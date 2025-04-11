@@ -1,5 +1,0 @@
-﻿namespace LAHJAAPI.Models
-{
-
-   
-}
