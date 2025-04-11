@@ -1,6 +1,8 @@
 ﻿using AutoGenerator.ApiFolder;
+using AutoGenerator.Helper.Translation;
 using AutoMapper.Internal;
 using Microsoft.CodeAnalysis;
+using Microsoft.Extensions.Options;
 using System.Reflection;
 using System.Text;
 
@@ -37,14 +39,14 @@ public class VMGenerator : GenericClassGenerator, ITGenerator
 
         var models = assembly.GetTypes().Where(t => typeof(ITModel).IsAssignableFrom(t) && t.IsClass).ToList();
 
+        
 
 
 
 
 
-
-
-        StringBuilder temp = new StringBuilder();
+       
+        StringBuilder  temp= new StringBuilder();
         var root = ApiFolderInfo.ROOT.Name;
 
 
@@ -65,7 +67,7 @@ public class VMGenerator : GenericClassGenerator, ITGenerator
                     temp.AppendLine(GetTemplateVM(null, subvm, model.Name, prortyappend));
 
                 }
-                else if (subvm == "Create")
+                else if (subvm == "Create" )
                 {
                     var prortyappend = GenerateDtoProperties(model.GetProperties(), models, $"{subvm}{type}", isOutput: false);
                     temp.AppendLine(GetTemplateVM(null, subvm, model.Name, prortyappend));
@@ -83,7 +85,7 @@ public class VMGenerator : GenericClassGenerator, ITGenerator
                     Usings = new List<string>
                         {
                             "AutoGenerator",
-
+                            
                             "AutoGenerator.Helper.Translation",
                              model.Namespace
 
@@ -113,38 +115,38 @@ public class VMGenerator : GenericClassGenerator, ITGenerator
 
     }
 
-    private static void CreateFolder(string path, string namemodel)
+    private static void CreateFolder(string path,string namemodel)
     {
-
-        string folderPath = Path.Combine(path, namemodel);
-        if (!Directory.Exists(folderPath))
-        {
-            Directory.CreateDirectory(folderPath);
-        }
-
+       
+            string folderPath = Path.Combine(path, namemodel);
+            if (!Directory.Exists(folderPath))
+            {
+                Directory.CreateDirectory(folderPath);
+            }
+        
     }
-
-    private static string GetTemplateVM(List<string> usings, string nameSpace, string className, string append = "")
+    
+    private static string GetTemplateVM(List<string> usings, string nameSpace, string className,string append="")
     {
         // Initialize a StringBuilder to accumulate the using statements.
         StringBuilder usingStatements = new StringBuilder();
 
-
-        StringBuilder pros = new StringBuilder();
+    
+        StringBuilder pros= new StringBuilder();
 
         if (!string.IsNullOrEmpty(append))
             pros.AppendLine(append);
         else
         {
+            
 
-
-
-            pros.AppendLine(@" 
+            
+                pros.AppendLine(@" 
          ///
                 public string?  Id { get; set; }");
 
-
-            if (nameSpace == "Filter")
+                
+                if (nameSpace == "Filter")
                 pros.AppendLine(@"
           ///
    
@@ -186,29 +188,29 @@ public class VMGenerator : GenericClassGenerator, ITGenerator
 
 
 
-    private static string[] UseVM = new string[] { "Create", "Output", "Update", "Delete", "Info", "Filter" };
+    private static string[] UseVM = new string[] { "Create", "Output", "Update", "Delete", "Info","Filter" };
     public static void GeneratWithFolder(FolderEventArgs e)
     {
 
 
-        GenerateAll(e.Node.Name, e.Node.Name, e.Node.Name, e.FullPath);
-
-        //GenerateAll(e.Node.Name, node.Name, node.Name, e.FullPath);
-
-
+            GenerateAll(e.Node.Name, e.Node.Name, e.Node.Name, e.FullPath);
+          
+            //GenerateAll(e.Node.Name, node.Name, node.Name, e.FullPath);
 
 
+
+      
     }
 
 
-    public static string GenerateDtoProperties(PropertyInfo[] properties, List<Type> models, string end, bool isOutput = false, bool isupdaute = false)
+    public static string GenerateDtoProperties(PropertyInfo[] properties, List<Type> models, string end,bool isOutput=false,bool isupdaute=false)
     {
         var propertyDeclarations = new StringBuilder();
 
         foreach (var prop in properties)
         {
 
-            if ((!isOutput && !isupdaute) && prop.Name.ToLower() == "id") { continue; }
+            if ((!isOutput&&!isupdaute) && prop.Name.ToLower() == "id") {  continue; }
             // إذا كان النوع من ضمن القائمة models
             if (models.Contains(prop.PropertyType))
             {
@@ -240,10 +242,10 @@ public class VMGenerator : GenericClassGenerator, ITGenerator
                 }
 
             }
-            // إذا كان لديها ToTranslationAttribute
+            // إذا كان لديها `ToTranslationAttribute`
             else if (prop.GetCustomAttributes<ToTranslationAttribute>().Any())
             {
-                propertyDeclarations.AppendLine(isOutput ? getproString(prop.Name) : getproITranslationData(prop.Name));
+                propertyDeclarations.AppendLine(isOutput? getproString(prop.Name): getproITranslationData(prop.Name));
             }
             // الحالات الأخرى (الافتراضية)
             else
@@ -269,6 +271,7 @@ public class VMGenerator : GenericClassGenerator, ITGenerator
     {
         return $@"
             //
-            public TranslationData? {name} {{ get; set; }}";
+            public TranslationData? {name} {{ get; set; }}";
     }
 }
+

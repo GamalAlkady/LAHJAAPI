@@ -133,6 +133,10 @@ namespace AutoGenerator
                     }
                 else
                     serviceCollection.AddAutoGenerateApiCore(option);
+              
+
+
+
 
 
             }
@@ -158,12 +162,8 @@ namespace AutoGenerator
                 serviceCollection.AddAutoTransient(option.Assembly);
                 serviceCollection.AddAutoSingleton(option.Assembly);
 
-                serviceCollection.AddQuartz(q =>
-                {
-                    q.UseMicrosoftDependencyInjectionJobFactory();
-                });
-
-                serviceCollection.AddQuartzHostedService(q => q.WaitForJobsToComplete = true);
+                serviceCollection.AddAutoScheduler(new() {
+                    Assembly=option.Assembly} );
             }
         }
 

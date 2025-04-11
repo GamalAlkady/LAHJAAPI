@@ -2,29 +2,34 @@
 
 
 using AutoGenerator.ApiFolder;
+using AutoGenerator.Conditions;
+using AutoGenerator.Data;
 using AutoGenerator.Helper.Translation;
+using AutoGenerator.Repositories.Share;
 using AutoMapper;
 using Microsoft.Extensions.DependencyInjection;
+using System.Linq;
 using System.Reflection;
+using System.Security.Cryptography;
 
 namespace AutoGenerator.Config
 {
 
-
+     
     public static class AutoConfigall
     {
-
+       
         public static void AddAutoScope(this IServiceCollection serviceCollection, Assembly? assembly)
         {
 
-            var scopes = assembly.GetTypes().Where(t => typeof(ITScope).IsAssignableFrom(t)).AsParallel().ToList();
+            var scopes = assembly.GetTypes().Where(t => typeof(ITScope).IsAssignableFrom(t) ).AsParallel().ToList();
             var Iscopeshare = scopes.Where(t => typeof(ITBaseShareRepository).IsAssignableFrom(t) && t.IsInterface).AsParallel().ToList();
             var cscopeshare = scopes.Where(t => typeof(ITBaseShareRepository).IsAssignableFrom(t) && t.IsClass).AsParallel().ToList();
-            foreach (var Iscope in Iscopeshare)
+              foreach (var Iscope in Iscopeshare)
             {
 
-                var cscope = cscopeshare.Where(t => Iscope.IsAssignableFrom(t)).FirstOrDefault();
-                if (cscope != null)
+                var cscope= cscopeshare.Where(t => Iscope.IsAssignableFrom(t)).FirstOrDefault();
+                if(cscope != null)
                 {
                     serviceCollection.AddScoped(Iscope, cscope);
                 }
@@ -32,14 +37,14 @@ namespace AutoGenerator.Config
                 {
 
                 }
-
+               
             }
 
             var Iscopeservis = scopes.Where(t => typeof(ITBaseService).IsAssignableFrom(t) && t.IsInterface).AsParallel().ToList();
             var cscopeservis = scopes.Where(t => typeof(ITBaseService).IsAssignableFrom(t) && t.IsClass).AsParallel().ToList();
             foreach (var Iscope in Iscopeservis)
             {
-                if (!Iscope.Name.Contains("IUse"))
+                if(!Iscope.Name.Contains("IUse"))
                 {
                     continue;
                 }
@@ -51,6 +56,13 @@ namespace AutoGenerator.Config
             }
 
 
+
+
+
+
+            //serviceCollection.AddHttpContextAccessor();
+
+            //var  usercliems= assembly.GetTypes().Where(t => typeof(ITClaimsHelper).IsAssignableFrom(t)).AsParallel().ToList();
 
 
 
@@ -67,7 +79,7 @@ namespace AutoGenerator.Config
 
         public static void AddAutoSingleton(this IServiceCollection serviceCollection, Assembly? assembly)
         {
-
+          
             var singletons = assembly.GetTypes().Where(t => typeof(ITSingleton).IsAssignableFrom(t) && t.IsClass).ToList();
             foreach (var singleton in singletons)
             {
@@ -76,12 +88,12 @@ namespace AutoGenerator.Config
 
 
 
-
+           
         }
 
         public static void AddAutoTransient(this IServiceCollection serviceCollection, Assembly? assembly)
         {
-
+         
             var transients = assembly.GetTypes().Where(t => typeof(ITTransient).IsAssignableFrom(t) && t.IsClass).ToList();
             foreach (var transient in transients)
             {
@@ -90,6 +102,7 @@ namespace AutoGenerator.Config
         }
 
     }
+
     public class MappingConfig : Profile
     {
         public static bool CheckIgnoreAutomateMapper(Type type)
@@ -172,6 +185,5 @@ namespace AutoGenerator.Config
             });
         }
     }
-
 
 }

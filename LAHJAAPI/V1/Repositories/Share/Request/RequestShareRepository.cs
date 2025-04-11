@@ -1,19 +1,14 @@
+using AutoGenerator;
+using AutoGenerator.Helper;
+using AutoGenerator.Repositories.Share;
 using AutoMapper;
 using LAHJAAPI.Data;
-using LAHJAAPI.Models;
-using V1.Repositories.Base;
-using AutoGenerator.Repositories.Builder;
+using Microsoft.EntityFrameworkCore;
 using V1.DyModels.Dto.Build.Requests;
 using V1.DyModels.Dto.Build.Responses;
-using AutoGenerator;
-using V1.Repositories.Builder;
-using AutoGenerator.Repositories.Share;
-using System.Linq.Expressions;
-using AutoGenerator.Repositories.Base;
-using AutoGenerator.Helper;
 using V1.DyModels.Dto.Share.Requests;
 using V1.DyModels.Dto.Share.Responses;
-using System;
+using V1.Repositories.Builder;
 
 namespace V1.Repositories.Share
 {
@@ -31,7 +26,7 @@ namespace V1.Repositories.Share
         {
             // Initialize the builder repository.
             _builder = new RequestBuilderRepository(dbContext, mapper, logger.CreateLogger(typeof(RequestShareRepository).FullName));
-        // Initialize the logger.
+            // Initialize the logger.
         }
 
         /// <summary>
@@ -48,6 +43,26 @@ namespace V1.Repositories.Share
             {
                 _logger.LogError(ex, "Error in CountAsync for Request entities.");
                 return Task.FromResult(0);
+            }
+        }
+
+        /// <summary>
+        /// Method to count the number of entities.
+        /// </summary>
+        public async Task<int> GetCount(string subscriptionId, string? serviceId, DateTime start, DateTime end, string status)
+        {
+            try
+            {
+                _logger.LogInformation("Counting Request entities...");
+                var query = _builder.GetQueryable(true);
+                if (status != null) query = query.Where(r => r.Status == status);
+                if (serviceId != null) query = query.Where(r => r.ServiceId == serviceId);
+                return await query.CountAsync(r => r.SubscriptionId == subscriptionId && r.CreatedAt <= start && r.CreatedAt <= end);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error in CountAsync for Request entities.");
+                return await Task.FromResult(0);
             }
         }
 

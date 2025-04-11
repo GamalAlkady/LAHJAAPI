@@ -1,29 +1,186 @@
+using APILAHJA.Utilities;
 using AutoGenerator;
-using AutoMapper;
-using Microsoft.Extensions.Logging;
-using System.Collections.Generic;
-using AutoGenerator.Services.Base;
-using V1.DyModels.Dso.Requests;
-using V1.DyModels.Dso.Responses;
-using LAHJAAPI.Models;
-using V1.DyModels.Dto.Share.Requests;
-using V1.DyModels.Dto.Share.Responses;
-using V1.Repositories.Share;
-using System.Linq.Expressions;
-using V1.Repositories.Builder;
-using AutoGenerator.Repositories.Base;
 using AutoGenerator.Helper;
-using System;
+using AutoGenerator.Services.Base;
+using AutoMapper;
+using LAHJAAPI.V1.Validators;
+using LAHJAAPI.V1.Validators.Conditions;
+using Utilities;
+using V1.DyModels.Dso.Requests;
+using V1.DyModels.Dso.ResponseFilters;
+using V1.DyModels.Dso.Responses;
+using V1.DyModels.Dto.Share.Requests;
+using V1.Repositories.Share;
 
 namespace V1.Services.Services
 {
     public class SubscriptionService : BaseService<SubscriptionRequestDso, SubscriptionResponseDso>, IUseSubscriptionService
     {
         private readonly ISubscriptionShareRepository _share;
-        public SubscriptionService(ISubscriptionShareRepository buildSubscriptionShareRepository, IMapper mapper, ILoggerFactory logger) : base(mapper, logger)
+        private readonly ISpaceShareRepository _spaceRepository;
+        private readonly IRequestShareRepository _requestRepository;
+        private readonly IUserClaimsHelper _userClaims;
+        private readonly IConditionChecker _checker;
+
+        public SubscriptionService(
+            ISubscriptionShareRepository buildSubscriptionShareRepository,
+            ISpaceShareRepository spaceRepository,
+            IRequestShareRepository requestRepository,
+            IUserClaimsHelper userClaims,
+            IMapper mapper,
+            IConditionChecker checker,
+            ILoggerFactory logger) : base(mapper, logger)
         {
             _share = buildSubscriptionShareRepository;
+            _spaceRepository = spaceRepository;
+            _requestRepository = requestRepository;
+            _userClaims = userClaims;
+            _checker = checker;
         }
+
+        #region My Functions
+        private SubscriptionResponseDso Subscription { get; set; }
+        private int NumberRequests { get; set; }
+
+        public async Task<SubscriptionResponseDso> GetUserSubscription(string? userId = null, string? subscriptionId = null)
+        {
+            try
+            {
+                if (Subscription != null && (userId != subscriptionId)) return Subscription;
+
+                _logger.LogInformation($"Retrieving user Subscription entity.");
+                var filter = new List<FilterCondition> { new FilterCondition { PropertyName = "UserId", Value = _userClaims.UserId } };
+                if (!string.IsNullOrEmpty(subscriptionId))
+                {
+                    filter.Add(new FilterCondition { PropertyName = "Id", Value = subscriptionId });
+                }
+                var subscription = await _share.GetOneByAsync(filter)
+                                   ?? throw new ArgumentNullException("You have no subscription");
+
+                _logger.LogInformation("Retrieved user subscription entity successfully.");
+                Subscription = GetMapper().Map<SubscriptionResponseDso>(subscription);
+                return Subscription;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error while creating Subscription entity.");
+                throw;
+            }
+        }
+
+        public async Task<int> GetNumberRequests(string? subsriptionId = null, bool refresh = true)
+        {
+            if (NumberRequests != 0 && !refresh) return NumberRequests;
+            await GetUserSubscription(subsriptionId);
+            NumberRequests = await _requestRepository.GetCount(
+                 Subscription.Id!, null,
+                 Subscription.CurrentPeriodStart,
+                 Subscription.CurrentPeriodEnd,
+                 RequestStatus.Created.ToString());
+            return NumberRequests;
+        }
+
+        public async Task<int> AllowedRequests()
+        {
+            NumberRequests = await GetNumberRequests();
+            return Subscription.AllowedRequests - NumberRequests;
+        }
+
+        //public async Task<bool> IsFree(string? userId = null)
+        //{
+        //    userId ??= _userClaims.UserId;
+        //    await GetUserSubscription();
+        //    var plan = await _spaceShareRepository.GetByIdAsync(Subscription.PlanId!, "en");
+        //    return plan.Amount == 0;
+        //}
+
+        public async Task<PagedResponse<SpaceResponseDso>> GetSpaces(string? subscriptionId = null)
+        {
+            subscriptionId ??= (await GetUserSubscription()).Id;
+            var response = await _spaceRepository.GetAllByAsync(
+                [new FilterCondition("SubscriptionId", subscriptionId)], new ParamOptions { PageSize = Subscription.AllowedSpaces });
+            return response.ToResponse(GetMapper().Map<IEnumerable<SpaceResponseDso>>(response.Data));
+        }
+
+        public async Task<SpaceResponseDso> GetSpace(string spaceId, string? subscriptionId = null)
+        {
+            subscriptionId ??= (await GetUserSubscription()).Id;
+            var space = await _spaceRepository.GetOneByAsync([
+                    new FilterCondition("Id",spaceId),
+                new FilterCondition("SubscriptionId",subscriptionId),
+                ]);
+            return GetMapper().Map<SpaceResponseDso>(space);
+        }
+
+        public async Task<bool> IsSpaceFound(string spaceId, string? subscriptionId = null)
+        {
+
+            var space = await GetSpace(spaceId, subscriptionId);
+            return space is not null;
+        }
+
+        public async Task<int> AvailableSpace(string? userId = null, string? subscriptionId = null)
+        {
+            await GetUserSubscription(userId, subscriptionId);
+            var pagedResponse = await GetSpaces(subscriptionId);
+
+            return Subscription.AllowedSpaces - pagedResponse.TotalRecords;
+        }
+
+
+        public async Task<bool> IsActive(string? userId = null, string? subscriptionId = null)
+        {
+            await GetUserSubscription(userId, subscriptionId);
+
+            return _checker.Check(SubscriptionValidatorStates.IsActive, new SubscriptionResponseFilterDso
+            {
+                Status = Subscription.Status,
+            });
+        }
+
+        public async Task<bool> IsCanceled(string? userId = null, string? subscriptionId = null)
+        {
+            await GetUserSubscription(userId, subscriptionId);
+            return _checker.Check(SubscriptionValidatorStates.IsCanceled, new SubscriptionResponseFilterDso
+            {
+                Status = Subscription.Status,
+            });
+        }
+
+        public async Task<bool> IsCancelAtPeriodEnd(string? userId = null, string? subscriptionId = null)
+        {
+            await GetUserSubscription(userId, subscriptionId);
+            return _checker.Check(SubscriptionValidatorStates.IsCancelAtPeriodEnd, new SubscriptionResponseFilterDso
+            {
+                CancelAtPeriodEnd = Subscription.CancelAtPeriodEnd,
+            });
+        }
+
+
+        public async Task<(bool IsNotSubscribed, object? Result)> IsNotSubscribe(string? userId = null, string? subscriptionId = null)
+        {
+            await GetUserSubscription(userId, subscriptionId);
+            var result = _checker.CheckAndResult(SubscriptionValidatorStates.IsNotSubscribe,
+                new SubscriptionResponseFilterDso
+                {
+                    Status = Subscription.Status,
+                    CancelAtPeriodEnd = Subscription.CancelAtPeriodEnd,
+                });
+            return (result.Result is not null, result.Result);
+        }
+
+        public async Task<bool> IsSubscribe(string? userId = null, string? subscriptionId = null)
+        {
+            await GetUserSubscription(userId, subscriptionId);
+            return _checker.Check(SubscriptionValidatorStates.IsSubscribe,
+                new SubscriptionResponseFilterDso
+                {
+                    Status = Subscription.Status,
+                    CancelAtPeriodEnd = Subscription.CancelAtPeriodEnd,
+                });
+        }
+
+        #endregion
 
         public override Task<int> CountAsync()
         {
@@ -225,7 +382,6 @@ namespace V1.Services.Services
             try
             {
                 _logger.LogInformation("Retrieving all Subscription entities...");
-                var results = await _share.GetAllAsync();
                 var response = await _share.GetAllByAsync(conditions, options);
                 return response.ToResponse(GetMapper().Map<IEnumerable<SubscriptionResponseDso>>(response.Data));
             }

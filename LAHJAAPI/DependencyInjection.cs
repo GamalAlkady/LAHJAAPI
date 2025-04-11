@@ -28,8 +28,8 @@ public static class DependencyInjection
         services.AddAutoMapper(typeof(MappingConfig));
         services.AddSingleton<IEmailService, EmailService>();
         services.AddSingleton<IEmailSender<ApplicationUser>, EmailService>();
-
         services.AddScoped<IUserClaimsHelper, UserClaimsHelper>();
+        services.AddScoped<SubscriptionCheckFilter>();
 
         // options
         services.Configure<AppSettings>(configuration.GetSection("appsettings"));
@@ -62,7 +62,6 @@ public static class DependencyInjection
         //services.AddSingleton(typeof(IPipelineBehavior<,>), typeof(LoggingBehavior<,>));
 
         // Filters
-        //services.AddScoped<SubscriptionCheckFilter>();
     }
 
     public static void AddDefaultAuthentication(this IServiceCollection services)

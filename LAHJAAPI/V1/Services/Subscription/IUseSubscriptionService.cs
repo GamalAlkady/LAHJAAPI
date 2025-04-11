@@ -1,19 +1,8 @@
 using AutoGenerator;
-using AutoMapper;
-using Microsoft.Extensions.Logging;
-using System.Collections.Generic;
+using AutoGenerator.Repositories.Base;
 using AutoGenerator.Services.Base;
 using V1.DyModels.Dso.Requests;
 using V1.DyModels.Dso.Responses;
-using LAHJAAPI.Models;
-using V1.DyModels.Dto.Share.Requests;
-using V1.DyModels.Dto.Share.Responses;
-using V1.Repositories.Share;
-using System.Linq.Expressions;
-using V1.Repositories.Builder;
-using AutoGenerator.Repositories.Base;
-using AutoGenerator.Helper;
-using System;
 
 namespace V1.Services.Services
 {
@@ -21,5 +10,17 @@ namespace V1.Services.Services
     //, ISubscriptionBuilderRepository<SubscriptionRequestDso, SubscriptionResponseDso>
     , IBasePublicRepository<SubscriptionRequestDso, SubscriptionResponseDso>
     {
+        Task<int> AllowedRequests();
+        Task<int> AvailableSpace(string? userId = null, string? subscriptionId = null);
+        Task<int> GetNumberRequests(string? subsriptionId = null, bool refresh = true);
+        Task<SpaceResponseDso> GetSpace(string spaceId, string? subscriptionId = null);
+        Task<PagedResponse<SpaceResponseDso>> GetSpaces(string? subscriptionId = null);
+        Task<SubscriptionResponseDso> GetUserSubscription(string? userId = null, string? subscriptionId = null);
+        Task<bool> IsActive(string? userId = null, string? subscriptionId = null);
+        Task<bool> IsCancelAtPeriodEnd(string? userId = null, string? subscriptionId = null);
+        Task<bool> IsCanceled(string? userId = null, string? subscriptionId = null);
+        Task<(bool IsNotSubscribed, object? Result)> IsNotSubscribe(string? userId = null, string? subscriptionId = null);
+        Task<bool> IsSpaceFound(string spaceId, string? subscriptionId = null);
+        Task<bool> IsSubscribe(string? userId = null, string? subscriptionId = null);
     }
 }

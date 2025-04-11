@@ -30,6 +30,7 @@
         {
 
         }
+
         public FilterCondition(string? propertyName, object? value)
         {
             PropertyName = propertyName;

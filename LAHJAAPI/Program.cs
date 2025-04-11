@@ -4,6 +4,8 @@ using AutoGenerator.CustomPolicy;
 using AutoGenerator.Utilities;
 using LAHJAAPI.Data;
 using LAHJAAPI.Models;
+using LAHJAAPI.V1.Schedulers;
+using LAHJAAPI.V1.Validators.Conditions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -12,7 +14,6 @@ using Microsoft.OpenApi.Models;
 using System.Reflection;
 using System.Text.Json.Serialization;
 using Utilities;
-using V1.Validators.Conditions;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -44,8 +45,9 @@ builder.Services.AddAutoBuilderApiCore(new()
     Assembly = Assembly.GetExecutingAssembly(),
     AssemblyModels = typeof(Advertisement).Assembly
 })
-    .AddAutoValidator()
-    ;
+   .AddAutoValidator().
+    AddAutoConfigScheduler();
+;
 
 //TODO: preapare the shared
 //TODO: preapare the services

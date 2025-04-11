@@ -1,17 +1,13 @@
-using AutoMapper;
-using Microsoft.Extensions.Logging;
-using System.Collections.Generic;
-using V1.Services.Services;
-using Microsoft.AspNetCore.Mvc;
-using V1.DyModels.VMs;
-using System.Linq.Expressions;
-using V1.DyModels.Dso.Requests;
 using AutoGenerator.Helper.Translation;
-using System;
+using AutoMapper;
+using Microsoft.AspNetCore.Mvc;
+using V1.DyModels.Dso.Requests;
+using V1.DyModels.VMs;
+using V1.Services.Services;
 
 namespace V1.Controllers.Api
 {
-    //[ApiExplorerSettings(GroupName = "V1")]
+    [ServiceFilter(typeof(SubscriptionCheckFilter))]
     [Route("api/V1/Api/[controller]")]
     [ApiController]
     public class AuthorizationSessionController : ControllerBase
@@ -147,6 +143,7 @@ namespace V1.Controllers.Api
         }
 
         // Create a new AuthorizationSession.
+        [ServiceFilter(typeof(SubscriptionCheckFilter))]
         [HttpPost(Name = "CreateAuthorizationSession")]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status200OK)]

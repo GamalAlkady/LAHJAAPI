@@ -40,6 +40,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\AutoGenerator\AutoGenerator.csproj" />
+    <ProjectReference Include="..\Models\Models.csproj" />
   </ItemGroup>
 
 </Project>

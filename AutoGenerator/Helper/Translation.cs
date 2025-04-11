@@ -1,7 +1,6 @@
 ﻿using AutoGenerator.Config;
 using AutoMapper;
 using Newtonsoft.Json;
-using System.Reflection;
 
 namespace AutoGenerator.Helper.Translation
 {
@@ -274,7 +273,7 @@ namespace AutoGenerator.Helper.Translation
                 var destitem = dest.GetType().GetProperty(kname);
 
 
-                if (!(destitem is ITranslationData))
+                if (!typeof(ITranslationData).IsAssignableFrom(destitem.PropertyType))
                 {
 
 
