@@ -1,7 +1,6 @@
 using AutoGenerator;
-using AutoGenerator.Helper.Translation;
-using LAHJAAPI.Models;
-using System;
+using System.ComponentModel;
+using System.ComponentModel.DataAnnotations;
 
 namespace V1.DyModels.VMs
 {
@@ -10,26 +9,42 @@ namespace V1.DyModels.VMs
     /// </summary>
     public class AuthorizationSessionCreateVM : ITVM
     {
-        ///
-        public String? SessionToken { get; set; }
-        ///
-        public String? UserToken { get; set; }
-        ///
-        public String? AuthorizationType { get; set; }
-        ///
-        public DateTime StartTime { get; set; }
-        ///
-        public Nullable<DateTime> EndTime { get; set; }
-        ///
-        public Boolean IsActive { get; set; }
-        ///
-        public String? UserId { get; set; }
-        public ApplicationUserCreateVM? User { get; set; }
-        ///
-        public String? IpAddress { get; set; }
-        ///
-        public String? DeviceInfo { get; set; }
-        ///
-        public String? ServicesIds { get; set; }
+        public required string Token { get; set; }
+
+        public required string ServiceId { get; set; }
+    }
+
+    public class CreateAuthorizationWebRequest
+    {
+
+        public required string Token { get; set; }
+
+        public required string ServiceId { get; set; }
+
+    }
+
+    public class CreateAuthorizationForDashboard
+    {
+        public required string Token { get; set; }
+    }
+
+    public class CreateAuthorizationForListServices
+    {
+
+        public required string Token { get; set; }
+
+        [Required(ErrorMessage = "The ServicesIds field is required.")]
+        public List<string> ServicesIds { get; set; }
+
+    }
+
+    public class CreateAuthorizationForServices
+    {
+
+        public required string Token { get; set; }
+
+        [DefaultValue("")]
+        public string? ModelAiId { get; set; }
+
     }
 }

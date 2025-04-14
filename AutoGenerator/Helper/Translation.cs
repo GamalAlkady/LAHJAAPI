@@ -287,7 +287,7 @@ namespace AutoGenerator.Helper.Translation
 
                     else
 
-                        destitem.SetValue(dest, ConvertTranslationDataToText(item.Value)); // Convert ITranslationData to text
+                        destitem.SetValue(dest, ConvertTranslationDataToText(item?.Value)); // Convert ITranslationData to text
 
 
                 }

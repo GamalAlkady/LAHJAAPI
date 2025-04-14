@@ -9,6 +9,6 @@ namespace V1.Services.Services
     //, ISpaceBuilderRepository<SpaceRequestDso, SpaceResponseDso>
     , IBasePublicRepository<SpaceRequestDso, SpaceResponseDso>
     {
-
+        Task<IEnumerable<SpaceResponseDso>> GetSpacesBySubscriptionId(string subscriptionId);
     }
 }

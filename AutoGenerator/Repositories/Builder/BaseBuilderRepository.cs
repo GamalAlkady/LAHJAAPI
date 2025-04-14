@@ -1,6 +1,4 @@
-﻿
-using AutoGenerator.Data;
-using AutoGenerator.Helper;
+﻿using AutoGenerator.Helper;
 using AutoGenerator.Repositories.Base;
 using AutoMapper;
 using AutoMapper.QueryableExtensions;
@@ -18,7 +16,7 @@ namespace AutoGenerator.Repositories.Builder
 
     }
 
-   
+
     public abstract class TBaseBuilderRepository<TModel, TBuildRequestDto, TBuildResponseDto> : IBaseBuilderRepository<TBuildRequestDto, TBuildResponseDto>, ITBuildRepository
       where TModel : class
       where TBuildRequestDto : class
@@ -36,7 +34,7 @@ namespace AutoGenerator.Repositories.Builder
                 throw new InvalidOperationException("Creation of this repository is not allowed for the specified types.");
             }
 
-            _repository =repository;
+            _repository = repository;
             _mapper = mapper;
             _logger = logger;
 
@@ -47,7 +45,8 @@ namespace AutoGenerator.Repositories.Builder
         public async Task<IEnumerable<TBuildResponseDto>> GetAllAsync()
         {
             var entities = await _repository.GetAllAsync();
-            return entities.Select(entity => _mapper.Map<TBuildResponseDto>(entity));
+            return _mapper.Map<IEnumerable<TBuildResponseDto>>(entities);
+            //return entities.Select(entity => _mapper.Map<TBuildResponseDto>(entity));
         }
 
         public async Task<TBuildResponseDto?> GetByIdAsync(string id)
@@ -82,7 +81,7 @@ namespace AutoGenerator.Repositories.Builder
         public async Task<TBuildResponseDto> CreateAsync(TBuildRequestDto entity)
         {
             var modelEntity = _mapper.Map<TModel>(entity);
-           // modelEntity = await _repository.CreateAsync(modelEntity);
+            modelEntity = await _repository.CreateAsync(modelEntity);
             return _mapper.Map<TBuildResponseDto>(modelEntity);
         }
 
@@ -114,19 +113,19 @@ namespace AutoGenerator.Repositories.Builder
 
         #region Delete Methods
 
-        public  Task DeleteAsync(string id)
+        public Task DeleteAsync(string id)
         {
             return _repository.RemoveAsync(e => EF.Property<string>(e, "Id") == id);
         }
 
-       
-        public  Task<int> CountAsync()
+
+        public Task<int> CountAsync()
         {
             // عد عدد العناصر في القاعدة
-            return  _repository.GetAll().CountAsync();
+            return _repository.GetAll().CountAsync();
         }
 
-        public  Task SaveChangesAsync()
+        public Task SaveChangesAsync()
         {
             // حفظ التغييرات في القاعدة
             return _repository.SaveAsync();
@@ -210,9 +209,9 @@ namespace AutoGenerator.Repositories.Builder
             return _mapper.Map<IEnumerable<TModel>>(requestDto);
         }
 
-        public  Task<TBuildResponseDto?> GetByIdAsync(object id)
+        public Task<TBuildResponseDto?> GetByIdAsync(object id)
         {
-            return  FindAsync(id);
+            return FindAsync(id);
         }
 
         public async Task<TBuildResponseDto?> FindAsync(params object[] id)
@@ -221,15 +220,15 @@ namespace AutoGenerator.Repositories.Builder
             return entity != null ? _mapper.Map<TBuildResponseDto>(entity) : null;
         }
 
-        public  Task<bool> ExistsAsync(object value, string name = "Id")
+        public Task<bool> ExistsAsync(object value, string name = "Id")
         {
-            return  _repository.ExistsAsync(e => EF.Property<object>(e, name) == value);
+            return _repository.ExistsAsync(e => EF.Property<object>(e, name) == value);
         }
 
-        public  Task<PagedResponse<TBuildResponseDto>> GetAllAsync(string[]? includes = null, int pageNumber = 1, int pageSize = 10)
+        public Task<PagedResponse<TBuildResponseDto>> GetAllAsync(string[]? includes = null, int pageNumber = 1, int pageSize = 10)
         {
             var query = GetQueryable(true, includes);
-            return  query.ToPagedResponseAsync(pageNumber, pageSize);
+            return query.ToPagedResponseAsync(pageNumber, pageSize);
         }
 
         public Task DeleteAsync(TBuildRequestDto entity)

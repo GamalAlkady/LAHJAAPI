@@ -1,19 +1,13 @@
 using AutoGenerator;
-using AutoMapper;
-using Microsoft.Extensions.Logging;
-using System.Collections.Generic;
+using AutoGenerator.Helper;
 using AutoGenerator.Services.Base;
+using AutoMapper;
+using FluentResults;
+using Newtonsoft.Json;
 using V1.DyModels.Dso.Requests;
 using V1.DyModels.Dso.Responses;
-using LAHJAAPI.Models;
 using V1.DyModels.Dto.Share.Requests;
-using V1.DyModels.Dto.Share.Responses;
 using V1.Repositories.Share;
-using System.Linq.Expressions;
-using V1.Repositories.Builder;
-using AutoGenerator.Repositories.Base;
-using AutoGenerator.Helper;
-using System;
 
 namespace V1.Services.Services
 {
@@ -23,6 +17,39 @@ namespace V1.Services.Services
         public AuthorizationSessionService(IAuthorizationSessionShareRepository buildAuthorizationSessionShareRepository, IMapper mapper, ILoggerFactory logger) : base(mapper, logger)
         {
             _share = buildAuthorizationSessionShareRepository;
+        }
+
+        public async Task<Result<AuthorizationSessionResponseDso>> GetSessionByServices(string userId, List<string> servicesIds, string authorizationType)
+        {
+            var response = await _share.GetAllByAsync([
+                new FilterCondition("UserId" , userId),
+                new FilterCondition(authorizationType ,authorizationType)]);
+            if (response.TotalPages == 0)
+            {
+                return Result.Fail(new Error("No session found for the provided user ID and authorization type."));
+            }
+            var session = response.Data
+             .Select(s => new AuthorizationSessionResponseDso
+             {
+                 Id = s.Id,
+                 Services = JsonConvert.DeserializeObject<List<string>>(s.ServicesIds),
+                 EndTime = s.EndTime,
+                 IsActive = s.IsActive,
+                 SessionToken = s.SessionToken,
+             })
+             .AsEnumerable()
+             .FirstOrDefault(s => s.Services.Count() == servicesIds.Count() && s.Services.SequenceEqual(servicesIds));
+
+
+            if (session != null && !session.IsActive) return Result.Fail(new Error("Your current session has been suspended."));
+
+            return Result.Ok(session);
+        }
+
+
+        private AuthorizationSessionResponseDso MapToResponse(AuthorizationSessionRequestDso requestDso)
+        {
+            return GetMapper().Map<AuthorizationSessionResponseDso>(requestDso);
         }
 
         public override Task<int> CountAsync()

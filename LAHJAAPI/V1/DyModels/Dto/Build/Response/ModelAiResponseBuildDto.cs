@@ -1,8 +1,5 @@
 using AutoGenerator;
 using AutoGenerator.Helper.Translation;
-using LAHJAAPI.Models;
-using AutoGenerator.Config;
-using System;
 
 namespace V1.DyModels.Dto.Build.Responses
 {
@@ -22,9 +19,9 @@ namespace V1.DyModels.Dto.Build.Responses
         /// </summary>
         public String? AbsolutePath { get; set; }
         public TranslationData? Category { get; set; } = new();
-        public TranslationData? Language { get; set; } = new();
-        public TranslationData? IsStandard { get; set; } = new();
-        public TranslationData? Gender { get; set; } = new();
+        public string? Language { get; set; }
+        public bool IsStandard { get; set; }
+        public string? Gender { get; set; }
         public TranslationData? Dialect { get; set; } = new();
         /// <summary>
         /// Type property for DTO.

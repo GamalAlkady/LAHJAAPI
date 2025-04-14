@@ -21,5 +21,8 @@ namespace V1.Services.Services
     //, IServiceBuilderRepository<ServiceRequestDso, ServiceResponseDso>
     , IBasePublicRepository<ServiceRequestDso, ServiceResponseDso>
     {
+        Task<ServiceResponseDso> GetByAbsolutePath(string absolutePath);
+        Task<ServiceResponseDso> GetByName(string name);
+        Task<List<ServiceResponseDso>> GetListWithoutSome(List<string>? servicesId = null, string? modelId = null);
     }
 }

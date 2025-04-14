@@ -2,6 +2,7 @@
 using Api.Utilities;
 using APILAHJA.Utilities;
 using AutoGenerator.Config;
+using AutoGenerator.Services2;
 using AutoGenerator.Utilities;
 using LAHJAAPI.Models;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -36,6 +37,7 @@ public static class DependencyInjection
         services.Configure<SmtpConfig>(configuration.GetSection(nameof(SmtpConfig)));
 
         services.AddSingleton<ClaimsChange>();
+        services.AddSingleton<TokenService>();
         //services.AddScoped<IUserShareRepository, UserShareRepository>();
 
         //services.AddScoped<UserService>();

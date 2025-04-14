@@ -1,13 +1,10 @@
-using AutoMapper;
-using Microsoft.Extensions.Logging;
-using System.Collections.Generic;
-using V1.Services.Services;
-using Microsoft.AspNetCore.Mvc;
-using V1.DyModels.VMs;
-using System.Linq.Expressions;
-using V1.DyModels.Dso.Requests;
 using AutoGenerator.Helper.Translation;
-using System;
+using AutoGenerator.Utilities;
+using AutoMapper;
+using Microsoft.AspNetCore.Mvc;
+using V1.DyModels.Dso.Requests;
+using V1.DyModels.VMs;
+using V1.Services.Services;
 
 namespace V1.Controllers.Api
 {
@@ -43,7 +40,8 @@ namespace V1.Controllers.Api
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error while fetching all ModelAis");
-                return StatusCode(500, "Internal Server Error");
+                return StatusCode(500, HandelErrors.Problem(ex));
+                //return StatusCode(500, "Internal Server Error");
             }
         }
 
@@ -153,22 +151,13 @@ namespace V1.Controllers.Api
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
         public async Task<ActionResult<ModelAiOutputVM>> Create([FromBody] ModelAiCreateVM model)
         {
-            if (model == null)
-            {
-                _logger.LogWarning("ModelAi data is null in Create.");
-                return BadRequest("ModelAi data is required.");
-            }
-
-            if (!ModelState.IsValid)
-            {
-                _logger.LogWarning("Invalid model state in Create: {ModelState}", ModelState);
-                return BadRequest(ModelState);
-            }
 
             try
             {
                 _logger.LogInformation("Creating new ModelAi with data: {@model}", model);
                 var item = _mapper.Map<ModelAiRequestDso>(model);
+                item.Id = $"mod_{Guid.NewGuid():N}";
+
                 var createdEntity = await _modelaiService.CreateAsync(item);
                 var createdItem = _mapper.Map<ModelAiOutputVM>(createdEntity);
                 return Ok(createdItem);

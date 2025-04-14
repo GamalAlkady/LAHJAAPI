@@ -1,7 +1,4 @@
 using AutoGenerator;
-using AutoGenerator.Helper.Translation;
-using LAHJAAPI.Models;
-using System;
 
 namespace V1.DyModels.VMs
 {
@@ -23,7 +20,7 @@ namespace V1.DyModels.VMs
         //
         public string? Language { get; set; }
         //
-        public string? IsStandard { get; set; }
+        public bool IsStandard { get; set; }
         //
         public string? Gender { get; set; }
         //

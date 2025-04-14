@@ -1,19 +1,11 @@
 using AutoGenerator;
-using AutoMapper;
-using Microsoft.Extensions.Logging;
-using System.Collections.Generic;
+using AutoGenerator.Helper;
 using AutoGenerator.Services.Base;
+using AutoMapper;
 using V1.DyModels.Dso.Requests;
 using V1.DyModels.Dso.Responses;
-using LAHJAAPI.Models;
 using V1.DyModels.Dto.Share.Requests;
-using V1.DyModels.Dto.Share.Responses;
 using V1.Repositories.Share;
-using System.Linq.Expressions;
-using V1.Repositories.Builder;
-using AutoGenerator.Repositories.Base;
-using AutoGenerator.Helper;
-using System;
 
 namespace V1.Services.Services
 {
@@ -23,6 +15,23 @@ namespace V1.Services.Services
         public SpaceService(ISpaceShareRepository buildSpaceShareRepository, IMapper mapper, ILoggerFactory logger) : base(mapper, logger)
         {
             _share = buildSpaceShareRepository;
+        }
+
+
+        public async Task<IEnumerable<SpaceResponseDso>> GetSpacesBySubscriptionId(string subscriptionId)
+        {
+            try
+            {
+                _logger.LogInformation($"Retrieving spaces by subscription.");
+                var pagedResponse = await _share.GetAllByAsync([new FilterCondition { PropertyName = "SubscriptionId", Value = subscriptionId }]);
+
+                return GetMapper().Map<IEnumerable<SpaceResponseDso>>(pagedResponse.Data);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error while retrieve spaces by subscription.");
+                throw;
+            }
         }
 
         public override Task<int> CountAsync()

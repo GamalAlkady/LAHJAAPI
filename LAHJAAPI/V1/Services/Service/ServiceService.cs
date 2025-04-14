@@ -1,19 +1,12 @@
 using AutoGenerator;
-using AutoMapper;
-using Microsoft.Extensions.Logging;
-using System.Collections.Generic;
+using AutoGenerator.Helper;
 using AutoGenerator.Services.Base;
+using AutoMapper;
 using V1.DyModels.Dso.Requests;
 using V1.DyModels.Dso.Responses;
-using LAHJAAPI.Models;
 using V1.DyModels.Dto.Share.Requests;
 using V1.DyModels.Dto.Share.Responses;
 using V1.Repositories.Share;
-using System.Linq.Expressions;
-using V1.Repositories.Builder;
-using AutoGenerator.Repositories.Base;
-using AutoGenerator.Helper;
-using System;
 
 namespace V1.Services.Services
 {
@@ -23,6 +16,42 @@ namespace V1.Services.Services
         public ServiceService(IServiceShareRepository buildServiceShareRepository, IMapper mapper, ILoggerFactory logger) : base(mapper, logger)
         {
             _share = buildServiceShareRepository;
+        }
+
+        public async Task<ServiceResponseDso> GetByAbsolutePath(string absolutePath)
+        {
+            var service = await _share.GetOneByAsync([new FilterCondition("AbsolutePath", absolutePath, FilterOperator.Contains)]);
+
+            return MapToResponse(service);
+        }
+
+        private readonly HashSet<string> withoutServices = ["createspace", "dashboard"];
+        public async Task<List<ServiceResponseDso>> GetListWithoutSome(List<string>? servicesId = null, string? modelId = null)
+        {
+            List<FilterCondition> filterConditions = new List<FilterCondition>() {
+                new FilterCondition("AbsolutePath", withoutServices, FilterOperator.NotIn)
+            };
+            if (servicesId != null) filterConditions.Add(new FilterCondition("Id", servicesId, FilterOperator.In));
+            if (modelId != null) filterConditions.Add(new FilterCondition("ModelAiId", modelId));
+
+            var response = await _share.GetAllByAsync(filterConditions);
+            return MapToResponse(response.Data).ToList();
+        }
+
+        public async Task<ServiceResponseDso> GetByName(string name)
+        {
+            var service = await _share.GetOneByAsync([new FilterCondition("Name", name)]);
+            return MapToResponse(service);
+        }
+
+        private ServiceResponseDso MapToResponse(object requestDso)
+        {
+            return GetMapper().Map<ServiceResponseDso>(requestDso);
+        }
+
+        private IEnumerable<ServiceResponseDso> MapToResponse(IEnumerable<ServiceResponseShareDto> requestDso)
+        {
+            return GetMapper().Map<IEnumerable<ServiceResponseDso>>(requestDso);
         }
 
         public override Task<int> CountAsync()
