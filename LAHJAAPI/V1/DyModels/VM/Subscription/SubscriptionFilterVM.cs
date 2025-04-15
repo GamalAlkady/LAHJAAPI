@@ -1,7 +1,4 @@
 using AutoGenerator;
-using AutoGenerator.Helper.Translation;
-using LAHJAAPI.Models;
-using System;
 
 namespace V1.DyModels.VMs
 {
@@ -14,5 +11,8 @@ namespace V1.DyModels.VMs
         public string? Id { get; set; }
         ///
         public string? Lg { get; set; }
+
+        public int AllowedSpaces { get; set; }
+        public int SpaceCount { get; set; }
     }
 }

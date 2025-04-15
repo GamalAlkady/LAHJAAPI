@@ -76,7 +76,7 @@ namespace V1.Services.Services
                  Subscription.Id!, null,
                  Subscription.CurrentPeriodStart,
                  Subscription.CurrentPeriodEnd,
-                 RequestStatus.Created.ToString());
+                 RequestStatus.Success.ToString());
             return NumberRequests;
         }
 

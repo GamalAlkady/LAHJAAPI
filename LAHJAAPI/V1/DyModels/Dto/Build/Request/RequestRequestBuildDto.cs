@@ -1,8 +1,4 @@
 using AutoGenerator;
-using AutoGenerator.Helper.Translation;
-using LAHJAAPI.Models;
-using AutoGenerator.Config;
-using System;
 
 namespace V1.DyModels.Dto.Build.Requests
 {
@@ -11,7 +7,7 @@ namespace V1.DyModels.Dto.Build.Requests
         /// <summary>
         /// Id property for DTO.
         /// </summary>
-        public String? Id { get; set; }
+        public string Id { get; set; } = $"req_{Guid.NewGuid():N}";
         /// <summary>
         /// Status property for DTO.
         /// </summary>
@@ -60,6 +56,6 @@ namespace V1.DyModels.Dto.Build.Requests
         /// </summary>
         public String? SpaceId { get; set; }
         public SpaceRequestBuildDto? Space { get; set; }
-        public ICollection<EventRequestRequestBuildDto>? Events { get; set; }
+        public ICollection<EventRequestRequestBuildDto>? Events { get; set; } = [];
     }
 }

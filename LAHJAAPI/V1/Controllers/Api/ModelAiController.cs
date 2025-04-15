@@ -156,7 +156,6 @@ namespace V1.Controllers.Api
             {
                 _logger.LogInformation("Creating new ModelAi with data: {@model}", model);
                 var item = _mapper.Map<ModelAiRequestDso>(model);
-                item.Id = $"mod_{Guid.NewGuid():N}";
 
                 var createdEntity = await _modelaiService.CreateAsync(item);
                 var createdItem = _mapper.Map<ModelAiOutputVM>(createdEntity);

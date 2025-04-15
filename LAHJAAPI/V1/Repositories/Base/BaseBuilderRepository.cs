@@ -13,9 +13,17 @@ namespace V1.Repositories.Base
         IBaseBuilderRepository<TBuildRequestDto, TBuildResponseDto>,
         ITBuildRepository where TModel : class where TBuildRequestDto : class where TBuildResponseDto : class
     {
-        public BaseBuilderRepository(DataContext context, IMapper mapper, ILogger logger) : base(new BaseRepository<TModel>(context, logger), mapper, logger)
-        {
+        private readonly BaseRepository<TModel> _baseRepository;
 
+        public BaseBuilderRepository(DataContext context, IMapper mapper, ILogger logger)
+            : base(new BaseRepository<TModel>(context, logger), mapper, logger)
+        {
+            _baseRepository = new BaseRepository<TModel>(context, logger);
+        }
+
+        public async Task<bool> ExecuteTransactionAsync(Func<Task<bool>> operation)
+        {
+            return await _baseRepository.ExecuteTransactionAsync(operation);
         }
 
 

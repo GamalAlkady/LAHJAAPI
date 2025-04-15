@@ -46,6 +46,20 @@ namespace V1.Repositories.Share
             }
         }
 
+        public Task<bool> ExecuteTransactionAsync(Func<Task<bool>> operation)
+        {
+            try
+            {
+                _logger.LogInformation("Executing transaction for Request entities...");
+                return _builder.ExecuteTransactionAsync(operation);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error in ExecuteTransactionAsync for Request entities.");
+                throw;
+            }
+        }
+
         /// <summary>
         /// Method to count the number of entities.
         /// </summary>
@@ -55,6 +69,7 @@ namespace V1.Repositories.Share
             {
                 _logger.LogInformation("Counting Request entities...");
                 var query = _builder.GetQueryable(true);
+
                 if (status != null) query = query.Where(r => r.Status == status);
                 if (serviceId != null) query = query.Where(r => r.ServiceId == serviceId);
                 return await query.CountAsync(r => r.SubscriptionId == subscriptionId && r.CreatedAt <= start && r.CreatedAt <= end);

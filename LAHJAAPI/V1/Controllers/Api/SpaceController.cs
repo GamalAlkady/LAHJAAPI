@@ -1,13 +1,12 @@
-using AutoMapper;
-using Microsoft.Extensions.Logging;
-using System.Collections.Generic;
-using V1.Services.Services;
-using Microsoft.AspNetCore.Mvc;
-using V1.DyModels.VMs;
-using System.Linq.Expressions;
-using V1.DyModels.Dso.Requests;
 using AutoGenerator.Helper.Translation;
-using System;
+using AutoGenerator.Utilities;
+using AutoMapper;
+using LAHJAAPI.V1.Validators;
+using LAHJAAPI.V1.Validators.Conditions;
+using Microsoft.AspNetCore.Mvc;
+using V1.DyModels.Dso.Requests;
+using V1.DyModels.VMs;
+using V1.Services.Services;
 
 namespace V1.Controllers.Api
 {
@@ -18,11 +17,23 @@ namespace V1.Controllers.Api
     {
         private readonly IUseSpaceService _spaceService;
         private readonly IMapper _mapper;
+        private readonly IConditionChecker _checker;
+        private readonly IUseSubscriptionService _subscriptionService;
+        private readonly IUseServiceService _serviceService;
         private readonly ILogger _logger;
-        public SpaceController(IUseSpaceService spaceService, IMapper mapper, ILoggerFactory logger)
+        public SpaceController(
+            IUseSpaceService spaceService,
+            IMapper mapper,
+            IConditionChecker checker,
+            IUseSubscriptionService subscriptionService,
+            IUseServiceService serviceService,
+            ILoggerFactory logger)
         {
             _spaceService = spaceService;
             _mapper = mapper;
+            _checker = checker;
+            _subscriptionService = subscriptionService;
+            _serviceService = serviceService;
             _logger = logger.CreateLogger(typeof(SpaceController).FullName);
         }
 
@@ -147,31 +158,33 @@ namespace V1.Controllers.Api
         }
 
         // Create a new Space.
+        [ServiceFilter(typeof(SubscriptionCheckFilter))]
         [HttpPost(Name = "CreateSpace")]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
         public async Task<ActionResult<SpaceOutputVM>> Create([FromBody] SpaceCreateVM model)
         {
-            if (model == null)
-            {
-                _logger.LogWarning("Space data is null in Create.");
-                return BadRequest("Space data is required.");
-            }
-
-            if (!ModelState.IsValid)
-            {
-                _logger.LogWarning("Invalid model state in Create: {ModelState}", ModelState);
-                return BadRequest(ModelState);
-            }
-
             try
             {
-                _logger.LogInformation("Creating new Space with data: {@model}", model);
-                var item = _mapper.Map<SpaceRequestDso>(model);
-                var createdEntity = await _spaceService.CreateAsync(item);
-                var createdItem = _mapper.Map<SpaceOutputVM>(createdEntity);
-                return Ok(createdItem);
+                if (_checker.CheckAndResult(SpaceValidatorStates.IsValid, new SpaceFilterVM()) is not { } problemDetails)
+                {
+                    var service = await _serviceService.GetByName("createspace");
+
+                    if (_checker.CheckAndResult(ServiceValidatorStates.IsServiceIdFound, service.Id) is not { } errorMessage)
+                    {
+                        var item = _mapper.Map<SpaceRequestDso>(model);
+                        item.SubscriptionId = (await _subscriptionService.GetUserSubscription()).Id;
+
+                        _logger.LogInformation("Creating new Space with data: {@model}", model);
+
+                        var result = await _spaceService.CreateAsync(item);
+                        var resultVM = _mapper.Map<SpaceOutputVM>(result);
+                        return CreatedAtAction(nameof(GetById), new { id = result.Id }, resultVM);
+                    }
+                    return NotFound(HandelErrors.Problem("Create space", errorMessage.Result.ToString()));
+                }
+                return StatusCode(500, problemDetails.Result);
             }
             catch (Exception ex)
             {

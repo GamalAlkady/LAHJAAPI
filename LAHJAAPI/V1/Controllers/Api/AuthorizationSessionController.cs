@@ -18,7 +18,6 @@ using V1.Services.Services;
 
 namespace V1.Controllers.Api
 {
-    [ServiceFilter(typeof(SubscriptionCheckFilter))]
     [Route("api/V1/Api/[controller]")]
     [ApiController]
     public class AuthorizationSessionController : ControllerBase
@@ -193,8 +192,7 @@ namespace V1.Controllers.Api
         {
             try
             {
-                var webToken = "webToken";
-
+                var webToken = _appSettings.Value.Jwt.WebSecret;
                 var result = _tokenService.ValidateToken(validateToken.Token, webToken);
                 if (result.IsFailed) return Unauthorized(result.Errors); // التوكن غير صالح
 
@@ -203,11 +201,7 @@ namespace V1.Controllers.Api
 
                 result = _tokenService.ValidateToken(sessionToken);
                 if (result.IsFailed) return BadRequest(result.Errors);
-                //TODO: try and cache for every where
-                //var data = claims.FindFirstValue("data");
-                //var sessionData = JsonSerializer.Deserialize<SessionData>(data);
-
-                var item = await _sessionService.GetOneByAsync([new FilterCondition("Tooken", sessionToken)]);
+                var item = await _sessionService.GetOneByAsync([new FilterCondition("SessionToken", sessionToken)]);
                 if (item == null) return BadRequest("Not found session by token");
 
                 var token = _tokenService.GenerateToken([
@@ -228,6 +222,7 @@ namespace V1.Controllers.Api
 
 
         // Create a new AuthorizationSession.
+        [ServiceFilter(typeof(SubscriptionCheckFilter))]
         [ServiceFilter(typeof(SubscriptionCheckFilter))]
         [HttpPost(Name = "CreateAuthorizationSession")]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -339,6 +334,7 @@ namespace V1.Controllers.Api
         }
 
         // Update an existing AuthorizationSession.
+        [ServiceFilter(typeof(SubscriptionCheckFilter))]
         [HttpPut(Name = "UpdateAuthorizationSession")]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status200OK)]
@@ -427,7 +423,7 @@ namespace V1.Controllers.Api
 
 
         [HttpPost("encryptFromWeb")]
-        public async Task<IActionResult> EncryptFromWebAsync(EncryptTokenRequest encryptToken)
+        public async Task<ActionResult<string>> EncryptFromWebAsync(EncryptTokenRequest encryptToken)
         {
             var webToken = _appSettings.Value.Jwt.WebSecret;
             List<Claim> claims = [new Claim("Data", JsonSerializer.Serialize(encryptToken))];
@@ -436,19 +432,8 @@ namespace V1.Controllers.Api
             return Ok(encrptedToken);
         }
 
-
-        //[HttpGet("encryptFromCore")]
-        //public async Task<ActionResult> EncryptFromCoreAsync(string sesstionToken)
-        //{
-        //    var modelGateway = await modelGatewayRepository.GetByAsync(m => m.Name == "Web");
-        //    var webToken = modelGateway.Token;
-        //    var encrptedToken = tokenService.GenerateTemporaryToken(webToken, [new Claim("SessionToken", sesstionToken)]);
-
-        //    return Ok(encrptedToken);
-        //}
-
         [HttpGet("encryptFromCore2")]
-        public async Task<IActionResult> EncryptFromCoreAsync2(string encrptedToken, string coreToken)
+        public async Task<ActionResult<string>> EncryptFromCoreAsync2(string encrptedToken, string coreToken)
         {
             var decrptedToken = _tokenService.ValidateToken(encrptedToken, coreToken);
             if (decrptedToken.IsFailed) return Unauthorized(decrptedToken.Errors);
@@ -457,11 +442,9 @@ namespace V1.Controllers.Api
             var data = claims.FindFirstValue("data");
             var webToken = claims.FindFirstValue("WebToken");
 
-            var token = _tokenService.GenerateTemporaryToken(webToken, [new Claim("SessionToken", sessionToken),
-                new Claim("Data",data)
-                ]);
+            var token = _tokenService.GenerateTemporaryToken(webToken, [new Claim("SessionToken", sessionToken)]);
 
-            return Ok(encrptedToken);
+            return Ok(token);
         }
 
         [HttpGet("ValidateWebTokenAsync")]

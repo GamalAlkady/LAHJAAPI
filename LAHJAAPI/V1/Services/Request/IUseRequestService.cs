@@ -21,5 +21,6 @@ namespace V1.Services.Services
     //, IRequestBuilderRepository<RequestRequestDso, RequestResponseDso>
     , IBasePublicRepository<RequestRequestDso, RequestResponseDso>
     {
+        Task<bool> ExecuteTransactionAsync(Func<Task<bool>> action);
     }
 }

@@ -43,6 +43,7 @@ namespace AutoGenerator.Repositories.Base
 
         Task<PagedResponse<T>> GetAllByAsync(List<FilterCondition> conditions, ParamOptions? options = null);
         Task<T?> GetOneByAsync(List<FilterCondition> conditions, ParamOptions? options = null);
+        Task<bool> ExecuteTransactionAsync(Func<Task<bool>> operation);
     }
 
     public abstract class TBaseRepository<TUser, TRole, TValue, T> : IBaseRepository<T>
@@ -248,26 +249,35 @@ namespace AutoGenerator.Repositories.Base
         // Handle transactions: to ensure multiple operations are executed as a single unit
         public async Task<bool> ExecuteTransactionAsync(Func<Task<bool>> operation)
         {
-            using var transaction = await _db.Database.BeginTransactionAsync();
-            try
+            var strategy = _db.Database.CreateExecutionStrategy();
+            await strategy.ExecuteAsync(async () =>
             {
-                bool result = await operation();
-                if (result)
+                using (var transaction = await _db.Database.BeginTransactionAsync())
                 {
-                    await transaction.CommitAsync();
+
+                    try
+                    {
+                        bool result = await operation();
+                        if (result)
+                        {
+                            await transaction.CommitAsync();
+                        }
+                        else
+                        {
+                            await transaction.RollbackAsync();
+                        }
+                        //return result;
+                    }
+                    catch (Exception ex)
+                    {
+                        await transaction.RollbackAsync();
+                        _logger.LogError(ex, "Error during transaction");
+                        throw new RepositoryException("Error during transaction", ex);
+                    }
                 }
-                else
-                {
-                    await transaction.RollbackAsync();
-                }
-                return result;
-            }
-            catch (Exception ex)
-            {
-                await transaction.RollbackAsync();
-                _logger.LogError(ex, "Error during transaction");
-                throw new RepositoryException("Error during transaction", ex);
-            }
+
+            });
+            return true;
         }
 
         public async Task RemoveRange(List<T> entities)

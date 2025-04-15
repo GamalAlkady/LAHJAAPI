@@ -37,7 +37,7 @@ public static class DependencyInjection
         services.Configure<SmtpConfig>(configuration.GetSection(nameof(SmtpConfig)));
 
         services.AddSingleton<ClaimsChange>();
-        services.AddSingleton<TokenService>();
+        services.AddScoped<TokenService>();
         //services.AddScoped<IUserShareRepository, UserShareRepository>();
 
         //services.AddScoped<UserService>();

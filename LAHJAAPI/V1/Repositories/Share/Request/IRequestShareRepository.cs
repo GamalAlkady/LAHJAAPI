@@ -25,6 +25,8 @@ namespace V1.Repositories.Share
     //  يمكنك  التزويد بكل  دوال   طبقة Builder   ببوابات  الطبقة   هذه نفسها      
     //,IRequestBuilderRepository<RequestRequestShareDto, RequestResponseShareDto>
     {
+        Task<bool> ExecuteTransactionAsync(Func<Task<bool>> operation);
+
         // Define methods or properties specific to the share repository interface.
         Task<int> GetCount(string subscriptionId, string? serviceId, DateTime start, DateTime end, string status);
     }

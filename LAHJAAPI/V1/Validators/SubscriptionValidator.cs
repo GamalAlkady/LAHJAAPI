@@ -2,7 +2,9 @@ using AutoGenerator.Conditions;
 using LAHJAAPI.Models;
 using LAHJAAPI.V1.Validators.Conditions;
 using Microsoft.AspNetCore.Mvc;
+using Utilities;
 using V1.DyModels.Dso.ResponseFilters;
+using V1.DyModels.VMs;
 
 namespace LAHJAAPI.V1.Validators;
 
@@ -14,13 +16,13 @@ public enum SubscriptionValidatorStates
     IsNotSubscribe = 6000,
     IsCancelAtPeriodEnd = 6001,
     IsCanceled = 6002,
-    IsNotAllowed = 6003,
+    IsNotAllowedRequests = 6003,
     IsSubscriptionId,
     IsCustomerId,
     HasStatus,
     IsValidStartDate,
     IsValidPeriodDates,
-    IsIsAllowedSpaces,
+    IsAllowedSpaces,
     IsFull,
     IsValid
 }
@@ -29,6 +31,7 @@ public enum SubscriptionValidatorStates
 public class SubscriptionValidator : BaseValidator<SubscriptionResponseFilterDso, SubscriptionValidatorStates>, ITValidator
 {
     private readonly IConditionChecker _checker;
+    private Subscription Subscription { get; set; }
     public SubscriptionValidator(IConditionChecker checker) : base(checker)
     {
         _checker = checker;
@@ -71,7 +74,7 @@ public class SubscriptionValidator : BaseValidator<SubscriptionResponseFilterDso
             SubscriptionValidatorStates.IsSubscribe,
             new LambdaCondition<SubscriptionResponseFilterDso>(
                 nameof(SubscriptionValidatorStates.IsSubscribe),
-                context => IsSubscribe(context),
+                context => IsSubscribeAsync(context),
                 "You are not subscription"
             )
         );
@@ -80,14 +83,14 @@ public class SubscriptionValidator : BaseValidator<SubscriptionResponseFilterDso
             SubscriptionValidatorStates.IsNotSubscribe,
             new LambdaCondition<SubscriptionResponseFilterDso>(
                 nameof(SubscriptionValidatorStates.IsNotSubscribe),
-                context => IsNotSubscribe(context),
+                context => IsNotSubscribeAsync(context),
                 "You are not subscription"
             )
         );
 
         _provider.Register(
             SubscriptionValidatorStates.IsAllowedRequests,
-            new LambdaCondition<SubscriptionResponseFilterDso>(
+            new LambdaCondition<SubscriptionFilterVM>(
                 nameof(SubscriptionValidatorStates.IsAllowedRequests),
                 context => IsAllowedRequests(context),
                 "You have exhausted all allowed subscription requests."
@@ -114,40 +117,45 @@ public class SubscriptionValidator : BaseValidator<SubscriptionResponseFilterDso
         );
 
         _provider.Register(
-            SubscriptionValidatorStates.IsNotAllowed,
-            new LambdaCondition<SubscriptionResponseFilterDso>(
-                nameof(SubscriptionValidatorStates.IsNotAllowed),
-                context => IsNotAllowedRequests(context),
-                "You have exhausted all allowed subscription requests."
-            )
-        );
+            SubscriptionValidatorStates.IsAllowedSpaces,
+            new LambdaCondition<int>(nameof(SubscriptionValidatorStates.IsAllowedSpaces),
+            context => IsAllowedSpaces(context),
+            "Space not allowed"
+        ));
 
         _provider.Register(
-    SubscriptionValidatorStates.IsIsAllowedSpaces,
-    new LambdaCondition<int>(
-        nameof(SubscriptionValidatorStates.IsIsAllowedSpaces),
-        context => isIsAllowedSpaces(context),
-        "Space is not active"
-    )
-);
+            SubscriptionValidatorStates.IsAllowedSpaces,
+            new LambdaCondition<SubscriptionFilterVM>(nameof(SubscriptionValidatorStates.IsAllowedSpaces),
+            context => IsAllowedSpaces(context),
+            "Space not allowed"
+        ));
     }
 
-    //async Task GetSubscription(SubscriptionResponseFilterDso context)
-    //{
-    //    Subscription = _dataContext.Subscriptions.FirstOrDefault(s => s.UserId == context.UserId);
-    //    //?? throw new ArgumentNullException("No subscription found");
-    //}
-
-    bool isIsAllowedSpaces(int count)
+    Subscription GetSubscription(SubscriptionFilterVM context)
     {
+        Subscription = _checker.Injector.Context.Set<Subscription>()
+            .Where(s => s.UserId == _checker.Injector.UserClaims.UserId)
+            .FirstOrDefault() ?? throw new ArgumentNullException("No subscription found");
+        return Subscription;
+    }
 
-
+    bool IsAllowedSpaces(int count)
+    {
         var result = _checker.Injector.Context.Set<Subscription>()
-        .Any(sub => sub.AllowedSpaces < count);
+            .Where(x => x.UserId == _checker.Injector.UserClaims.UserId)
+             .Select(s => new
+             {
+                 s.AllowedSpaces,
+                 SpaceCount = s.Spaces.Count()
+             }).FirstOrDefault();
 
-        return result;
 
+        return result.AllowedSpaces >= result.SpaceCount;
+    }
 
+    bool IsAllowedSpaces(SubscriptionFilterVM filterVM)
+    {
+        return filterVM.AllowedSpaces >= filterVM.SpaceCount;
     }
 
     bool IsAllowedSpaces(params object[] args)
@@ -176,7 +184,7 @@ public class SubscriptionValidator : BaseValidator<SubscriptionResponseFilterDso
 
     bool IsActive(SubscriptionResponseFilterDso context)
     {
-        //await GetSubscription(context);
+        //GetSubscription(context);
         return context.Status!.Equals("active", StringComparison.OrdinalIgnoreCase);
     }
 
@@ -192,27 +200,33 @@ public class SubscriptionValidator : BaseValidator<SubscriptionResponseFilterDso
         return context.CancelAtPeriodEnd;
     }
 
-    bool IsAllowedRequests(SubscriptionResponseFilterDso context)
+    bool IsAllowedRequests(SubscriptionFilterVM context)
     {
-        //await GetSubscription(context);
-        return context.AllowedRequests >= context.CountRequests;
+        var subscription = GetSubscription(context);
+        var requests = _checker.Injector.Context.Requests
+            .Where(r => r.SubscriptionId == subscription.Id
+            && r.Status == RequestStatus.Success.ToString()
+            && r.CreatedAt >= subscription.CurrentPeriodStart && r.CreatedAt <= subscription.CurrentPeriodEnd)
+            .ToList();
+
+        return subscription.AllowedRequests >= requests.Count;
     }
 
-    bool IsNotAllowedRequests(SubscriptionResponseFilterDso context)
+    bool IsNotAllowedRequests(SubscriptionFilterVM context)
     {
         //await GetSubscription(context);
         return !IsAllowedRequests(context);
     }
 
-    bool IsSubscribe(SubscriptionResponseFilterDso context)
+    bool IsSubscribeAsync(SubscriptionResponseFilterDso context)
     {
         return
             !IsCancelAtPeriodEnd(context) ||
             !IsCanceled(context) ||
-            IsActive(context);
+             IsActive(context);
     }
 
-    ProblemDetails? IsNotSubscribe(SubscriptionResponseFilterDso context)
+    ProblemDetails? IsNotSubscribeAsync(SubscriptionResponseFilterDso context)
     {
         if (IsCanceled(context))
         {

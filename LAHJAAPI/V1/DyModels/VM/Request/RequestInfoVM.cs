@@ -1,7 +1,4 @@
 using AutoGenerator;
-using AutoGenerator.Helper.Translation;
-using LAHJAAPI.Models;
-using System;
 
 namespace V1.DyModels.VMs
 {
@@ -11,6 +8,12 @@ namespace V1.DyModels.VMs
     public class RequestInfoVM : ITVM
     {
         ///
-        public string? Id { get; set; }
+        public string? ModelGateway { get; set; }
+        public string? ModelAi { get; set; }
+        public string? Service { get; set; }
+        public string? Token { get; set; }
+        public string? EventId { get; set; }
+        public int AllowedRequests { get; internal set; }
+        public int NumberRequests { get; internal set; }
     }
 }

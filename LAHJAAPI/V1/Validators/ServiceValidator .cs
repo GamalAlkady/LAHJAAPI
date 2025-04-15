@@ -1,5 +1,4 @@
 using AutoGenerator.Conditions;
-using LAHJAAPI.Models;
 using LAHJAAPI.V1.Validators.Conditions;
 using V1.DyModels.Dso.Requests;
 
@@ -12,7 +11,8 @@ namespace LAHJAAPI.V1.Validators
     public enum ServiceValidatorStates
     {
         IsFull,
-        IsServiceId,
+        IsServiceIdFound,
+        IsServiceIdsEmpty,
         HasName,
         HasAbsolutePath,
         HasToken,
@@ -33,9 +33,6 @@ namespace LAHJAAPI.V1.Validators
 
         protected override void InitializeConditions()
         {
-
-
-
             _provider.Register(ServiceValidatorStates.HasName,
                 new LambdaCondition<ServiceRequestDso>(
                     nameof(ServiceValidatorStates.HasName),
@@ -91,11 +88,19 @@ namespace LAHJAAPI.V1.Validators
                     "Service must be linked to at least one user"
                 )
             );
-            _provider.Register(ServiceValidatorStates.IsServiceId,
+            _provider.Register(ServiceValidatorStates.IsServiceIdFound,
                 new LambdaCondition<string>(
-                    nameof(ServiceValidatorStates.IsServiceId),
-                    context => IsIdService(context),
-                    "Service ID is required"
+                    nameof(ServiceValidatorStates.IsServiceIdFound),
+                    context => IsServiceIdFound(context),
+                    "You coudn't create space with this session. You need to create session with service create space."
+                )
+            );
+
+            _provider.Register(ServiceValidatorStates.IsServiceIdsEmpty,
+                new LambdaCondition<bool>(
+                    nameof(ServiceValidatorStates.IsServiceIdsEmpty),
+                    context => IsServiceIdsEmpty(context),
+                    "Service Ids is empty."
                 )
             );
 
@@ -111,24 +116,36 @@ namespace LAHJAAPI.V1.Validators
 
 
         }
-        bool IsIdService(string idServ)
+        bool IsServiceIdFound(string idServ)
         {
-
-
-
-            if (idServ != "")
+            if (!string.IsNullOrWhiteSpace(idServ))
             {
-                var result = _checker.Injector.Context.Set<Service>()
-                    .Any(x => x.Id == idServ);
-
-                return result;
+                var result = _checker.Injector.UserClaims.ServicesIds?.Any(x => x == idServ);
+                return result ?? false;
             }
-            else
-            {
-                return false;
-
-            }
+            return false;
         }
+
+        bool IsServiceIdsEmpty(bool idServ)
+        {
+            return _checker.Injector.UserClaims.ServicesIds?.Count == 0;
+        }
+
+        //bool IsServiceIdFound(string idServ)
+        //{
+        //    if (!String.IsNullOrWhiteSpace(idServ))
+        //    {
+        //        var result = _checker.Injector.Context.Set<Service>()
+        //            .Any(x => x.Id == idServ);
+
+        //        return result;
+        //    }
+        //    else
+        //    {
+        //        return false;
+
+        //    }
+        //}
 
     }
 }

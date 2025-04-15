@@ -191,11 +191,11 @@ namespace LAHJAAPI.V1.Validators
         {
 
             var result1 = _checker.Check(
-                SpaceValidatorStates.IsSpaceId,
+                SpaceValidatorStates.IsFound,
                 context.SpaceId);
 
             var result2 = _checker.Check(
-                ServiceValidatorStates.IsServiceId,
+                ServiceValidatorStates.IsServiceIdFound,
                 context.ServiceId);
 
             if (result1 == true && result2 == true)

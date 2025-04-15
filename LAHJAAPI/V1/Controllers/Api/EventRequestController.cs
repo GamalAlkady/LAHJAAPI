@@ -1,13 +1,9 @@
-using AutoMapper;
-using Microsoft.Extensions.Logging;
-using System.Collections.Generic;
-using V1.Services.Services;
-using Microsoft.AspNetCore.Mvc;
-using V1.DyModels.VMs;
-using System.Linq.Expressions;
-using V1.DyModels.Dso.Requests;
 using AutoGenerator.Helper.Translation;
-using System;
+using AutoMapper;
+using Microsoft.AspNetCore.Mvc;
+using V1.DyModels.Dso.Requests;
+using V1.DyModels.VMs;
+using V1.Services.Services;
 
 namespace V1.Controllers.Api
 {
@@ -52,7 +48,7 @@ namespace V1.Controllers.Api
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-        public async Task<ActionResult<EventRequestInfoVM>> GetById(string? id)
+        public async Task<ActionResult<EventRequestOutputVM>> GetById(string? id)
         {
             if (string.IsNullOrWhiteSpace(id))
             {
@@ -70,7 +66,7 @@ namespace V1.Controllers.Api
                     return NotFound();
                 }
 
-                var item = _mapper.Map<EventRequestInfoVM>(entity);
+                var item = _mapper.Map<EventRequestOutputVM>(entity);
                 return Ok(item);
             }
             catch (Exception ex)

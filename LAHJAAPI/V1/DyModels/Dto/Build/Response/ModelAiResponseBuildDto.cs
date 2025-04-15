@@ -1,5 +1,4 @@
 using AutoGenerator;
-using AutoGenerator.Helper.Translation;
 
 namespace V1.DyModels.Dto.Build.Responses
 {
@@ -9,7 +8,7 @@ namespace V1.DyModels.Dto.Build.Responses
         /// Id property for DTO.
         /// </summary>
         public String? Id { get; set; }
-        public TranslationData? Name { get; set; } = new();
+        public String? Name { get; set; }
         /// <summary>
         /// Token property for DTO.
         /// </summary>
@@ -18,11 +17,11 @@ namespace V1.DyModels.Dto.Build.Responses
         /// AbsolutePath property for DTO.
         /// </summary>
         public String? AbsolutePath { get; set; }
-        public TranslationData? Category { get; set; } = new();
-        public string? Language { get; set; }
+        public String? Category { get; set; }
+        public String? Language { get; set; }
         public bool IsStandard { get; set; }
-        public string? Gender { get; set; }
-        public TranslationData? Dialect { get; set; } = new();
+        public String? Gender { get; set; }
+        public String? Dialect { get; set; }
         /// <summary>
         /// Type property for DTO.
         /// </summary>
@@ -31,8 +30,10 @@ namespace V1.DyModels.Dto.Build.Responses
         /// ModelGatewayId property for DTO.
         /// </summary>
         public String? ModelGatewayId { get; set; }
+
         public ModelGatewayResponseBuildDto? ModelGateway { get; set; }
         public ICollection<ServiceResponseBuildDto>? Services { get; set; }
+
         public ICollection<UserModelAiResponseBuildDto>? UserModelAis { get; set; }
     }
 }

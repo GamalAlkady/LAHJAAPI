@@ -1,10 +1,10 @@
 using AutoGenerator.Conditions;
-
-using AutoMapper;
 using LAHJAAPI.Models;
 using LAHJAAPI.V1.Validators.Conditions;
+using Microsoft.AspNetCore.Mvc;
 using V1.DyModels.Dso.Requests;
 using V1.DyModels.Dso.ResponseFilters;
+using V1.DyModels.VMs;
 
 namespace LAHJAAPI.V1.Validators
 {
@@ -14,9 +14,10 @@ namespace LAHJAAPI.V1.Validators
     public enum SpaceValidatorStates
     {
         IsActive,
-        IsSpaceId,
+        IsFound,
         IsFull,
         IsValid,
+        NotValid,
         HasName,
         HasRam,
         HasCpu,
@@ -43,8 +44,6 @@ namespace LAHJAAPI.V1.Validators
         }
         protected override void InitializeConditions()
         {
-
-
             _provider.Register(
                 SpaceValidatorStates.IsActive,
                 new LambdaCondition<SpaceRequestDso>(
@@ -57,11 +56,11 @@ namespace LAHJAAPI.V1.Validators
 
 
             _provider.Register(
-                SpaceValidatorStates.IsFull,
-                new LambdaCondition<SpaceRequestDso>(
-                    nameof(SpaceValidatorStates.IsFull),
-                    context => IsFull(context),
-                    "Space is full"
+                SpaceValidatorStates.IsValid,
+                new LambdaCondition<SpaceFilterVM>(
+                    nameof(SpaceValidatorStates.IsValid),
+                    context => IsValid(context),
+                    "Space is not valid"
                 )
             );
 
@@ -87,20 +86,48 @@ namespace LAHJAAPI.V1.Validators
 
 
 
-            _provider.Register(SpaceValidatorStates.IsSpaceId,
-                new LambdaCondition<string>(
-                    nameof(SpaceValidatorStates.IsSpaceId),
-                    context => IsValidSpaceId(context),
-                    "Space is not valid"
+            _provider.Register(SpaceValidatorStates.IsFound,
+                new LambdaCondition<SpaceFilterVM>(
+                    nameof(SpaceValidatorStates.IsFound),
+                    context => IsFound(context.Id),
+                    "Space is not found"
                 )
             );
-
-
-
-
         }
 
 
+        private bool IsFound(string spaceId)
+        {
+            if (string.IsNullOrWhiteSpace(spaceId)) return false;
+            var result = _checker.Injector.Context.Set<Space>()
+                    .Any(x => x.Id == spaceId);
+            return result;
+        }
+
+
+        ProblemDetails? IsValid(SpaceFilterVM context)
+        {
+            if (!_checker.Check(SubscriptionValidatorStates.IsAllowedSpaces, 0))
+            {
+                return new ProblemDetails
+                {
+                    Title = "Coudn't create space",
+                    Detail = "You cannot add a space because you have reached the allowed limit.",
+                    Status = 7000
+                };
+            }
+            else if (!_checker.Check(ServiceValidatorStates.IsServiceIdsEmpty, true))
+            {
+                return new ProblemDetails
+                {
+                    Title = "Coudn't create space",
+                    Detail = "You cannot add a space because this session does not belong to service create space.",
+                    Status = 7001
+                };
+            }
+
+            return null;
+        }
         private bool IsValidSpaceId(string spaceId)
         {
             if (spaceId != "")
@@ -110,15 +137,9 @@ namespace LAHJAAPI.V1.Validators
 
                 return result;
             }
-            else
-            {
-                return false;
-
-            }
-
-
-
+            return false;
         }
+
         private bool IsCountSpces(string subId)
         {
             var spaces = _checker.Injector.Context.Set<Space>()

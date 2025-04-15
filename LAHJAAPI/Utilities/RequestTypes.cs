@@ -9,7 +9,7 @@ namespace Utilities
         [Display(Name = "222.1")]
         Processing = 2221,
         [Display(Name = "222.2")]
-        Completed = 2222,
+        Success = 2222,
         [Display(Name = "333.1")]
         Failed = 3331,//error api model
         [Display(Name = "333.2")]
@@ -18,10 +18,10 @@ namespace Utilities
         Retry = 4441
     }
 
-    public enum EventStatus
+    public enum EventRequestStatus
     {
         [Display(Name = "222.2")]
-        Completed = 2222,
+        Success = 2222,
         [Display(Name = "333.1")]
         Failed = 3331,//error api model
 

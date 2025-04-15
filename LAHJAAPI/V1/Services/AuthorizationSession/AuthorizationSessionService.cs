@@ -23,7 +23,7 @@ namespace V1.Services.Services
         {
             var response = await _share.GetAllByAsync([
                 new FilterCondition("UserId" , userId),
-                new FilterCondition(authorizationType ,authorizationType)]);
+                new FilterCondition(nameof(authorizationType) ,authorizationType)]);
             if (response.TotalPages == 0)
             {
                 return Result.Fail(new Error("No session found for the provided user ID and authorization type."));

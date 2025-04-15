@@ -2,7 +2,6 @@ using AutoGenerator.Repositories.Base;
 using LAHJAAPI.Data;
 using LAHJAAPI.Models;
 using Microsoft.AspNetCore.Identity;
-using System;
 
 namespace V1.Repositories.Base
 {
@@ -14,5 +13,11 @@ namespace V1.Repositories.Base
         public BaseRepository(DataContext db, ILogger logger) : base(db, logger)
         {
         }
+
+        public async Task<bool> ExecuteTransactionAsync(Func<Task<bool>> operation)
+        {
+            return await base.ExecuteTransactionAsync(operation);
+        }
+
     }
 }

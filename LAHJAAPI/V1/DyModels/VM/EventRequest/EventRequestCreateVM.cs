@@ -1,7 +1,5 @@
 using AutoGenerator;
-using AutoGenerator.Helper.Translation;
-using LAHJAAPI.Models;
-using System;
+using Utilities;
 
 namespace V1.DyModels.VMs
 {
@@ -10,14 +8,8 @@ namespace V1.DyModels.VMs
     /// </summary>
     public class EventRequestCreateVM : ITVM
     {
-        ///
-        public String? Status { get; set; }
-        ///
-        public String? Details { get; set; }
-        ///
-        public DateTime CreatedAt { get; set; }
-        ///
-        public String? RequestId { get; set; }
-        public RequestCreateVM? Request { get; set; }
+        public required String EventId { get; set; }
+        public required EventRequestStatus Status { get; set; }
+        public required String Details { get; set; }
     }
 }
