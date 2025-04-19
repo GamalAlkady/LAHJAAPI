@@ -1,40 +1,25 @@
-using AutoGenerator.Schedulers;
-using LAHJAAPI.V1.Validators.Conditions;
 using Quartz;
+using ApiCore.Validators;
+using AutoGenerator.Schedulers;
 using System.Reflection;
+using System;
+using LAHJAAPI.V1.Validators.Conditions;
 
-namespace LAHJAAPI.V1.Schedulers
+namespace ApiCore.Schedulers
 {
     public static class ConfigMScheduler
     {
-
-
-        public static void AddAutoConfigScheduler(this IServiceCollection serviceCollection)
+        public static IServiceCollection AddAutoConfigScheduler(this IServiceCollection serviceCollection)
         {
             Assembly? assembly = Assembly.GetExecutingAssembly();
-
-
-
-
-            serviceCollection.AddHostedService(pro =>
-           {
-               var jober = pro.GetRequiredService<ISchedulerFactory>();
-
-               var checker = new ConditionChecker(null);
-
-               var jobs = ConfigScheduler.getJobOptions(checker, assembly);
-
-               return new JobScheduler(jober, jobs);
-
-           });
-
-
-
-
-
-
-
-
+            serviceCollection.AddHostedService<JobScheduler>(pro =>
+            {
+                var jober = pro.GetRequiredService<ISchedulerFactory>();
+                var checker = new ConditionChecker(null);
+                var jobs = ConfigScheduler.getJobOptions(checker, assembly);
+                return new JobScheduler(jober, jobs);
+            });
+            return serviceCollection;
         }
     }
 }

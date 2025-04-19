@@ -1,13 +1,9 @@
-using AutoMapper;
-using Microsoft.Extensions.Logging;
-using System.Collections.Generic;
-using V1.Services.Services;
-using Microsoft.AspNetCore.Mvc;
-using V1.DyModels.VMs;
-using System.Linq.Expressions;
-using V1.DyModels.Dso.Requests;
 using AutoGenerator.Helper.Translation;
-using System;
+using AutoMapper;
+using Microsoft.AspNetCore.Mvc;
+using V1.DyModels.Dso.Requests;
+using V1.DyModels.VMs;
+using V1.Services.Services;
 
 namespace V1.Controllers.Api
 {
@@ -31,13 +27,13 @@ namespace V1.Controllers.Api
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-        public async Task<ActionResult<IEnumerable<LanguageOutputVM>>> GetAll()
+        public async Task<ActionResult<IEnumerable<LanguageOutputVM>>> GetAll(string lg = "en")
         {
             try
             {
                 _logger.LogInformation("Fetching all Languages...");
                 var result = await _languageService.GetAllAsync();
-                var items = _mapper.Map<List<LanguageOutputVM>>(result);
+                var items = _mapper.Map<List<LanguageOutputVM>>(result, opt => opt.Items.Add(HelperTranslation.KEYLG, lg));
                 return Ok(items);
             }
             catch (Exception ex)
@@ -85,13 +81,18 @@ namespace V1.Controllers.Api
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-        public async Task<ActionResult<LanguageOutputVM>> GetLanguageByLg(LanguageFilterVM model)
+        public async Task<ActionResult<LanguageOutputVM>> GetLanguageByLg(string id, string lg)
         {
-            var id = model.Id;
             if (string.IsNullOrWhiteSpace(id))
             {
                 _logger.LogWarning("Invalid Language ID received.");
                 return BadRequest("Invalid Language ID.");
+            }
+
+            if (string.IsNullOrWhiteSpace(lg))
+            {
+                _logger.LogWarning("Invalid Language lg received.");
+                return BadRequest("Invalid Language lg null ");
             }
 
             try
@@ -104,12 +105,59 @@ namespace V1.Controllers.Api
                     return NotFound();
                 }
 
-                var item = _mapper.Map<LanguageOutputVM>(entity, opt => opt.Items.Add(HelperTranslation.KEYLG, model.Lg));
+                var item = _mapper.Map<LanguageOutputVM>(entity, opt => opt.Items.Add(HelperTranslation.KEYLG, lg));
                 return Ok(item);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error while fetching Language with ID: {id}", id);
+                return StatusCode(500, "Internal Server Error");
+            }
+        }
+
+
+        // // Get a Language by code.
+        [HttpGet("GetLanguageByCode", Name = "GetLanguageByCode")]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+        public async Task<ActionResult<LanguageOutputVM>> GetLanguageByCode(string code, string lg)
+        {
+            if (string.IsNullOrWhiteSpace(code))
+            {
+                _logger.LogWarning("Invalid Language code received.");
+                return BadRequest("Invalid Language code.");
+            }
+
+            if (string.IsNullOrWhiteSpace(lg))
+            {
+                _logger.LogWarning("Invalid Language lg received.");
+                return BadRequest("Invalid Language lg null ");
+            }
+
+            try
+            {
+                _logger.LogInformation("Fetching Language with code: {code}", code);
+                var entity = await _languageService.GetOneByAsync(
+                [
+                    new AutoGenerator.Helper.FilterCondition
+                    {
+                        PropertyName = nameof(LanguageRequestDso.Code),
+                        Value = code
+                    }
+                ]);
+                if (entity == null)
+                {
+                    _logger.LogWarning("Language not found withcode: {code}", code);
+                    return NotFound();
+                }
+
+                var item = _mapper.Map<LanguageOutputVM>(entity, opt => opt.Items.Add(HelperTranslation.KEYLG, lg));
+                return Ok(item);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error while fetching Language with code: {code}", code);
                 return StatusCode(500, "Internal Server Error");
             }
         }
@@ -153,12 +201,6 @@ namespace V1.Controllers.Api
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
         public async Task<ActionResult<LanguageOutputVM>> Create([FromBody] LanguageCreateVM model)
         {
-            if (model == null)
-            {
-                _logger.LogWarning("Language data is null in Create.");
-                return BadRequest("Language data is required.");
-            }
-
             if (!ModelState.IsValid)
             {
                 _logger.LogWarning("Invalid model state in Create: {ModelState}", ModelState);

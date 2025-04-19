@@ -1,7 +1,7 @@
-using AutoGenerator;
-using AutoGenerator.Helper.Translation;
-using LAHJAAPI.Models;
-using System;
+﻿using AutoGenerator;
+using System.ComponentModel;
+using System.ComponentModel.DataAnnotations;
+using Utilities;
 
 namespace V1.DyModels.VMs
 {
@@ -10,37 +10,23 @@ namespace V1.DyModels.VMs
     /// </summary>
     public class SubscriptionCreateVM : ITVM
     {
-        ///
-        public String? CustomerId { get; set; }
-        ///
-        public DateTime StartDate { get; set; }
-        ///
-        public DateTime CurrentPeriodStart { get; set; }
-        ///
-        public DateTime CurrentPeriodEnd { get; set; }
-        ///
-        public String? Status { get; set; }
-        ///
-        public Boolean CancelAtPeriodEnd { get; set; }
-        ///
-        public Int32 NumberRequests { get; set; }
-        ///
-        public Int32 AllowedRequests { get; set; }
-        ///
-        public Int32 AllowedSpaces { get; set; }
-        ///
-        public Nullable<DateTime> CancelAt { get; set; }
-        ///
-        public Nullable<DateTime> CanceledAt { get; set; }
-        ///
-        public String? PlanId { get; set; }
-        public PlanCreateVM? Plan { get; set; }
-        ///
-        public String? UserId { get; set; }
-        public ApplicationUserCreateVM? User { get; set; }
-        //
-        public List<RequestCreateVM>? Requests { get; set; }
-        //
-        public List<SpaceCreateVM>? Spaces { get; set; }
+        [Required]
+        public String PlanId { get; set; }
+
     }
+
+    public class SubscriptionResumeRequest
+    {
+        [DefaultValue("create_prorations")]
+        public string ProrationBehavior { get; set; } = "create_prorations"; // احتساب الفروقات
+    }
+
+
+    public class SubscriptionUpdateRequest
+    {
+        [DefaultValue("void")]
+        public PauseCollectionBehaviorType PauseCollectionBehavior { get; set; } = PauseCollectionBehaviorType.@void; // سلوك الفواتير أثناء الإيقاف
+        public DateTime? ResumesAt { get; set; }
+    }
+
 }

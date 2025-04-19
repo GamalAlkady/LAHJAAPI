@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace Utilities
+namespace LAHJAAPI.V1.Enums
 {
     public enum RequestStatus
     {

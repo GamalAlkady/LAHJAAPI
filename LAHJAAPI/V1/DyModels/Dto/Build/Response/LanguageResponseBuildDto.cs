@@ -1,8 +1,5 @@
 using AutoGenerator;
 using AutoGenerator.Helper.Translation;
-using LAHJAAPI.Models;
-using AutoGenerator.Config;
-using System;
 
 namespace V1.DyModels.Dto.Build.Responses
 {
@@ -15,7 +12,7 @@ namespace V1.DyModels.Dto.Build.Responses
         /// <summary>
         /// Name property for DTO.
         /// </summary>
-        public String? Name { get; set; }
+        public TranslationData? Name { get; set; } = new();
         /// <summary>
         /// Code property for DTO.
         /// </summary>

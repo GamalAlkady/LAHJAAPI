@@ -28,14 +28,16 @@
     {
         public FilterCondition()
         {
-
+             
         }
+
 
         public FilterCondition(string? propertyName, object? value)
         {
             PropertyName = propertyName;
             Value = value;
         }
+
 
         public FilterCondition(string? propertyName, object? value, FilterOperator @operator)
         {

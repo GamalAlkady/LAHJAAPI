@@ -1,4 +1,4 @@
-﻿namespace Api.Utilities
+﻿namespace LAHJAAPI.V1.Enums
 {
     public enum DateTimeFilter
     {

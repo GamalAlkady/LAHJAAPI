@@ -1,13 +1,10 @@
-using AutoMapper;
-using Microsoft.Extensions.Logging;
-using System.Collections.Generic;
-using V1.Services.Services;
-using Microsoft.AspNetCore.Mvc;
-using V1.DyModels.VMs;
-using System.Linq.Expressions;
-using V1.DyModels.Dso.Requests;
+using AutoGenerator.Helper;
 using AutoGenerator.Helper.Translation;
-using System;
+using AutoMapper;
+using Microsoft.AspNetCore.Mvc;
+using V1.DyModels.Dso.Requests;
+using V1.DyModels.VMs;
+using V1.Services.Services;
 
 namespace V1.Controllers.Api
 {
@@ -31,13 +28,13 @@ namespace V1.Controllers.Api
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-        public async Task<ActionResult<IEnumerable<AdvertisementOutputVM>>> GetAll()
+        public async Task<ActionResult<IEnumerable<AdvertisementOutputVM>>> GetAll(string lg = "en")
         {
             try
             {
                 _logger.LogInformation("Fetching all Advertisements...");
                 var result = await _advertisementService.GetAllAsync();
-                var items = _mapper.Map<List<AdvertisementOutputVM>>(result);
+                var items = _mapper.Map<List<AdvertisementOutputVM>>(result, opt => opt.Items[HelperTranslation.KEYLG] = lg);
                 return Ok(items);
             }
             catch (Exception ex)
@@ -47,12 +44,33 @@ namespace V1.Controllers.Api
             }
         }
 
+
+        [HttpGet("ActiveAdvertisements", Name = "GetActiveAdvertisements")]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+        public async Task<ActionResult<IEnumerable<AdvertisementOutputVM>>> GetActiveAdvertisements(string lg = "en")
+        {
+            try
+            {
+                _logger.LogInformation("Fetching all active Advertisements...");
+                var result = await _advertisementService.GetAllByAsync([new FilterCondition("active", true)]);
+                var items = _mapper.Map<List<AdvertisementOutputVM>>(result.Data, opt => opt.Items[HelperTranslation.KEYLG] = lg);
+                return Ok(items);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error while fetching all active Advertisements");
+                return StatusCode(500, "Internal Server Error");
+            }
+        }
+
         // Get a Advertisement by ID.
         [HttpGet("{id}", Name = "GetAdvertisement")]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-        public async Task<ActionResult<AdvertisementInfoVM>> GetById(string? id)
+        public async Task<ActionResult<AdvertisementOutputVM>> GetById(string id, string lg = "en")
         {
             if (string.IsNullOrWhiteSpace(id))
             {
@@ -70,7 +88,7 @@ namespace V1.Controllers.Api
                     return NotFound();
                 }
 
-                var item = _mapper.Map<AdvertisementInfoVM>(entity);
+                var item = _mapper.Map<AdvertisementOutputVM>(entity, opts => opts.Items[HelperTranslation.KEYLG] = lg);
                 return Ok(item);
             }
             catch (Exception ex)

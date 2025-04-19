@@ -1,13 +1,9 @@
-using AutoMapper;
-using Microsoft.Extensions.Logging;
-using System.Collections.Generic;
-using V1.Services.Services;
-using Microsoft.AspNetCore.Mvc;
-using V1.DyModels.VMs;
-using System.Linq.Expressions;
-using V1.DyModels.Dso.Requests;
 using AutoGenerator.Helper.Translation;
-using System;
+using AutoMapper;
+using Microsoft.AspNetCore.Mvc;
+using V1.DyModels.Dso.Requests;
+using V1.DyModels.VMs;
+using V1.Services.Services;
 
 namespace V1.Controllers.Api
 {
@@ -48,11 +44,11 @@ namespace V1.Controllers.Api
         }
 
         // Get a CategoryModel by ID.
-        [HttpGet("{id}", Name = "GetCategoryModel")]
+        [HttpGet("{id}", Name = "GetCategoryModelById")]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-        public async Task<ActionResult<CategoryModelInfoVM>> GetById(string? id)
+        public async Task<ActionResult<CategoryModelInfoVM>> GetById(string id, string lg = "en")
         {
             if (string.IsNullOrWhiteSpace(id))
             {
@@ -70,12 +66,54 @@ namespace V1.Controllers.Api
                     return NotFound();
                 }
 
-                var item = _mapper.Map<CategoryModelInfoVM>(entity);
+                var item = _mapper.Map<CategoryModelOutputVM>(entity, opt => opt.Items.Add(HelperTranslation.KEYLG, lg));
                 return Ok(item);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error while fetching CategoryModel with ID: {id}", id);
+                return StatusCode(500, "Internal Server Error");
+            }
+        }
+
+
+        // Get a CategoryModel by ID.
+        [HttpGet("{name}", Name = "GetCategoryModelByName")]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+        public async Task<ActionResult<CategoryModelInfoVM>> GetByName(string name, string lg = "en")
+        {
+            if (string.IsNullOrWhiteSpace(name))
+            {
+                _logger.LogWarning("Invalid CategoryModel name received.");
+                return BadRequest("Invalid CategoryModel name.");
+            }
+
+            try
+            {
+                _logger.LogInformation("Fetching CategoryModel with name: {name}", name);
+                var entity = await _categorymodelService.GetOneByAsync(
+                [
+                    new AutoGenerator.Helper.FilterCondition
+                    {
+                        PropertyName = nameof(CategoryModelRequestDso.Name),
+                        Value = name
+                    }
+                ]);
+
+                if (entity == null)
+                {
+                    _logger.LogWarning("CategoryModel not found with name: {name}", name);
+                    return NotFound();
+                }
+
+                var item = _mapper.Map<CategoryModelOutputVM>(entity, opt => opt.Items.Add(HelperTranslation.KEYLG, lg));
+                return Ok(item);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error while fetching CategoryModel with name: {name}", name);
                 return StatusCode(500, "Internal Server Error");
             }
         }
@@ -153,12 +191,6 @@ namespace V1.Controllers.Api
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
         public async Task<ActionResult<CategoryModelOutputVM>> Create([FromBody] CategoryModelCreateVM model)
         {
-            if (model == null)
-            {
-                _logger.LogWarning("CategoryModel data is null in Create.");
-                return BadRequest("CategoryModel data is required.");
-            }
-
             if (!ModelState.IsValid)
             {
                 _logger.LogWarning("Invalid model state in Create: {ModelState}", ModelState);

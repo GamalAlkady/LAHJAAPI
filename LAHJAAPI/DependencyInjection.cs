@@ -3,8 +3,9 @@ using Api.Utilities;
 using APILAHJA.Utilities;
 using AutoGenerator.Config;
 using AutoGenerator.Services2;
-using AutoGenerator.Utilities;
 using LAHJAAPI.Models;
+using LAHJAAPI.Utilities;
+using LAHJAAPI.V1.Services.Statistics;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.IdentityModel.Tokens;
@@ -38,7 +39,8 @@ public static class DependencyInjection
 
         services.AddSingleton<ClaimsChange>();
         services.AddScoped<TokenService>();
-        //services.AddScoped<IUserShareRepository, UserShareRepository>();
+
+        services.AddScoped<IStatisticsService, StatisticsService>();
 
         //services.AddScoped<UserService>();
         //services.AddHostedService<TrackSubscriptionLoader>();

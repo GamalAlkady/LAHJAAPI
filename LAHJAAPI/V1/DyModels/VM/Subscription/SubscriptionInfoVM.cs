@@ -1,7 +1,5 @@
 using AutoGenerator;
-using AutoGenerator.Helper.Translation;
-using LAHJAAPI.Models;
-using System;
+using System.ComponentModel.DataAnnotations;
 
 namespace V1.DyModels.VMs
 {
@@ -10,7 +8,9 @@ namespace V1.DyModels.VMs
     /// </summary>
     public class SubscriptionInfoVM : ITVM
     {
-        ///
-        public string? Id { get; set; }
+        [Required]
+        public string SubscriptionId { get; set; }
+        [Required]
+        public string ClientSecret { get; set; }
     }
 }

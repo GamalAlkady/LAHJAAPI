@@ -1,13 +1,9 @@
-using AutoMapper;
-using Microsoft.Extensions.Logging;
-using System.Collections.Generic;
-using V1.Services.Services;
-using Microsoft.AspNetCore.Mvc;
-using V1.DyModels.VMs;
-using System.Linq.Expressions;
-using V1.DyModels.Dso.Requests;
 using AutoGenerator.Helper.Translation;
-using System;
+using AutoMapper;
+using Microsoft.AspNetCore.Mvc;
+using V1.DyModels.Dso.Requests;
+using V1.DyModels.VMs;
+using V1.Services.Services;
 
 namespace V1.Controllers.Api
 {
@@ -299,5 +295,28 @@ namespace V1.Controllers.Api
                 return StatusCode(500, "Internal Server Error");
             }
         }
+
+
+        // Get count of PlanFeatures.
+        [HttpGet("NumberRequests")]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+        public async Task<ActionResult<int>> GetNUmberRequests()
+        {
+            try
+            {
+                _logger.LogInformation("Counting PlanFeatures...");
+                var count = await _planfeatureService.GetNumberSpaces("price_1Qn3ypKMQ7LabgRTSuyGIBVH");
+                return Ok(count);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error while counting PlanFeatures");
+                return StatusCode(500, "Internal Server Error");
+            }
+        }
+
+
     }
 }

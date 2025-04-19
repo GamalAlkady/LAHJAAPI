@@ -1,3 +1,4 @@
+using AutoGenerator.Helper;
 using AutoGenerator.Helper.Translation;
 using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
@@ -48,7 +49,7 @@ namespace V1.Controllers.Api
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-        public async Task<ActionResult<AdvertisementTabInfoVM>> GetById(string? id)
+        public async Task<ActionResult<AdvertisementTabOutputVM>> GetById(string? id, string lg = "en")
         {
             if (string.IsNullOrWhiteSpace(id))
             {
@@ -66,12 +67,44 @@ namespace V1.Controllers.Api
                     return NotFound();
                 }
 
-                var item = _mapper.Map<AdvertisementTabInfoVM>(entity);
+                var item = _mapper.Map<AdvertisementTabOutputVM>(entity, opt => opt.Items[HelperTranslation.KEYLG] = lg);
                 return Ok(item);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error while fetching AdvertisementTab with ID: {id}", id);
+                return StatusCode(500, "Internal Server Error");
+            }
+        }
+
+        [HttpGet("GetByAdvertisementId/{advertisementId}", Name = "GetByAdvertisementId")]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+        public async Task<ActionResult<AdvertisementTabOutputVM>> GetByAdvertisementId(string advertisementId, string lg = "en")
+        {
+            if (string.IsNullOrWhiteSpace(advertisementId))
+            {
+                _logger.LogWarning("Invalid AdvertisementTab ID received.");
+                return BadRequest("Invalid AdvertisementTab ID.");
+            }
+
+            try
+            {
+                _logger.LogInformation("Fetching AdvertisementTab with advertisementId: {id}", advertisementId);
+                var entity = await _advertisementtabService.GetOneByAsync([new FilterCondition(nameof(AdvertisementTabRequestDso.AdvertisementId), advertisementId)]);
+                if (entity == null)
+                {
+                    _logger.LogWarning("AdvertisementTab not found with advertisementId: {id}", advertisementId);
+                    return NotFound();
+                }
+
+                var item = _mapper.Map<AdvertisementTabOutputVM>(entity, opt => opt.Items[HelperTranslation.KEYLG] = lg);
+                return Ok(item);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error while fetching AdvertisementTab with advertisementId: {id}", advertisementId);
                 return StatusCode(500, "Internal Server Error");
             }
         }

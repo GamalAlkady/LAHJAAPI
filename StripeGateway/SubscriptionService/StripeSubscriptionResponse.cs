@@ -61,12 +61,6 @@ namespace StripeGateway
         [JsonProperty("billing_cycle_anchor_config")]
         public SubscriptionBillingCycleAnchorConfig BillingCycleAnchorConfig { get; set; }
 
-        /// <summary>
-        /// Define thresholds at which an invoice will be sent, and the subscription advanced to a
-        /// new billing period.
-        /// </summary>
-        //[JsonProperty("billing_thresholds")]
-        //public SubscriptionBillingThresholds BillingThresholds { get; set; }
 
         /// <summary>
         /// A date in the future at which the subscription will automatically get canceled.
@@ -287,11 +281,6 @@ namespace StripeGateway
         [JsonProperty("items")]
         public StripeList<SubscriptionItem> Items { get; set; }
 
-        /// <summary>
-        /// Details of the most recent price migration that failed for the subscription.
-        /// </summary>
-        //[JsonProperty("last_price_migration_error")]
-        //public SubscriptionLastPriceMigrationError LastPriceMigrationError { get; set; }
 
         #region Expandable LatestInvoice
 
@@ -416,11 +405,6 @@ namespace StripeGateway
         [JsonProperty("pending_update")]
         public SubscriptionPendingUpdate PendingUpdate { get; set; }
 
-        /// <summary>
-        /// Time period and invoice for a Subscription billed in advance.
-        /// </summary>
-        //[JsonProperty("prebilling")]
-        //public SubscriptionPrebilling Prebilling { get; set; }
 
         #region Expandable Schedule
 

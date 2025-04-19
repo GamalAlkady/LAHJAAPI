@@ -1,4 +1,4 @@
-﻿namespace AutoGenerator.Utilities
+﻿namespace LAHJAAPI.Utilities
 {
     public class AppSettings
     {

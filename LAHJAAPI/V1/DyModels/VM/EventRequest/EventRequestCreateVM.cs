@@ -1,5 +1,5 @@
 using AutoGenerator;
-using Utilities;
+using LAHJAAPI.V1.Enums;
 
 namespace V1.DyModels.VMs
 {

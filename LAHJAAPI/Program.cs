@@ -1,10 +1,12 @@
 ﻿using Api;
+using ApiCore.Schedulers;
 using AutoGenerator;
 using AutoGenerator.CustomPolicy;
-using AutoGenerator.Utilities;
+using AutoGenerator.Notifications.Config;
+using AutoGenerator.Schedulers;
 using LAHJAAPI.Data;
 using LAHJAAPI.Models;
-using LAHJAAPI.V1.Schedulers;
+using LAHJAAPI.Utilities;
 using LAHJAAPI.V1.Validators.Conditions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -35,19 +37,37 @@ builder.Services
     ;
 #endregion
 
-builder.Services.AddAutoBuilderApiCore(new()
-{
+builder.Services.
+    AddAutoBuilderApiCore(new()
+    {
 
-    Arags = args,
-    NameRootApi = "V1",
-    IsMapper = true,
-    TypeContext = typeof(DataContext),
-    Assembly = Assembly.GetExecutingAssembly(),
-    AssemblyModels = typeof(Advertisement).Assembly
-})
-   .AddAutoValidator().
-    AddAutoConfigScheduler();
-;
+        Arags = args,
+        NameRootApi = "ApiCore",
+        IsMapper = true,
+        TypeContext = typeof(DataContext),
+        Assembly = Assembly.GetExecutingAssembly(),
+        AssemblyModels = typeof(LAHJAAPI.Models.Advertisement).Assembly,
+        DbConnectionString = builder.Configuration.GetConnectionString("DefaultConnection"),
+
+    })
+    .AddAutoValidator()
+    .AddAutoConfigScheduler()
+
+    .AddAutoNotifier(new()
+    {
+
+        MailConfiguration = new MailConfig()
+        {
+            SmtpUsername = "gamal333ge@gmail.com",
+            SmtpPassword = "bxed hnwv vqlt ddwy",
+            SmtpHost = "smtp.gmail.com",
+            SmtpPort = 587,
+            FromEmail = "gamal333ge@gmail.com",
+            NameApp = "ASG" // عيّن اسم التطبيق هنا كما يناسبك
+
+        }
+
+    });
 
 //TODO: preapare the shared
 //TODO: preapare the services
@@ -163,6 +183,7 @@ builder.Services.AddLogging(); // ÅÖÇÝÉ ÎÏãÇÊ ÇáÜ Logging
 //builder.Services.AddScoped<InvoiceService>();
 
 var app = builder.Build();
+app.UseSchedulerDashboard();
 
 //SeedData.EnsureSeedData(app);
 

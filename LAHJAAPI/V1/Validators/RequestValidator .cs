@@ -1,40 +1,17 @@
 using AutoGenerator.Conditions;
 using LAHJAAPI.Models;
+using LAHJAAPI.V1.Enums;
 using LAHJAAPI.V1.Validators.Conditions;
 using V1.DyModels.Dso.Requests;
 using V1.DyModels.Dso.Responses;
 
 namespace LAHJAAPI.V1.Validators
 {
-
-
-
-    //public enum ApplicationUserValidatorStates
-    //{
-    //    IsActive,
-    //    IsFull,
-    //    HasCustomerId,
-    //    HasFirstName,
-    //    HasLastName,
-    //    HasDisplayName,
-    //    HasProfileUrl,
-    //    HasImageUrl,
-    //    HasLastLoginIp,
-    //    HasCreatedAt,
-    //    HasUpdatedAt,
-    //    IsNotArchived,
-    //    HasArchivedDate,
-    //    HasLastLoginDate
-
-
-    //}
     public enum RequestValidatorStates
     {
         HasValidStatus,
-
         HasQuestion,
         IsValidRequestId,
-
         IsAllowedRequest,
         IsServiceId,
         IsSpaceId,
@@ -77,25 +54,6 @@ namespace LAHJAAPI.V1.Validators
                 )
             );
 
-            //_provider.Register(
-            //    RequestValidatorStates.IsUserId,
-            //    new LambdaCondition<RequestRequestDso>(
-            //        nameof(RequestValidatorStates.IsUserId),
-            //        context => !string.IsNullOrWhiteSpace(context.UserId),
-            //        "User ID is required"
-            //    )
-            //);
-
-
-            //_provider.Register(
-            //     RequestValidatorStates.IsUserId,
-            //     new LambdaCondition<string>(
-            //         nameof(RequestValidatorStates.IsUserId),
-            //         context => !string.IsNullOrWhiteSpace(context),
-            //         "User ID is required"
-            //     )
-            // );
-
 
 
             _provider.Register(
@@ -118,30 +76,12 @@ namespace LAHJAAPI.V1.Validators
                     )
                 );
 
-            //_provider.Register(
-            //    RequestValidatorStates.HasServiceIdIfNeeded,
-            //    new LambdaCondition<RequestRequestDso>(
-            //        nameof(RequestValidatorStates.HasServiceIdIfNeeded),
-            //        context => !string.IsNullOrWhiteSpace(context.ServiceId),
-            //        "Service ID is required if not global"
-            //    )
-            //);
-
-            //_provider.Register(
-            //    RequestValidatorStates.HasSubscriptionIdIfNeeded,
-            //    new LambdaCondition<RequestRequestDso>(
-            //        nameof(RequestValidatorStates.HasSubscriptionIdIfNeeded),
-            //        context => !string.IsNullOrWhiteSpace(context.SubscriptionId),
-            //        "Subscription ID is required if not global"
-            //    )
-            //    );
-
             _provider.Register(
                 RequestValidatorStates.IsAllowedRequest,
-                new LambdaCondition<RequestRequestDso>(
+                new LambdaCondition<SubscriptionResponseDso>(
                     nameof(RequestValidatorStates.IsAllowedRequest),
-                    context => IsValidAllowedRequest(context.ServiceId),
-                    "Service ID is required"
+                    context => IsAllowedRequests(context),
+                    "Requests not allowed"
                 )
             );
 
@@ -174,9 +114,15 @@ namespace LAHJAAPI.V1.Validators
 
 
 
-        private bool IsValidAllowedRequest(string servid)
+        bool IsAllowedRequests(SubscriptionResponseDso context)
         {
-            return true;
+            var requests = _checker.Injector.Context.Requests
+                .Where(r => r.SubscriptionId == context.Id
+                && r.Status == RequestStatus.Success.ToString()
+                && r.CreatedAt >= context.CurrentPeriodStart && r.CreatedAt <= context.CurrentPeriodEnd)
+                .ToList();
+
+            return context.AllowedRequests >= requests.Count;
         }
 
         private bool IsValidSpace(string spacId)

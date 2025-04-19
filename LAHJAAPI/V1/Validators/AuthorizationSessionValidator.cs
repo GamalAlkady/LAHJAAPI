@@ -1,8 +1,11 @@
 using AutoGenerator.Conditions;
+using FluentResults;
 using LAHJAAPI.Data;
 using LAHJAAPI.Models;
 using LAHJAAPI.V1.Validators;
 using LAHJAAPI.V1.Validators.Conditions;
+using System.Security.Claims;
+using System.Text.Json;
 using V1.DyModels.Dso.Requests;
 using V1.DyModels.Dso.ResponseFilters;
 using V1.DyModels.VMs;
@@ -18,7 +21,9 @@ namespace ApiCore.Validators
         HasUserId,
         HasEndTime,
         IsFull,
-        IsFound
+        IsFound,
+        ValidateCoreToken,
+        ValidatePlatformToken
     }
 
     public class AuthorizationSessionValidator : BaseValidator<AuthorizationSessionResponseFilterDso, SessionValidatorStates>, ITValidator
@@ -34,6 +39,25 @@ namespace ApiCore.Validators
 
         protected override void InitializeConditions()
         {
+            _provider.Register(
+                SessionValidatorStates.ValidateCoreToken,
+                new LambdaCondition<string>(
+                    nameof(SessionValidatorStates.ValidateCoreToken),
+                    context => ValidateCoreToken(context),
+                    "Core token is not valid"
+                )
+            );
+
+            _provider.Register(
+                SessionValidatorStates.ValidatePlatformToken,
+                new LambdaCondition<string>(
+                    nameof(SessionValidatorStates.ValidatePlatformToken),
+                    context => ValidatePlatformToken(context),
+                    "Platform token is not valid"
+                )
+            );
+
+
             _provider.Register(
                 SessionValidatorStates.IsFound,
                 new LambdaCondition<AuthorizationSessionFilterVM>(
@@ -107,14 +131,14 @@ namespace ApiCore.Validators
                 )
             );
 
-            _provider.Register(
-                SessionValidatorStates.IsFull,
-                new LambdaCondition<AuthorizationSessionRequestDso>(
-                    nameof(SessionValidatorStates.IsFull),
-                    context => IsValidAuthorizationSession(context),
-                    "Authorization session is incomplete"
-                )
-            );
+            //_provider.Register(
+            //    SessionValidatorStates.IsFull,
+            //    new LambdaCondition<AuthorizationSessionRequestDso>(
+            //        nameof(SessionValidatorStates.IsFull),
+            //        context => IsValidAuthorizationSession(context),
+            //        "Authorization session is incomplete"
+            //    )
+            //);
         }
         AuthorizationSession? Session { get; set; } = null;
         private AuthorizationSession? GetSession(string? id)
@@ -143,28 +167,62 @@ namespace ApiCore.Validators
             return _checker.Check(ApplicationUserValidatorStates.HasCustomerId, userId);
         }
 
+        private DataTokenRequest ValidatePlatformToken(string token)
+        {
+            if (string.IsNullOrWhiteSpace(token)) throw new Exception("Token can not be null.");
+            string secret = _checker.Injector.AppSettings.Jwt.WebSecret;
+            var result = _checker.Injector.TokenService.ValidateToken(token, secret);
+            if (result.IsFailed) throw new Exception(result.Errors?.FirstOrDefault()?.Message);
+            var claims = result.Value;
+            var data = claims.FindFirstValue("Data");
+            if (string.IsNullOrWhiteSpace(data)) throw new Exception("Data can not be null.");
+            var dataTokenRequest = JsonSerializer.Deserialize<DataTokenRequest>(data);
+            dataTokenRequest!.Token = secret;
+            return dataTokenRequest;
+        }
+
         private bool CheckSessionToken(string sessionToken)
         {
-            return !string.IsNullOrWhiteSpace(sessionToken);
+            if (string.IsNullOrWhiteSpace(sessionToken)) return false;
+            var result = _checker.Injector.TokenService.ValidateToken(sessionToken);
+            return result.IsSuccess;
+        }
+
+        private Result<string> ValidateCoreToken(string token)
+        {
+            if (string.IsNullOrWhiteSpace(token)) throw new Exception("Token can not be null.");
+            string secret = _checker.Injector.AppSettings.Jwt.WebSecret;
+            var result = _checker.Injector.TokenService.ValidateToken(token, secret);
+            if (result.IsFailed) return result.ToResult<string>();
+            var claims = result.Value;
+            var sessionToken = claims.FindFirstValue("SessionToken");
+            if (string.IsNullOrWhiteSpace(sessionToken))
+            {
+                return Result.Fail("Session token is not found in core token.");
+            }
+            if (CheckSessionToken(sessionToken)) return sessionToken;
+            if (result.IsFailed) return result.ToResult<string>();
+
+            return Result.Ok(sessionToken);
         }
 
         private bool CheckAuthorizationType(string authorizationType)
         {
             return !string.IsNullOrWhiteSpace(authorizationType);
         }
-        private bool IsValidAuthorizationSession(AuthorizationSessionRequestDso context)
-        {
-            var conditions = new List<Func<AuthorizationSessionRequestDso, bool>>
-            {
-                c =>CheckSessionToken(c.SessionToken),
-                c =>CheckAuthorizationType(c.AuthorizationType),
-                c => c.StartTime != default,
-                c => CheckCustomerId(c.UserId),
-                c => c.IsActive,
-                c => c.EndTime.HasValue,
-            };
+        //private bool IsValidAuthorizationSession(AuthorizationSessionRequestDso context)
+        //{
+        //    var conditions = new List<Func<AuthorizationSessionRequestDso, bool>>
+        //    {
+        //        c =>CheckSessionToken(c.SessionToken),
+        //        c =>CheckAuthorizationType(c.AuthorizationType),
+        //        c => c.StartTime != default,
+        //        c => CheckCustomerId(c.UserId),
+        //        c => c.IsActive,
+        //        c => c.EndTime.HasValue,
+        //    };
 
-            return conditions.All(condition => condition(context));
-        }
+        //    return conditions.All(condition => condition(context));
+        //}
     }
 }

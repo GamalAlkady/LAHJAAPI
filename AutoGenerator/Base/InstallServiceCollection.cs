@@ -1,22 +1,9 @@
 ﻿using AutoGenerator.ApiFolder;
-using AutoGenerator.Conditions;
 using AutoGenerator.Config;
-using AutoGenerator.Data;
 using AutoGenerator.Schedulers;
-using AutoMapper;
-using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
-using Microsoft.CodeAnalysis.Text;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
-using Quartz;
-using System;
 using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
-using System.Text;
 
 namespace AutoGenerator
 {
@@ -37,14 +24,14 @@ namespace AutoGenerator
         public Assembly? Assembly { get; set; }
         public Assembly? AssemblyModels { get; set; }
 
-
+        public string? DbConnectionString { get; set; }
         public string[]? Arags { get; set; }
 
 
 
     }
 
-    public  interface ITServiceCollection: IServiceCollection
+    public interface ITServiceCollection : IServiceCollection
     {
 
     }
@@ -121,7 +108,7 @@ namespace AutoGenerator
         {
             var args = option.Arags;
             ApiFolderInfo.AssemblyShare = option.Assembly;
-            ApiFolderInfo.AssemblyModels= option.AssemblyModels;
+            ApiFolderInfo.AssemblyModels = option.AssemblyModels;
 
             if ((args.Length > 0 && args[0].Contains("generate")))
             {
@@ -133,7 +120,7 @@ namespace AutoGenerator
                     }
                 else
                     serviceCollection.AddAutoGenerateApiCore(option);
-              
+
 
 
 
@@ -153,7 +140,7 @@ namespace AutoGenerator
 
             if (option.IsMapper)
             {
-                
+
                 serviceCollection.AddAutoMapper(typeof(MappingConfig));
             }
             if (option.Assembly != null)
@@ -162,8 +149,11 @@ namespace AutoGenerator
                 serviceCollection.AddAutoTransient(option.Assembly);
                 serviceCollection.AddAutoSingleton(option.Assembly);
 
-                serviceCollection.AddAutoScheduler(new() {
-                    Assembly=option.Assembly} );
+                serviceCollection.AddAutoScheduler(new()
+                {
+                    Assembly = option.Assembly,
+                    DbConnectionString = option.DbConnectionString,
+                });
             }
         }
 
@@ -172,7 +162,7 @@ namespace AutoGenerator
 
 
 
-           
+
             ApiFolderInfo.TypeContext = option.TypeContext;
             ApiFolderGenerator.Build(option.ProjectPath, option.NameRootApi);
 

@@ -1,19 +1,11 @@
 using AutoGenerator;
-using AutoMapper;
-using Microsoft.Extensions.Logging;
-using System.Collections.Generic;
+using AutoGenerator.Helper;
 using AutoGenerator.Services.Base;
+using AutoMapper;
 using V1.DyModels.Dso.Requests;
 using V1.DyModels.Dso.Responses;
-using LAHJAAPI.Models;
 using V1.DyModels.Dto.Share.Requests;
-using V1.DyModels.Dto.Share.Responses;
 using V1.Repositories.Share;
-using System.Linq.Expressions;
-using V1.Repositories.Builder;
-using AutoGenerator.Repositories.Base;
-using AutoGenerator.Helper;
-using System;
 
 namespace V1.Services.Services
 {
@@ -25,6 +17,62 @@ namespace V1.Services.Services
             _share = buildPlanFeatureShareRepository;
         }
 
+        public async Task<PlanFeatureResponseDso?> GetByNameAsync(string planId, string name, string lg = "en")
+        {
+            var response = await _share.GetAllByAsync([new FilterCondition("PlanId", planId)]);
+            //_dbSet.Include(p => p.PlanFeatures).FirstOrDefaultAsync(p => p.Id == id);
+            var planFeature = GetMapper().Map<List<PlanFeatureResponseDso>>(response.Data);
+            return planFeature.FirstOrDefault(p => p.Name?.Value?.Any(s => s.Value == name) == true);
+        }
+
+        public async Task<int> GetNumberRequests(string planId)
+        {
+            try
+            {
+                _logger.LogInformation("Getting number of requests for Plan ID: {PlanId}", planId);
+                int numberRequests = 0;
+                var planFeature = await GetByNameAsync(planId, "Requests", "en");
+                var desc = planFeature.Description.Value["en"];
+                if (desc.Contains("request")) desc = desc[..6];
+                numberRequests = Convert.ToInt32(Convert.ToDecimal(desc));
+                return numberRequests;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error while getting number of requests for Plan ID: {PlanId}", planId);
+                return 0;
+            }
+        }
+
+        public async Task<int> GetNumberSpaces(string planId)
+        {
+            try
+            {
+                _logger.LogInformation("Getting number of spaces for Plan ID: {PlanId}", planId);
+                var planFeature = await GetByNameAsync(planId, "Space", "en");
+                return Convert.ToInt32(Convert.ToDecimal(planFeature.Description.Value["en"]));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error while getting number of spaces for Plan ID: {PlanId}", planId);
+                return 0;
+            }
+        }
+
+        //public async Task<int> GetNumberSpaces(string planId)
+        //{
+        //    try
+        //    {
+        //        _logger.LogInformation("Getting number of spaces for Plan ID: {PlanId}", planId);
+        //        var planFeature = await _share.GetOneByAsync([new FilterCondition("Key", "spaces")]);
+        //        return Convert.ToInt32(planFeature.Value);
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        _logger.LogError(ex, "Error while getting number of spaces for Plan ID: {PlanId}", planId);
+        //        return 0;
+        //    }
+        //}
         public override Task<int> CountAsync()
         {
             try

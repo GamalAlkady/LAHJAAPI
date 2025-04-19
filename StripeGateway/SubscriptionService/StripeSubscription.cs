@@ -8,9 +8,9 @@ namespace StripeGateway
         Task<StripeSubscriptionResponse> CreateAsync(SubscriptionCreateOptions options, CancellationToken cancellationToken = default);
         Task<StripeSubscriptionResponse> CancelAsync(string id, CancellationToken cancellationToken = default);
         Task<StripeList<StripeSubscriptionResponse>> GetAllAsync(string customerId = null, CancellationToken cancellationToken = default);
-        Task<StripeSubscriptionResponse> GetByIdAsync(string subscriptionId, CancellationToken cancellationToken = default);
         Task<StripeSubscriptionResponse> UpdateAsync(string id, SubscriptionUpdateOptions options, CancellationToken cancellationToken = default);
         Task<StripeSubscriptionResponse> ResumeAsync(string id, SubscriptionResumeOptions options, CancellationToken cancellationToken = default);
+        Task<StripeSubscriptionResponse> GetByIdAsync(string subscriptionId, SubscriptionGetOptions options = null, CancellationToken cancellationToken = default);
     }
 
     public class StripeSubscription(IMapper mapper) : IStripeSubscription
@@ -55,10 +55,10 @@ namespace StripeGateway
             return responses;
         }
 
-        public async Task<StripeSubscriptionResponse> GetByIdAsync(string subscriptionId, CancellationToken cancellationToken = default)
+        public async Task<StripeSubscriptionResponse> GetByIdAsync(string subscriptionId, SubscriptionGetOptions options = null, CancellationToken cancellationToken = default)
         {
             var service = new SubscriptionService();
-            var subscription = await service.GetAsync(subscriptionId);
+            var subscription = await service.GetAsync(subscriptionId, options);
             var result = mapper.Map<StripeSubscriptionResponse>(subscription);
             return result;
         }

@@ -4,6 +4,7 @@ using LAHJAAPI.V1.Validators.Conditions;
 using Microsoft.AspNetCore.Mvc;
 using V1.DyModels.Dso.Requests;
 using V1.DyModels.Dso.ResponseFilters;
+using V1.DyModels.Dso.Responses;
 using V1.DyModels.VMs;
 
 namespace LAHJAAPI.V1.Validators
@@ -27,9 +28,8 @@ namespace LAHJAAPI.V1.Validators
         HasSubscriptionId,
         IsGpuEnabled,
         IsGlobalEnabled,
-        IsCountSpces
-
-
+        IsCountSpces,
+        IsAvailable
     }
 
 
@@ -91,6 +91,14 @@ namespace LAHJAAPI.V1.Validators
                     nameof(SpaceValidatorStates.IsFound),
                     context => IsFound(context.Id),
                     "Space is not found"
+                )
+            );
+
+            _provider.Register(SpaceValidatorStates.IsAvailable,
+                new LambdaCondition<SubscriptionResponseDso>(
+                    nameof(SpaceValidatorStates.IsAvailable),
+                    context => IsSpacesAvailable(context),
+                    "Spaces not available"
                 )
             );
         }
@@ -233,13 +241,13 @@ namespace LAHJAAPI.V1.Validators
             return (failedConditions.Count == 0, failedConditions);
         }
 
+        bool IsSpacesAvailable(SubscriptionResponseDso subscription)
+        {
+            var countSpaces = _checker.Injector.Context.Set<Space>()
+                .Count(x => x.SubscriptionId == subscription.Id);
 
-        //private bool IsFull(SpaceResponseFilterDso context)
-        //{
 
-        //        return false;
-        //    }
-        //    return true;
-        //}
+            return subscription.AllowedSpaces >= countSpaces;
+        }
     }
 }

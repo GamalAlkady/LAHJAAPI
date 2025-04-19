@@ -1,30 +1,60 @@
+using APILAHJA.Utilities;
 using AutoGenerator;
-using AutoMapper;
-using Microsoft.Extensions.Logging;
-using System.Collections.Generic;
+using AutoGenerator.Helper;
 using AutoGenerator.Services.Base;
+using AutoMapper;
 using V1.DyModels.Dso.Requests;
 using V1.DyModels.Dso.Responses;
-using LAHJAAPI.Models;
 using V1.DyModels.Dto.Share.Requests;
-using V1.DyModels.Dto.Share.Responses;
 using V1.Repositories.Share;
-using System.Linq.Expressions;
-using V1.Repositories.Builder;
-using AutoGenerator.Repositories.Base;
-using AutoGenerator.Helper;
-using System;
 
 namespace V1.Services.Services
 {
     public class ApplicationUserService : BaseService<ApplicationUserRequestDso, ApplicationUserResponseDso>, IUseApplicationUserService
     {
         private readonly IApplicationUserShareRepository _share;
-        public ApplicationUserService(IApplicationUserShareRepository buildApplicationUserShareRepository, IMapper mapper, ILoggerFactory logger) : base(mapper, logger)
+        private readonly IUserClaimsHelper _userClaims;
+
+        public ApplicationUserService(IApplicationUserShareRepository buildApplicationUserShareRepository,
+            IUserClaimsHelper userClaims,
+            IMapper mapper, ILoggerFactory logger) : base(mapper, logger)
         {
             _share = buildApplicationUserShareRepository;
+            _userClaims = userClaims;
         }
 
+        public async Task<ApplicationUserResponseDso> GetUser()
+        {
+            try
+            {
+                _logger.LogInformation("Fetching user...");
+                var result = await _share.GetByIdAsync(_userClaims.UserId);
+                _logger.LogInformation("User fetched successfully.");
+                return GetMapper().Map<ApplicationUserResponseDso>(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error while fetching user.");
+                throw;
+            }
+        }
+
+        public async Task<ApplicationUserResponseDso> GetUserWithSubscription()
+        {
+            try
+            {
+                _logger.LogInformation("Fetching user...");
+                // TODO: test checkout
+                var result = await _share.GetOneByAsync([new FilterCondition("Id", _userClaims.UserId)], new ParamOptions(["Subscription"]));
+                _logger.LogInformation("User fetched successfully.");
+                return GetMapper().Map<ApplicationUserResponseDso>(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error while fetching user.");
+                throw;
+            }
+        }
         public override Task<int> CountAsync()
         {
             try

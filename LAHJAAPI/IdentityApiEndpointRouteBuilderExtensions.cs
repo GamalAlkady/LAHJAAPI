@@ -3,8 +3,8 @@
 
 using AutoBuilderApiCore.Auth;
 using AutoGenerator.Services2;
-using AutoGenerator.Utilities;
 using LAHJAAPI.Models;
+using LAHJAAPI.Utilities;
 using Microsoft.AspNetCore.Authentication.BearerToken;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Http.Metadata;

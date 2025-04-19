@@ -1,9 +1,10 @@
-﻿using Stripe;
+﻿using Microsoft.Extensions.Configuration;
+using Stripe;
 using StripeGateway;
 
 namespace Microsoft.Extensions.DependencyInjection;
 
-public static class DependencyInjectionStripe
+public static class DependencyInjection
 {
     private static IServiceCollection AddServices(this IServiceCollection services)
     {

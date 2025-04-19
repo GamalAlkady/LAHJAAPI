@@ -1,4 +1,5 @@
-﻿using AutoMapper;
+﻿using AutoGenerator.Seeds;
+using AutoMapper;
 using LAHJAAPI.Data;
 using Microsoft.EntityFrameworkCore;
 using Utilities.Seeds;
@@ -23,7 +24,7 @@ public static class SeedData
             await DefaultUsers.SeedAdminAsync(scope);
 
 
-            //await DefaultPlansAndFeatures.SeedAsync(scope);
+            await DefaultPlansAndFeatures.SeedAsync(scope);
 
             //await DefaultModals.SeedAsync(context);
 

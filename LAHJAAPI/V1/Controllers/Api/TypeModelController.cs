@@ -1,13 +1,9 @@
-using AutoMapper;
-using Microsoft.Extensions.Logging;
-using System.Collections.Generic;
-using V1.Services.Services;
-using Microsoft.AspNetCore.Mvc;
-using V1.DyModels.VMs;
-using System.Linq.Expressions;
-using V1.DyModels.Dso.Requests;
 using AutoGenerator.Helper.Translation;
-using System;
+using AutoMapper;
+using Microsoft.AspNetCore.Mvc;
+using V1.DyModels.Dso.Requests;
+using V1.DyModels.VMs;
+using V1.Services.Services;
 
 namespace V1.Controllers.Api
 {
@@ -52,7 +48,7 @@ namespace V1.Controllers.Api
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-        public async Task<ActionResult<TypeModelInfoVM>> GetById(string? id)
+        public async Task<ActionResult<TypeModelInfoVM>> GetById(string id, string lg = "en")
         {
             if (string.IsNullOrWhiteSpace(id))
             {
@@ -70,12 +66,86 @@ namespace V1.Controllers.Api
                     return NotFound();
                 }
 
-                var item = _mapper.Map<TypeModelInfoVM>(entity);
+                var item = _mapper.Map<TypeModelOutputVM>(entity, opt => opt.Items.Add(HelperTranslation.KEYLG, lg));
                 return Ok(item);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error while fetching TypeModel with ID: {id}", id);
+                return StatusCode(500, "Internal Server Error");
+            }
+        }
+
+        [HttpGet("GetTypeModelByName/{name}", Name = "GetTypeModelByName")]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+        public async Task<ActionResult<TypeModelInfoVM>> GetByName(string name, string lg = "en")
+        {
+            if (string.IsNullOrWhiteSpace(name))
+            {
+                _logger.LogWarning("Invalname TypeModel name received.");
+                return BadRequest("Invalname TypeModel name.");
+            }
+
+            try
+            {
+                _logger.LogInformation("Fetching TypeModel with name: {name}", name);
+                var entity = await _typemodelService.GetOneByAsync(
+                [
+                    new AutoGenerator.Helper.FilterCondition
+                    {
+                        PropertyName = "Name",
+                        Value = name,
+                        Operator = AutoGenerator.Helper.FilterOperator.Contains
+                    }
+                ]);
+                if (entity == null)
+                {
+                    _logger.LogWarning("TypeModel not found with name: {name}", name);
+                    return NotFound();
+                }
+
+                var item = _mapper.Map<TypeModelOutputVM>(entity, opt => opt.Items.Add(HelperTranslation.KEYLG, lg));
+                return Ok(item);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error while fetching TypeModel with name: {name}", name);
+                return StatusCode(500, "Internal Server Error");
+            }
+        }
+
+        [HttpGet("ActiveTypes", Name = "GetActiveTypes")]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+        public async Task<ActionResult<List<TypeModelInfoVM>>> GetActiveTypes(string lg = "en")
+        {
+            try
+            {
+                _logger.LogInformation("Fetching active TypeModels...");
+                var entities = await _typemodelService.GetAllByAsync(
+                [
+                    new AutoGenerator.Helper.FilterCondition
+                    {
+                        PropertyName = "Active",
+                        Value = true
+                    }
+                ]);
+                if (entities == null)
+                {
+                    _logger.LogWarning("No active TypeModels found.");
+                    return NotFound();
+                }
+
+                var items = _mapper.Map<List<TypeModelOutputVM>>(entities.Data, opt => opt.Items.Add(HelperTranslation.KEYLG, lg));
+                return Ok(items);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error while fetching active TypeModels");
+                return BadRequest(ex);
                 return StatusCode(500, "Internal Server Error");
             }
         }

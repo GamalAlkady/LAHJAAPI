@@ -31,6 +31,7 @@ public class DataContext : AutoIdentityDataContext<ApplicationUser, IdentityRole
     public DbSet<TypeModel> Types { get; set; }
     public DbSet<Dialect> Dialects { get; set; }
     public DbSet<Advertisement> Advertisements { get; set; }
+    public DbSet<AdvertisementTab> AdvertisementTabs { get; set; }
 
     public DbSet<Setting> Settings { get; set; }
     public DbSet<Space> Spaces { get; set; }

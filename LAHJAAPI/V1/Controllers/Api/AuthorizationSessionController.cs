@@ -1,10 +1,13 @@
-﻿using APILAHJA.Utilities;
+﻿using ApiCore.Validators;
+using APILAHJA.Utilities;
 using ASG.Api2.Utilities;
 using AutoGenerator.Helper;
 using AutoGenerator.Helper.Translation;
 using AutoGenerator.Services2;
 using AutoGenerator.Utilities;
 using AutoMapper;
+using LAHJAAPI.Utilities;
+using LAHJAAPI.V1.Validators.Conditions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
@@ -31,6 +34,7 @@ namespace V1.Controllers.Api
         private readonly IUseSubscriptionService _subscriptionService;
         private readonly IUseModelAiService _modelAiRepository;
         private readonly IUserClaimsHelper _userClaims;
+        private readonly IConditionChecker _checker;
         private readonly IOptions<AppSettings> _appSettings;
         private readonly IMapper _mapper;
         private readonly ILogger _logger;
@@ -43,6 +47,7 @@ namespace V1.Controllers.Api
             IUseSubscriptionService subscriptionService,
             IUseModelAiService modelAiRepository,
             IUserClaimsHelper userClaims,
+            IConditionChecker checker,
             IOptions<AppSettings> appSettings,
             IMapper mapper, ILoggerFactory logger)
         {
@@ -55,6 +60,7 @@ namespace V1.Controllers.Api
             _subscriptionService = subscriptionService;
             _modelAiRepository = modelAiRepository;
             _userClaims = userClaims;
+            _checker = checker;
             _appSettings = appSettings;
             _mapper = mapper;
             _logger = logger.CreateLogger(typeof(AuthorizationSessionController).FullName);
@@ -526,11 +532,13 @@ namespace V1.Controllers.Api
             };
 
             // get platform to validate token
-            var dataTokenRequest = await ValidateWebToken(token);
+
+            var dataTokenRequest = (DataTokenRequest?)_checker.CheckAndResult(SessionValidatorStates.ValidateCoreToken, token).Result;
+            //var dataTokenRequest = await ValidateWebToken(token);
 
             if (isNeedSpace)
             {
-                if (string.IsNullOrEmpty(dataTokenRequest.SpaceId))
+                if (string.IsNullOrEmpty(dataTokenRequest?.SpaceId))
                     throw new Exception("You must encrypt space id with token.");
 
                 var space = await _subscriptionService.GetSpace(dataTokenRequest.SpaceId);

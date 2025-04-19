@@ -1,5 +1,5 @@
-﻿using AutoGenerator.Utilities;
-using FluentResults;
+﻿using FluentResults;
+using LAHJAAPI.Utilities;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
