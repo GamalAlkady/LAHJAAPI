@@ -1,12 +1,3 @@
-using AutoGenerator.Data;
-using AutoGenerator.Helper.Translation;
-using AutoMapper;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.Extensions.Options;
-using System;
-using System.Reflection;
-using System.Threading.Tasks; 
-
 namespace AutoGenerator.Conditions
 {
     public class ConditionResult
@@ -27,7 +18,7 @@ namespace AutoGenerator.Conditions
     {
         string Name { get; }
         string? ErrorMessage { get; }
-    
+
 
         Task<ConditionResult> Evaluate(object context);
     }
@@ -47,7 +38,7 @@ namespace AutoGenerator.Conditions
         // œ«·… €Ì—  “«„‰Ì… ›ﬁÿ
         public abstract Task<ConditionResult> Evaluate(object context);
 
-        
+
     }
 
     // Implementation of async evaluation with ConditionResult
@@ -59,7 +50,7 @@ namespace AutoGenerator.Conditions
             : base(name, errorMessage)
         {
 
-            _predicate = ConvertToConditionResult(predicate,errorMessage);
+            _predicate = ConvertToConditionResult(predicate, errorMessage);
         }
 
         public LambdaCondition(string name, Func<T, ConditionResult> predicate, string? errorMessage = null)
@@ -71,10 +62,10 @@ namespace AutoGenerator.Conditions
         public LambdaCondition(string name, Func<T, Task<ConditionResult>> predicate, string? errorMessage = null)
             : base(name, errorMessage)
         {
-            _predicate =predicate;
+            _predicate = predicate;
         }
 
-        private static Func<T, Task<ConditionResult>> ConvertToConditionResult(Func<T, object> predicate,string errorMessage)
+        private static Func<T, Task<ConditionResult>> ConvertToConditionResult(Func<T, object> predicate, string errorMessage)
         {
 
             if (predicate == null)
@@ -89,7 +80,7 @@ namespace AutoGenerator.Conditions
                 if (result is bool flag)
 
                     return Task.FromResult(new ConditionResult(flag, result, errorMessage));
-                
+
                 return Task.FromResult(new ConditionResult(false, result, errorMessage));
             };
         }
@@ -105,14 +96,14 @@ namespace AutoGenerator.Conditions
             }
             return (T context) =>
             {
-             
+
                 return Task.FromResult(predicate(context));
             };
         }
 
 
 
-        public override async Task<ConditionResult> Evaluate(object context) 
+        public override async Task<ConditionResult> Evaluate(object context)
         {
             try
             {
@@ -134,5 +125,5 @@ namespace AutoGenerator.Conditions
         }
     }
 
-  
+
 }

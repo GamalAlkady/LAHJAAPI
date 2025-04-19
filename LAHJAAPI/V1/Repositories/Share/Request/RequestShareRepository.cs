@@ -67,8 +67,9 @@ namespace V1.Repositories.Share
         {
             try
             {
+                //TODO: error when excecuting this method
                 _logger.LogInformation("Counting Request entities...");
-                var query = _builder.GetQueryable(true);
+                var query = _builder.GetQueryable();
 
                 if (status != null) query = query.Where(r => r.Status == status);
                 if (serviceId != null) query = query.Where(r => r.ServiceId == serviceId);
@@ -80,6 +81,7 @@ namespace V1.Repositories.Share
                 return await Task.FromResult(0);
             }
         }
+
 
         /// <summary>
         /// Method to create a new entity asynchronously.

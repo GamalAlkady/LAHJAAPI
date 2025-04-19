@@ -40,8 +40,7 @@ namespace LAHJAAPI.Models
 
         public AuthorizationSession()
         {
-
-            Id = Guid.NewGuid().ToString();
+            Id = $"sess_{Guid.NewGuid():N}";
             StartTime = DateTime.UtcNow;
             IsActive = true;
         }

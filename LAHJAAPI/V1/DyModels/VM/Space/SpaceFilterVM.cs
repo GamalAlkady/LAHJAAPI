@@ -7,5 +7,5 @@ namespace V1.DyModels.VMs
     /// </summary>
     /// <param name="Id"></param>
     /// <param name="Lg"></param>
-    public record SpaceFilterVM(string? Id = null, string? Lg = null) : ITVM;
+    public record SpaceFilterVM(string? Id = null, string? Lg = null, string? AbsolutePath = null) : ITVM;
 }

@@ -230,7 +230,6 @@ namespace V1.Services.Services
             try
             {
                 _logger.LogInformation("Retrieving all Request entities...");
-                var results = await _share.GetAllAsync();
                 var response = await _share.GetAllByAsync(conditions, options);
                 return response.ToResponse(GetMapper().Map<IEnumerable<RequestResponseDso>>(response.Data));
             }

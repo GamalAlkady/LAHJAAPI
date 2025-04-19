@@ -1,5 +1,4 @@
 using AutoGenerator.Helper.Translation;
-using AutoGenerator.Utilities;
 using AutoMapper;
 using LAHJAAPI.V1.Validators;
 using LAHJAAPI.V1.Validators.Conditions;
@@ -167,28 +166,25 @@ namespace V1.Controllers.Api
         {
             try
             {
-                if (_checker.CheckAndResult(SpaceValidatorStates.IsValid, new SpaceFilterVM()) is not { } problemDetails)
+                if (_checker.CheckAndResult(SpaceValidatorStates.IsValid, new SpaceFilterVM()).Result is ProblemDetails problem)
                 {
-                    var service = await _serviceService.GetByName("createspace");
-
-                    if (_checker.CheckAndResult(ServiceValidatorStates.IsServiceIdFound, service.Id) is not { } errorMessage)
-                    {
-                        var item = _mapper.Map<SpaceRequestDso>(model);
-                        item.SubscriptionId = (await _subscriptionService.GetUserSubscription()).Id;
-
-                        _logger.LogInformation("Creating new Space with data: {@model}", model);
-
-                        var result = await _spaceService.CreateAsync(item);
-                        var resultVM = _mapper.Map<SpaceOutputVM>(result);
-                        return CreatedAtAction(nameof(GetById), new { id = result.Id }, resultVM);
-                    }
-                    return NotFound(HandelErrors.Problem("Create space", errorMessage.Result.ToString()));
+                    return StatusCode(problem.Status ?? 500, problem);
                 }
-                return StatusCode(500, problemDetails.Result);
+
+                var item = _mapper.Map<SpaceRequestDso>(model);
+                item.SubscriptionId = (await _subscriptionService.GetUserSubscription()).Id;
+
+                _logger.LogInformation("Creating new Space with data: {@model}", model);
+
+                var result = await _spaceService.CreateAsync(item);
+                //var resultVM = _mapper.Map<SpaceOutputVM>(result);
+                return CreatedAtAction(nameof(GetById), new { id = result.Id }, result);
+
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error while creating a new Space");
+                return BadRequest(ex);
                 return StatusCode(500, "Internal Server Error");
             }
         }

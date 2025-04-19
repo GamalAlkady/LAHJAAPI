@@ -11,7 +11,7 @@ namespace LAHJAAPI.V1.Validators
 
     public enum ApplicationUserValidatorStates
     {
-        IsActive,
+        IsActive = 6500,
         IsFull,
         HasCustomerId,
         HasFirstName,

@@ -124,13 +124,6 @@ public class SubscriptionValidator : BaseValidator<SubscriptionResponseFilterDso
             "Space not allowed"
         ));
 
-        _provider.Register(
-            SubscriptionValidatorStates.IsAllowedSpaces,
-            new LambdaCondition<SubscriptionResponseFilterDso>(nameof(SubscriptionValidatorStates.IsAllowedSpaces),
-            context => IsAllowedSpaces(context),
-            "Space not allowed"
-        ));
-
 
         _provider.Register(
         SubscriptionValidatorStates.IsActiveAndResult,

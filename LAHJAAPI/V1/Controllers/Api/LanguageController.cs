@@ -27,18 +27,19 @@ namespace V1.Controllers.Api
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-        public async Task<ActionResult<IEnumerable<LanguageOutputVM>>> GetAll(string lg = "en")
+        public async Task<ActionResult<IEnumerable<LanguageOutputVM>>> GetAll()
         {
             try
             {
                 _logger.LogInformation("Fetching all Languages...");
                 var result = await _languageService.GetAllAsync();
-                var items = _mapper.Map<List<LanguageOutputVM>>(result, opt => opt.Items.Add(HelperTranslation.KEYLG, lg));
+                var items = _mapper.Map<IEnumerable<LanguageOutputVM>>(result);
                 return Ok(items);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error while fetching all Languages");
+                return BadRequest(ex);
                 return StatusCode(500, "Internal Server Error");
             }
         }

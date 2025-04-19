@@ -1,6 +1,7 @@
 using AutoGenerator.Conditions;
 using LAHJAAPI.V1.Validators.Conditions;
 using V1.DyModels.Dso.Requests;
+using V1.DyModels.Dso.Responses;
 
 namespace LAHJAAPI.V1.Validators
 {
@@ -10,11 +11,12 @@ namespace LAHJAAPI.V1.Validators
 
     public enum ServiceValidatorStates
     {
+        IsFound = 6200,
         IsFull,
-        IsServiceIdFound,
-        IsServiceIdsEmpty,
         HasName,
         HasAbsolutePath,
+        IsCreateSpace,
+        IsDashboard,
         HasToken,
         HasValidModelAi,
         HasMethods,
@@ -42,10 +44,26 @@ namespace LAHJAAPI.V1.Validators
             );
 
             _provider.Register(ServiceValidatorStates.HasAbsolutePath,
-                new LambdaCondition<ServiceRequestDso>(
+                new LambdaCondition<ServiceResponseDso>(
                     nameof(ServiceValidatorStates.HasAbsolutePath),
                     s => Uri.IsWellFormedUriString(s.AbsolutePath, UriKind.Absolute),
                     "AbsolutePath must be a valid URL"
+                )
+            );
+
+            _provider.Register(ServiceValidatorStates.IsCreateSpace,
+                new LambdaCondition<string>(
+                    nameof(ServiceValidatorStates.IsCreateSpace),
+                    context => context.Equals("createspace", StringComparison.CurrentCultureIgnoreCase),
+                    "This service not create space"
+                )
+            );
+
+            _provider.Register(ServiceValidatorStates.IsDashboard,
+                new LambdaCondition<string>(
+                    nameof(ServiceValidatorStates.IsDashboard),
+                    context => context.Equals("dashboard", StringComparison.CurrentCultureIgnoreCase),
+                    "This service not dashboard"
                 )
             );
 
@@ -88,64 +106,24 @@ namespace LAHJAAPI.V1.Validators
                     "Service must be linked to at least one user"
                 )
             );
-            _provider.Register(ServiceValidatorStates.IsServiceIdFound,
+            _provider.Register(ServiceValidatorStates.IsFound,
                 new LambdaCondition<string>(
-                    nameof(ServiceValidatorStates.IsServiceIdFound),
-                    context => IsServiceIdFound(context),
+                    nameof(ServiceValidatorStates.IsFound),
+                    context => IsFound(context),
                     "You coudn't create space with this session. You need to create session with service create space."
                 )
             );
 
-            _provider.Register(ServiceValidatorStates.IsServiceIdsEmpty,
-                new LambdaCondition<bool>(
-                    nameof(ServiceValidatorStates.IsServiceIdsEmpty),
-                    context => IsServiceIdsEmpty(context),
-                    "Service Ids is empty."
-                )
-            );
-
-
-            //_provider.Where(
-            //    ServiceValidatorStates.IsFull,
-            //    new LambdaCondition<ServiceRequestDso>(
-            //        nameof(ServiceValidatorStates.IsFull),
-            //         ,
-            //        "Service is not full"
-            //    )
-            //);
-
-
         }
-        bool IsServiceIdFound(string idServ)
+        bool IsFound(string idServ)
         {
             if (!string.IsNullOrWhiteSpace(idServ))
             {
-                var result = _checker.Injector.UserClaims.ServicesIds?.Any(x => x == idServ);
+                var result = _checker.Injector.Context.Services?.Any(x => x.Id == idServ);
                 return result ?? false;
             }
             return false;
         }
-
-        bool IsServiceIdsEmpty(bool idServ)
-        {
-            return _checker.Injector.UserClaims.ServicesIds?.Count == 0;
-        }
-
-        //bool IsServiceIdFound(string idServ)
-        //{
-        //    if (!String.IsNullOrWhiteSpace(idServ))
-        //    {
-        //        var result = _checker.Injector.Context.Set<Service>()
-        //            .Any(x => x.Id == idServ);
-
-        //        return result;
-        //    }
-        //    else
-        //    {
-        //        return false;
-
-        //    }
-        //}
 
     }
 }

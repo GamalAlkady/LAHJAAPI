@@ -9,6 +9,7 @@ namespace LAHJAAPI.Models
         public string Id { get; set; } = $"lang_{Guid.NewGuid():N}";
 
         [Required]
+        [ToTranslation]
         public string? Name { get; set; } // مثل "Arabic", "English"
 
         [Required]

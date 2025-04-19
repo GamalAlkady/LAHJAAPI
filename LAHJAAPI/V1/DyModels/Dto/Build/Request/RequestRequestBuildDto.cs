@@ -31,11 +31,9 @@ namespace V1.DyModels.Dto.Build.Requests
         /// <summary>
         /// CreatedAt property for DTO.
         /// </summary>
-        public DateTime CreatedAt { get; set; }
-        /// <summary>
-        /// UpdatedAt property for DTO.
-        /// </summary>
-        public DateTime UpdatedAt { get; set; }
+
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
         /// <summary>
         /// UserId property for DTO.
         /// </summary>

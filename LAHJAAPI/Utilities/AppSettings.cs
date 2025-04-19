@@ -17,6 +17,7 @@
         public string Secret { get; set; } = "secret";
         public static string SessionToken => "JWTToken";
         public string WebSecret { get; set; }
+        public string TempSecret { get; set; }
         public string validIssuer { get; set; }
         public string ValidAudience { get; set; }
     }

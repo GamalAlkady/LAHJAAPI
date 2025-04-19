@@ -14,16 +14,17 @@ namespace ApiCore.Validators
 {
     public enum SessionValidatorStates
     {
+        IsFound = 6400,
+        IsActive = 6401,
         HasSessionToken,
         HasAuthorizationType,
         HasStartTime,
-        IsActive,
         HasUserId,
         HasEndTime,
         IsFull,
-        IsFound,
         ValidateCoreToken,
-        ValidatePlatformToken
+        ValidatePlatformToken,
+        CheckSessionToken
     }
 
     public class AuthorizationSessionValidator : BaseValidator<AuthorizationSessionResponseFilterDso, SessionValidatorStates>, ITValidator
@@ -57,13 +58,22 @@ namespace ApiCore.Validators
                 )
             );
 
+            _provider.Register(
+                SessionValidatorStates.CheckSessionToken,
+                new LambdaCondition<string>(
+                    nameof(SessionValidatorStates.CheckSessionToken),
+                    context => CheckSessionToken(context),
+                    "Platform token is not valid"
+                )
+            );
+
 
             _provider.Register(
                 SessionValidatorStates.IsFound,
                 new LambdaCondition<AuthorizationSessionFilterVM>(
                     nameof(SessionValidatorStates.IsFound),
                     context => IsFound(context.Id),
-                    "Session not found"
+                    "Session is not found"
                 )
             );
 
@@ -72,7 +82,7 @@ namespace ApiCore.Validators
                 new LambdaCondition<AuthorizationSessionFilterVM>(
                     nameof(SessionValidatorStates.IsActive),
                     context => IsActive(context.Id),
-                    "Session not active"
+                    "This session has been suspended."
                 )
             );
 
@@ -109,7 +119,7 @@ namespace ApiCore.Validators
                 new LambdaCondition<AuthorizationSessionRequestDso>(
                     nameof(SessionValidatorStates.IsActive),
                     context => context.IsActive,
-                    "Session must be active"
+                    "Session is not active"
                 )
             );
 
@@ -190,7 +200,7 @@ namespace ApiCore.Validators
 
         private Result<string> ValidateCoreToken(string token)
         {
-            if (string.IsNullOrWhiteSpace(token)) throw new Exception("Token can not be null.");
+            if (string.IsNullOrWhiteSpace(token)) Result.Fail("Token can not be null.");
             string secret = _checker.Injector.AppSettings.Jwt.WebSecret;
             var result = _checker.Injector.TokenService.ValidateToken(token, secret);
             if (result.IsFailed) return result.ToResult<string>();

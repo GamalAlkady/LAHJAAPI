@@ -6,7 +6,9 @@ using AutoGenerator.Helper.Translation;
 using AutoGenerator.Services2;
 using AutoGenerator.Utilities;
 using AutoMapper;
+using FluentResults;
 using LAHJAAPI.Utilities;
+using LAHJAAPI.V1.Validators;
 using LAHJAAPI.V1.Validators.Conditions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -198,16 +200,18 @@ namespace V1.Controllers.Api
         {
             try
             {
-                var webToken = _appSettings.Value.Jwt.WebSecret;
-                var result = _tokenService.ValidateToken(validateToken.Token, webToken);
-                if (result.IsFailed) return Unauthorized(result.Errors); // التوكن غير صالح
+                //var webToken = _appSettings.Value.Jwt.WebSecret;
+                //var result = _tokenService.ValidateToken(validateToken.Token, webToken);
+                //if (result.IsFailed) return Unauthorized(result.Errors); // التوكن غير صالح
 
-                var claims = result.Value;
-                var sessionToken = claims.FindFirstValue("SessionToken");
+                //var claims = result.Value;
+                //var sessionToken = claims.FindFirstValue("SessionToken");
 
-                result = _tokenService.ValidateToken(sessionToken);
+                //result = _tokenService.ValidateToken(sessionToken);
+
+                var result = (Result<string>)_checker.CheckAndResult(SessionValidatorStates.ValidateCoreToken, validateToken.Token).Result;
                 if (result.IsFailed) return BadRequest(result.Errors);
-                var item = await _sessionService.GetOneByAsync([new FilterCondition("SessionToken", sessionToken)]);
+                var item = await _sessionService.GetOneByAsync([new FilterCondition("SessionToken", result.Value)]);
                 if (item == null) return BadRequest("Not found session by token");
 
                 var token = _tokenService.GenerateToken([
@@ -241,15 +245,14 @@ namespace V1.Controllers.Api
             {
                 _logger.LogInformation("Creating new AuthorizationSession with data: {@model}", model);
                 var service = await _serviceService.GetByIdAsync(model.ServiceId);
+
                 bool isNeedSpace = true;
-                if (service.AbsolutePath.Equals("createspace", StringComparison.CurrentCultureIgnoreCase))
+                if (_checker.Check(ServiceValidatorStates.IsCreateSpace, service.AbsolutePath))
                 {
-                    if (await _subscriptionService.AvailableSpace() != 0)
-                        return BadRequest(HandelErrors.Problem("Create space", "You cannot create session for a space because you have reached the allowed limit."));
                     isNeedSpace = false;
-                    //sessionData.SubscriptionId = trackSubscription.SubscriptionId;
+                    if (!_checker.Check(SpaceValidatorStates.IsAvailable, new SpaceFilterVM()))
+                        return BadRequest(HandelErrors.Problem("Create space", "You cannot create session for a space because you have reached the allowed limit."));
                 }
-                else if (service.AbsolutePath.Equals("createspace", StringComparison.CurrentCultureIgnoreCase)) isNeedSpace = true;
 
                 //var (type, expire, webToken, spaceId) = await ValidateWebToken(model.Token);
                 var response = await PrepareCreateSession([service], model.Token, [model.ServiceId], isNeedSpace);
@@ -434,7 +437,7 @@ namespace V1.Controllers.Api
             var webToken = _appSettings.Value.Jwt.WebSecret;
             List<Claim> claims = [new Claim("Data", JsonSerializer.Serialize(encryptToken))];
             //if (encryptToken.Expires != null) claims.Add(new Claim("Expires", encryptToken!.Expires!.ToString()!));
-            var encrptedToken = _tokenService.GenerateTemporaryToken(webToken!, claims, encryptToken.Expires);
+            var encrptedToken = _tokenService.GenerateTemporary(webToken!, claims, encryptToken.Expires);
             return Ok(encrptedToken);
         }
 
@@ -444,11 +447,11 @@ namespace V1.Controllers.Api
             var decrptedToken = _tokenService.ValidateToken(encrptedToken, coreToken);
             if (decrptedToken.IsFailed) return Unauthorized(decrptedToken.Errors);
             var claims = decrptedToken.ValueOrDefault;
-            var sessionToken = claims.FindFirstValue("sessionToken");
+            var sessionToken = claims.FindFirstValue("SessionToken");
             var data = claims.FindFirstValue("data");
             var webToken = claims.FindFirstValue("WebToken");
 
-            var token = _tokenService.GenerateTemporaryToken(webToken, [new Claim("SessionToken", sessionToken)]);
+            var token = _tokenService.GenerateTemporary(webToken, [new Claim("SessionToken", sessionToken)]);
 
             return Ok(token);
         }
@@ -532,8 +535,7 @@ namespace V1.Controllers.Api
             };
 
             // get platform to validate token
-
-            var dataTokenRequest = (DataTokenRequest?)_checker.CheckAndResult(SessionValidatorStates.ValidateCoreToken, token).Result;
+            var dataTokenRequest = (DataTokenRequest?)_checker.CheckAndResult(SessionValidatorStates.ValidatePlatformToken, token).Result;
             //var dataTokenRequest = await ValidateWebToken(token);
 
             if (isNeedSpace)
@@ -557,7 +559,7 @@ namespace V1.Controllers.Api
             claims.AddRange([new Claim("SessionToken", session.SessionToken),
                     new Claim("ApiUrl", GetApiUrl()!), new Claim("WebToken", dataTokenRequest.Token),new Claim("data",JsonSerializer.Serialize(sessionData))]);
 
-            var encrptedToken = _tokenService.GenerateTemporaryToken(modelCore.Token, claims, session.EndTime);
+            var encrptedToken = _tokenService.GenerateTemporary(modelCore.Token, claims, session.EndTime);
 
             string urlCore = $"{modelCore.Url}";
             if (services.Count == 1) urlCore += $"/{services[0].AbsolutePath}";
@@ -574,7 +576,7 @@ namespace V1.Controllers.Api
             var resultSession = await _sessionService.GetSessionByServices(_userClaims.UserId, servicesIds, type);
             var session = resultSession.ValueOrDefault;
             //DateTime endTime = DateTime.UtcNow.AddDays(30);
-            if (session == null)
+            if (session == null || !_checker.Check(SessionValidatorStates.CheckSessionToken, session.SessionToken))
             {
                 expire ??= DateTime.UtcNow.AddDays(30);
                 string ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
@@ -583,7 +585,7 @@ namespace V1.Controllers.Api
                 {
                     UserId = _userClaims.UserId,
                     EndTime = expire,
-                    SessionToken = _tokenService.GenerateToken([new Claim("StartDate", DateTime.UtcNow.ToString())], expires: expire),
+                    SessionToken = _tokenService.GenerateTemporary([new Claim("StartDate", DateTime.UtcNow.ToString())], expire),
                     AuthorizationType = type,
                     IpAddress = ipAddress,
                     DeviceInfo = "",
@@ -628,14 +630,7 @@ namespace V1.Controllers.Api
                 throw new Exception(ex.Message);
             }
         }
-        public class DataTokenRequest
-        {
-            public string AuthorizationType { get; set; }
 
-            public string? SpaceId { get; set; }
-            public DateTime? Expires { get; set; }
-            public string Token { get; set; }
-        }
 
         private class SessionData
         {

@@ -1,18 +1,21 @@
+using ApiCore.Validators;
 using AutoGenerator.Conditions;
 using LAHJAAPI.Models;
 using LAHJAAPI.V1.Enums;
 using LAHJAAPI.V1.Validators.Conditions;
+using Microsoft.AspNetCore.Mvc;
 using V1.DyModels.Dso.Requests;
 using V1.DyModels.Dso.Responses;
+using V1.DyModels.VMs;
 
 namespace LAHJAAPI.V1.Validators
 {
     public enum RequestValidatorStates
     {
+        IsAllowed = 6300,
         HasValidStatus,
         HasQuestion,
         IsValidRequestId,
-        IsAllowedRequest,
         IsServiceId,
         IsSpaceId,
         IsUserId,
@@ -20,6 +23,7 @@ namespace LAHJAAPI.V1.Validators
         HasValidDate,
         HasServiceIdIfNeeded,
         HasSubscriptionIdIfNeeded,
+        IsValid,
     }
 
     public class RequestValidator : BaseValidator<RequestRequestDso, RequestValidatorStates>, ITValidator
@@ -77,9 +81,9 @@ namespace LAHJAAPI.V1.Validators
                 );
 
             _provider.Register(
-                RequestValidatorStates.IsAllowedRequest,
+                RequestValidatorStates.IsAllowed,
                 new LambdaCondition<SubscriptionResponseDso>(
-                    nameof(RequestValidatorStates.IsAllowedRequest),
+                    nameof(RequestValidatorStates.IsAllowed),
                     context => IsAllowedRequests(context),
                     "Requests not allowed"
                 )
@@ -103,6 +107,15 @@ namespace LAHJAAPI.V1.Validators
                     )
                 );
 
+            _provider.Register(
+                    RequestValidatorStates.IsValid,
+                    new LambdaCondition<RequestFilterVM>(
+                        nameof(RequestValidatorStates.IsValid),
+                        context => IsValid(context),
+                        "Request ID is required"
+                    )
+                );
+
         }
 
 
@@ -122,12 +135,64 @@ namespace LAHJAAPI.V1.Validators
                 && r.CreatedAt >= context.CurrentPeriodStart && r.CreatedAt <= context.CurrentPeriodEnd)
                 .ToList();
 
-            return context.AllowedRequests >= requests.Count;
+            return context.AllowedRequests > requests.Count;
         }
 
-        private bool IsValidSpace(string spacId)
+        private ProblemDetails? IsValid(RequestFilterVM requestFilterVM)
         {
-            return true;
+            if (requestFilterVM == null)
+            {
+                return new ProblemDetails
+                {
+                    Title = "Not valid",
+                    Detail = "Request is not valid",
+                    Status = (int)RequestValidatorStates.IsValid
+                };
+            }
+
+            if (!IsAllowedRequests(requestFilterVM.Subscription))
+            {
+                return new ProblemDetails
+                {
+                    Title = "Not allowed",
+                    Detail = "You have exhausted all allowed subscription requests.",
+                    Status = (int)RequestValidatorStates.IsAllowed
+                };
+
+            }
+
+            string errorMessage = string.Empty;
+            if (!_checker.CheckWithError(TokenValidatorStates.IsServiceIdFound, requestFilterVM.ServiceId, out errorMessage))
+            {
+                return new ProblemDetails
+                {
+                    Title = "Not found",
+                    Detail = errorMessage,
+                    Status = (int)TokenValidatorStates.IsServiceIdFound
+                };
+            }
+
+            if (!_checker.CheckWithError(SessionValidatorStates.IsActive, requestFilterVM.AuthorizationSession, out errorMessage))
+            {
+                return new ProblemDetails
+                {
+                    Title = "Not found",
+                    Detail = errorMessage,
+                    Status = (int)SessionValidatorStates.IsActive
+                };
+            }
+
+            if (!_checker.Check(SpaceValidatorStates.IsFound, requestFilterVM.Space))
+            {
+                return new ProblemDetails
+                {
+                    Title = "Not found",
+                    Detail = "This space is not included in your subscription.",
+                    Status = (int)SpaceValidatorStates.IsFound
+                };
+            }
+
+            return null;
         }
 
 
@@ -141,7 +206,7 @@ namespace LAHJAAPI.V1.Validators
                 context.SpaceId);
 
             var result2 = _checker.Check(
-                ServiceValidatorStates.IsServiceIdFound,
+                TokenValidatorStates.IsServiceIdFound,
                 context.ServiceId);
 
             if (result1 == true && result2 == true)

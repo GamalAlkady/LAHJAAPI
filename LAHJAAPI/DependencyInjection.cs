@@ -181,4 +181,12 @@ public static class DependencyInjection
 
         return displayAttribute?.Name ?? enumValue.ToString();
     }
+
+    public static int ToInt(this Enum enumValue)
+    {
+        if (enumValue == null)
+            throw new ArgumentNullException(nameof(enumValue));
+
+        return Convert.ToInt32(enumValue);
+    }
 }

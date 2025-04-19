@@ -1,10 +1,10 @@
 using AutoGenerator.Conditions;
 using LAHJAAPI.Models;
+using LAHJAAPI.V1.Enums;
 using LAHJAAPI.V1.Validators.Conditions;
 using Microsoft.AspNetCore.Mvc;
 using V1.DyModels.Dso.Requests;
 using V1.DyModels.Dso.ResponseFilters;
-using V1.DyModels.Dso.Responses;
 using V1.DyModels.VMs;
 
 namespace LAHJAAPI.V1.Validators
@@ -14,8 +14,8 @@ namespace LAHJAAPI.V1.Validators
 
     public enum SpaceValidatorStates
     {
+        IsFound = 6100,
         IsActive,
-        IsFound,
         IsFull,
         IsValid,
         NotValid,
@@ -29,7 +29,8 @@ namespace LAHJAAPI.V1.Validators
         IsGpuEnabled,
         IsGlobalEnabled,
         IsCountSpces,
-        IsAvailable
+        IsAvailable,
+        IsAvailableForCreate,
     }
 
 
@@ -95,9 +96,18 @@ namespace LAHJAAPI.V1.Validators
             );
 
             _provider.Register(SpaceValidatorStates.IsAvailable,
-                new LambdaCondition<SubscriptionResponseDso>(
+                new LambdaCondition<SpaceFilterVM>(
                     nameof(SpaceValidatorStates.IsAvailable),
                     context => IsSpacesAvailable(context),
+                    "Spaces not available"
+                )
+            );
+
+
+            _provider.Register(SpaceValidatorStates.IsAvailableForCreate,
+                new LambdaCondition<SpaceFilterVM>(
+                    nameof(SpaceValidatorStates.IsAvailableForCreate),
+                    context => IsAvailableForCreate(context),
                     "Spaces not available"
                 )
             );
@@ -115,7 +125,17 @@ namespace LAHJAAPI.V1.Validators
 
         ProblemDetails? IsValid(SpaceFilterVM context)
         {
-            if (!_checker.Check(SubscriptionValidatorStates.IsAllowedSpaces, 0))
+            if (_checker.Check(TokenValidatorStates.IsServiceIdsEmpty, true))
+            {
+                return new ProblemDetails
+                {
+                    Title = "Coudn't create space",
+                    Detail = "You cannot add a space because this session does not belong to service create space.",
+                    Status = TokenValidatorStates.IsServiceIdsEmpty.ToInt()
+                };
+            }
+
+            if (!IsSpacesAvailable(context))
             {
                 return new ProblemDetails
                 {
@@ -124,18 +144,21 @@ namespace LAHJAAPI.V1.Validators
                     Status = 7000
                 };
             }
-            else if (!_checker.Check(ServiceValidatorStates.IsServiceIdsEmpty, true))
+
+            //var service = _checker.Injector.Context.Services.FirstOrDefault(s => s.AbsolutePath == GeneralServices.CreateSpace.ToString());
+            var serviceId = _checker.Injector.UserClaims.ServicesIds?.FirstOrDefault();
+            if (serviceId is null || !_checker.Check(ServiceValidatorStates.IsFound, serviceId))
             {
                 return new ProblemDetails
                 {
                     Title = "Coudn't create space",
-                    Detail = "You cannot add a space because this session does not belong to service create space.",
-                    Status = 7001
+                    Detail = "You coudn't create space with this session. You need to create service CreateSpace.",
+                    Status = GeneralServices.CreateSpace.ToInt()
                 };
             }
-
             return null;
         }
+
         private bool IsValidSpaceId(string spaceId)
         {
             if (spaceId != "")
@@ -241,13 +264,31 @@ namespace LAHJAAPI.V1.Validators
             return (failedConditions.Count == 0, failedConditions);
         }
 
-        bool IsSpacesAvailable(SubscriptionResponseDso subscription)
+        bool IsSpacesAvailable(SpaceFilterVM spaceFilter)
         {
-            var countSpaces = _checker.Injector.Context.Set<Space>()
-                .Count(x => x.SubscriptionId == subscription.Id);
+            var subscription = _checker.Injector.Context.Subscriptions
+                .FirstOrDefault(x => x.UserId == _checker.Injector.UserClaims.UserId);
+            if (subscription == null) return false;
+
+            var spaces = _checker.Injector.Context.Spaces
+                .Where(x => x.SubscriptionId == subscription.Id)
+                .ToList();
+            return subscription.AllowedSpaces > spaces.Count();
+        }
+
+        bool IsAvailableForCreate(SpaceFilterVM spaceFilter)
+        {
+            if (spaceFilter is null)
+            {
+                return false;
+            }
+            if (_checker.Check(ServiceValidatorStates.IsCreateSpace, spaceFilter.AbsolutePath))
+            {
+                return IsSpacesAvailable(spaceFilter);
+            }
 
 
-            return subscription.AllowedSpaces >= countSpaces;
+            return false;
         }
     }
 }

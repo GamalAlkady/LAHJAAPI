@@ -26,7 +26,7 @@ namespace AutoGenerator.Services2
             return Convert.ToBase64String(randomBytes);
         }
 
-        public string GenerateTemporaryToken(string secret, List<Claim> claims, DateTime? expirees = null)
+        public string GenerateTemporary(string secret, List<Claim> claims, DateTime? expirees = null)
         {
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secret));
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
@@ -42,29 +42,9 @@ namespace AutoGenerator.Services2
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
 
-        public string GenerateTemporaryToken(string requestId, string eventId, string clientId, DateTime? expirees = null)
+        public string GenerateTemporary(List<Claim> claims, DateTime? expirees = null)
         {
-            var claims = new[]
-            {
-            new Claim("RequestId", requestId),
-            new Claim("EventId", eventId),
-            new Claim("ClientId", clientId),
-            //new Claim("tokenService", tokenService),
-            new Claim(JwtRegisteredClaimNames.Exp, DateTimeOffset.UtcNow.AddDays(1).ToUnixTimeSeconds().ToString())
-        };
-
-            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(AppSettings.Jwt.Secret));
-            var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
-
-            var token = new JwtSecurityToken(
-                issuer: AppSettings.Jwt.validIssuer,
-                audience: AppSettings.Jwt.ValidAudience,
-                claims: claims,
-                expires: expirees ?? DateTime.UtcNow.AddDays(1),
-                signingCredentials: creds
-            );
-
-            return new JwtSecurityTokenHandler().WriteToken(token);
+            return GenerateTemporary(AppSettings.Jwt.TempSecret, claims, expirees);
         }
 
         public string GenerateToken(List<Claim>? claims = null, DateTime? expires = null)

@@ -1,4 +1,3 @@
-using ApiCore.Validators;
 using APILAHJA.Utilities;
 using AutoGenerator.Helper;
 using AutoGenerator.Helper.Translation;
@@ -57,6 +56,8 @@ namespace V1.Controllers.Api
             {
                 _logger.LogInformation("Fetching all Requests...");
                 var result = await _requestService.GetAllAsync();
+                result = result.OrderByDescending(x => x.UpdatedAt).Take(10).ToList();
+
                 var items = _mapper.Map<List<RequestOutputVM>>(result);
                 return Ok(items);
             }
@@ -100,39 +101,6 @@ namespace V1.Controllers.Api
             }
         }
 
-        // // Get a Request by Lg.
-        [HttpGet("GetRequestByLanguage", Name = "GetRequestByLg")]
-        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-        public async Task<ActionResult<RequestOutputVM>> GetRequestByLg(RequestFilterVM model)
-        {
-            var id = model.Id;
-            if (string.IsNullOrWhiteSpace(id))
-            {
-                _logger.LogWarning("Invalid Request ID received.");
-                return BadRequest("Invalid Request ID.");
-            }
-
-            try
-            {
-                _logger.LogInformation("Fetching Request with ID: {id}", id);
-                var entity = await _requestService.GetByIdAsync(id);
-                if (entity == null)
-                {
-                    _logger.LogWarning("Request not found with ID: {id}", id);
-                    return NotFound();
-                }
-
-                var item = _mapper.Map<RequestOutputVM>(entity, opt => opt.Items.Add(HelperTranslation.KEYLG, model.Lg));
-                return Ok(item);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error while fetching Request with ID: {id}", id);
-                return StatusCode(500, "Internal Server Error");
-            }
-        }
 
         // // Get a Requests by Lg.
         [HttpGet("GetRequestsByLanguage", Name = "GetRequestsByLg")]
@@ -177,29 +145,42 @@ namespace V1.Controllers.Api
             {
                 var subscription = await _subscriptionService.GetUserSubscription();
 
-                if (!_checker.Check(SubscriptionValidatorStates.IsAllowedRequests, new SubscriptionFilterVM() { }))
-                    return new ObjectResult(HandelErrors.Problem("Create request", "You have exhausted all allowed subscription requests.", null, (int)SubscriptionValidatorStates.IsNotAllowedRequests))
-                    { StatusCode = StatusCodes.Status402PaymentRequired };
+                //if (!_checker.Check(SubscriptionValidatorStates.IsAllowedRequests, new SubscriptionFilterVM() { }))
+                //    return new ObjectResult(HandelErrors.Problem("Create request", "You have exhausted all allowed subscription requests.", null, (int)SubscriptionValidatorStates.IsNotAllowedRequests))
+                //    { StatusCode = StatusCodes.Status402PaymentRequired };
 
-                string errorMessage = string.Empty;
-                if (!_checker.CheckWithError(ServiceValidatorStates.IsServiceIdFound, model.ServiceId, out errorMessage))
-                    return NotFound(HandelErrors.Problem("Service id not in token", errorMessage));
+                //string errorMessage = string.Empty;
+                //if (!_checker.CheckWithError(TokenValidatorStates.IsServiceIdFound, model.ServiceId, out errorMessage))
+                //    return NotFound(HandelErrors.Problem("Service id not in token", errorMessage));
 
 
-                if (!_checker.Check(SessionValidatorStates.IsFound, new AuthorizationSessionFilterVM(null, null)))
-                    return BadRequest(HandelErrors.Problem("Session not found", "This session not found"));
-                if (!_checker.Check(SessionValidatorStates.IsActive, new AuthorizationSessionFilterVM(null, null)))
-                    return BadRequest(HandelErrors.Problem("Create request", "This session has been suspended."));
+                //if (!_checker.Check(SessionValidatorStates.IsFound, new AuthorizationSessionFilterVM(null, null)))
+                //    return BadRequest(HandelErrors.Problem("Session not found", "This session not found"));
 
-                if (!_checker.Check(SpaceValidatorStates.IsFound, new SpaceFilterVM(model.SpaceId, null)))
-                    return BadRequest(HandelErrors.Problem("Create request", $"This space is not included in your subscription."));
+                //if (!_checker.Check(SessionValidatorStates.IsActive, new AuthorizationSessionFilterVM(null, null)))
+                //    return BadRequest(HandelErrors.Problem("Create request", "This session has been suspended."));
 
+                //if (!_checker.Check(SpaceValidatorStates.IsFound, new SpaceFilterVM(model.SpaceId, null)))
+                //    return BadRequest(HandelErrors.Problem("Create request", $"This space is not included in your subscription."));
+                var requestFilter = new RequestFilterVM
+                {
+                    Subscription = subscription,
+                    ServiceId = model.ServiceId, // Check if service id in token
+                    AuthorizationSession = new AuthorizationSessionFilterVM(null, null), // Check if session is found and active
+                    Space = new SpaceFilterVM(model.SpaceId, null),// Check if space is found
+                };
+
+                if (_checker.CheckAndResult(RequestValidatorStates.IsValid, requestFilter).Result is ProblemDetails problem)
+                {
+                    return StatusCode(problem.Status ?? StatusCodes.Status402PaymentRequired, problem);
+                }
 
                 var service = await _serviceService.GetOneByAsync(
-                    [new FilterCondition("Id", model.ServiceId)],
-                    new ParamOptions(["ModelAi.ModelGateway"]));
+                [new FilterCondition("Id", model.ServiceId)],
+                new ParamOptions(["ModelAi.ModelGateway"]));
 
-                if (service == null) return NotFound(HandelErrors.Problem("Create request", "This service not found"));
+                if (service == null)
+                    return NotFound(HandelErrors.Problem("Create request", "This service not found."));
                 var modelAi = service.ModelAi;
                 var modelGateway = modelAi.ModelGateway;
 

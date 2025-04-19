@@ -611,5 +611,24 @@ namespace V1.Controllers.Api
                 return StatusCode(500, "Internal Server Error");
             }
         }
+
+        [HttpGet("CountAllowedRequests")]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+        public async Task<ActionResult<int>> CountAllowedRequests()
+        {
+            try
+            {
+                _logger.LogInformation("Counting allowed requests...");
+                var count = await _subscriptionService.GetNumberRequests();
+                return Ok(count);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error while counting allowed requests");
+                return StatusCode(500, "Internal Server Error");
+            }
+        }
     }
 }

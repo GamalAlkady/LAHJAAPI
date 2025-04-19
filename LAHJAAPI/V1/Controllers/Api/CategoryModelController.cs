@@ -27,13 +27,13 @@ namespace V1.Controllers.Api
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-        public async Task<ActionResult<IEnumerable<CategoryModelOutputVM>>> GetAll()
+        public async Task<ActionResult<IEnumerable<CategoryModelOutputVM>>> GetAll(string lg = "en")
         {
             try
             {
                 _logger.LogInformation("Fetching all CategoryModels...");
                 var result = await _categorymodelService.GetAllAsync();
-                var items = _mapper.Map<List<CategoryModelOutputVM>>(result);
+                var items = _mapper.Map<IEnumerable<CategoryModelOutputVM>>(result, opt => opt.Items.Add(HelperTranslation.KEYLG, lg));
                 return Ok(items);
             }
             catch (Exception ex)
@@ -78,7 +78,7 @@ namespace V1.Controllers.Api
 
 
         // Get a CategoryModel by ID.
-        [HttpGet("{name}", Name = "GetCategoryModelByName")]
+        [HttpGet("ByName/{name}", Name = "GetCategoryModelByName")]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
@@ -98,7 +98,8 @@ namespace V1.Controllers.Api
                     new AutoGenerator.Helper.FilterCondition
                     {
                         PropertyName = nameof(CategoryModelRequestDso.Name),
-                        Value = name
+                        Value = name,
+                        Operator= AutoGenerator.Helper.FilterOperator.Contains,
                     }
                 ]);
 

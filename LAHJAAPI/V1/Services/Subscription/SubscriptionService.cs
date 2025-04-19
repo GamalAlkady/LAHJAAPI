@@ -68,15 +68,24 @@ namespace V1.Services.Services
             }
         }
 
+        //TODO: inilialize id and created at in requestsBuild in every model that contains string Id, CreatedAt, UpdatedAt like 
+        //public string Id { get; set; } = $"req_{Guid.NewGuid():N}";
+        //public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        //public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+
         public async Task<int> GetNumberRequests(string? subsriptionId = null, bool refresh = true)
         {
             if (NumberRequests != 0 && !refresh) return NumberRequests;
             await GetUserSubscription(subsriptionId);
-            NumberRequests = await _requestRepository.GetCount(
-                 Subscription.Id!, null,
-                 Subscription.CurrentPeriodStart,
-                 Subscription.CurrentPeriodEnd,
-                 RequestStatus.Success.ToString());
+
+            var response = await _requestRepository.GetAllByAsync([
+             new FilterCondition("SubscriptionId", Subscription.Id),
+                new FilterCondition("Status", RequestStatus.Success.ToString()),
+                new FilterCondition("UpdatedAt", Subscription.CurrentPeriodStart,FilterOperator.GreaterThanOrEqual),
+                new FilterCondition("UpdatedAt", Subscription.CurrentPeriodEnd,FilterOperator.LessThanOrEqual)
+                 ], new ParamOptions(1, Subscription.AllowedRequests));
+
+            NumberRequests = response.TotalRecords;
             return NumberRequests;
         }
 
@@ -182,17 +191,17 @@ namespace V1.Services.Services
 
         #endregion
 
-        public override Task<int> CountAsync()
+        public async override Task<int> CountAsync()
         {
             try
             {
                 _logger.LogInformation("Counting Subscription entities...");
-                return _share.CountAsync();
+                return await _share.CountAsync();
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error in CountAsync for Subscription entities.");
-                return Task.FromResult(0);
+                return await Task.FromResult(0);
             }
         }
 
