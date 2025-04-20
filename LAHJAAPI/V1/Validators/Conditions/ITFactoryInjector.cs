@@ -1,7 +1,7 @@
 using APILAHJA.Utilities;
 using AutoGenerator.Conditions;
-using AutoGenerator.Services2;
 using LAHJAAPI.Data;
+using LAHJAAPI.Services2;
 using LAHJAAPI.Utilities;
 
 namespace LAHJAAPI.V1.Validators.Conditions

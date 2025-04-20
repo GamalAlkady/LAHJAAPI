@@ -3,9 +3,9 @@ using MailKit.Net.Smtp;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Options;
 using MimeKit;
+using Utilities;
 
-
-namespace Utilities.Services2
+namespace LAHJAAPI.Services2
 {
 
     public interface IEmailService : IEmailSender<ApplicationUser>

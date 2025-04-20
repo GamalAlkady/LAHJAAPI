@@ -1,12 +1,11 @@
 ﻿using ApiCore.Validators;
 using APILAHJA.Utilities;
-using ASG.Api2.Utilities;
 using AutoGenerator.Helper;
 using AutoGenerator.Helper.Translation;
-using AutoGenerator.Services2;
 using AutoGenerator.Utilities;
 using AutoMapper;
 using FluentResults;
+using LAHJAAPI.Services2;
 using LAHJAAPI.Utilities;
 using LAHJAAPI.V1.Validators;
 using LAHJAAPI.V1.Validators.Conditions;

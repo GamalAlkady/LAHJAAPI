@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using Dto.Stripe.CheckoutDto;
 using Dto.Stripe.Customer;
+using LAHJAAPI.Stripe.Checkout;
 using LAHJAAPI.V1.Validators;
 using LAHJAAPI.V1.Validators.Conditions;
 using Microsoft.AspNetCore.Mvc;

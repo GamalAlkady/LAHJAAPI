@@ -1,13 +1,13 @@
-﻿using Api.Utilities;
-using AutoMapper;
+﻿using AutoMapper;
 using LAHJAAPI.Data;
+using LAHJAAPI.Services2;
+using LAHJAAPI.Utilities;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Stripe;
 using StripeGateway;
-using Utilities.Services2;
 using V1.DyModels.Dso.Requests;
 using V1.Services.Services;
 

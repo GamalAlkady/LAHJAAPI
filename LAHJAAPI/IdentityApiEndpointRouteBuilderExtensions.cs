@@ -2,7 +2,6 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 
 using AutoBuilderApiCore.Auth;
-using AutoGenerator.Services2;
 using LAHJAAPI.Models;
 using LAHJAAPI.Utilities;
 using Microsoft.AspNetCore.Authentication.BearerToken;
@@ -250,7 +249,7 @@ public static class IdentityApiEndpointRouteBuilderExtensions
         });
 
         routeGroup.MapPost("/resendConfirmationEmail", async Task<Results<Ok, Ok<string>, ValidationProblem>>
-            ([FromBody] Dto.Auth.ResendConfirmationEmailRequest resendRequest, HttpContext context, [FromServices] IServiceProvider sp, [FromServices] TokenListService tokenListService) =>
+            ([FromBody] Dto.Auth.ResendConfirmationEmailRequest resendRequest, HttpContext context, [FromServices] IServiceProvider sp) =>
         {
             var userManager = sp.GetRequiredService<UserManager<TUser>>();
             if (await userManager.FindByEmailAsync(resendRequest.Email) is not { } user)
@@ -291,7 +290,7 @@ public static class IdentityApiEndpointRouteBuilderExtensions
             ([FromBody] ResetPasswordRequest resetRequest, [FromServices] IServiceProvider sp) =>
         {
             var userManager = sp.GetRequiredService<UserManager<TUser>>();
-            var tokenListService = sp.GetRequiredService<TokenListService>();
+            //var tokenListService = sp.GetRequiredService<TokenListService>();
 
             var user = await userManager.FindByEmailAsync(resetRequest.Email);
 

@@ -3,7 +3,7 @@ using Microsoft.Extensions.Options;
 using System.Security.Cryptography;
 using System.Text;
 
-namespace AutoGenerator.Services2
+namespace LAHJAAPI.Services2
 {
     public class EncryptionService(IOptions<AppSettings> options)
     {

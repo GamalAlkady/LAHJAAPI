@@ -1,9 +1,10 @@
 ﻿using AutoGenerator.Helper;
+using AutoGenerator.Helper.Translation;
 using V1.DyModels.Dso.Requests;
 using V1.DyModels.Dto.Build.Requests;
 using V1.Services.Services;
 
-namespace AutoGenerator.Seeds;
+namespace LAHJAAPI.Seeds;
 
 public static class DefaultPlansAndFeatures
 {
@@ -332,7 +333,7 @@ public static class DefaultPlansAndFeatures
                         {
                             Key = "number_models",
                             Value = "3",
-                            Name = new Helper.Translation.TranslationData
+                            Name = new TranslationData
                             {
                                 Value = new Dictionary<string, string>
                                 {
@@ -340,7 +341,7 @@ public static class DefaultPlansAndFeatures
                                     { "ar", "عدد النماذج AI" }
                                 }
                             },
-                            Description = new Helper.Translation.TranslationData{
+                            Description = new TranslationData{
                                 Value = new Dictionary<string, string>
                                 {
                                     { "en", "3" },
@@ -352,7 +353,7 @@ public static class DefaultPlansAndFeatures
                         {
                             Key = "allowed_requests",
                             Value = "1000",
-                            Name = new Helper.Translation.TranslationData
+                            Name = new TranslationData
                             {
                                 Value = new Dictionary<string, string>
                             {
@@ -360,7 +361,7 @@ public static class DefaultPlansAndFeatures
                                 { "ar", "الطلبات" }
                             }
                             },
-                            Description = new Helper.Translation.TranslationData
+                            Description = new TranslationData
                             {
                                 Value = new Dictionary<string, string>
                             {
@@ -373,7 +374,7 @@ public static class DefaultPlansAndFeatures
                             {
                                 Key = "processor",
                                 Value = "shared",
-                                Name = new Helper.Translation.TranslationData
+                                Name = new TranslationData
                                 {
                                     Value = new Dictionary<string, string>
                                     {
@@ -381,7 +382,7 @@ public static class DefaultPlansAndFeatures
                                         { "ar", "المعالج" }
                                     }
                                 },
-                                Description = new Helper.Translation.TranslationData
+                                Description = new TranslationData
                                 {
                                     Value = new Dictionary<string, string>
                                     {
@@ -394,7 +395,7 @@ public static class DefaultPlansAndFeatures
 {
     Key = "ram",  // Changed from Id to Key
     Value = "2",
-    Name = new Helper.Translation.TranslationData
+    Name = new TranslationData
     {
         Value = new Dictionary<string, string>
         {
@@ -402,7 +403,7 @@ public static class DefaultPlansAndFeatures
             ["ar"] = "الذاكرة العشوائية"
         }
     },
-    Description = new Helper.Translation.TranslationData
+    Description = new TranslationData
     {
         Value = new Dictionary<string, string>
         {
@@ -416,7 +417,7 @@ public static class DefaultPlansAndFeatures
     {
         Key = "speed",
         Value = "2",
-        Name = new Helper.Translation.TranslationData
+        Name = new TranslationData
         {
             Value = new Dictionary<string, string>
             {
@@ -424,7 +425,7 @@ public static class DefaultPlansAndFeatures
                 ["ar"] = "السرعة"
             }
         },
-        Description = new Helper.Translation.TranslationData
+        Description = new TranslationData
         {
             Value = new Dictionary<string, string>
             {
@@ -437,7 +438,7 @@ public static class DefaultPlansAndFeatures
     {
         Key = "support",
         Value = "no",
-        Name = new Helper.Translation.TranslationData
+        Name = new TranslationData
         {
             Value = new Dictionary<string, string>
             {
@@ -445,7 +446,7 @@ public static class DefaultPlansAndFeatures
                 ["ar"] = "الدعم"
             }
         },
-        Description = new Helper.Translation.TranslationData
+        Description = new TranslationData
         {
             Value = new Dictionary<string, string>
             {
@@ -458,7 +459,7 @@ public static class DefaultPlansAndFeatures
     {
         Key = "customization",
         Value = "no",
-        Name = new Helper.Translation.TranslationData
+        Name = new TranslationData
         {
             Value = new Dictionary<string, string>
             {
@@ -466,7 +467,7 @@ public static class DefaultPlansAndFeatures
                 ["ar"] = "تخصيص"
             }
         },
-        Description = new Helper.Translation.TranslationData
+        Description = new TranslationData
         {
             Value = new Dictionary<string, string>
             {
@@ -479,7 +480,7 @@ public static class DefaultPlansAndFeatures
     {
         Key = "api",
         Value = "no",
-        Name = new Helper.Translation.TranslationData
+        Name = new TranslationData
         {
             Value = new Dictionary<string, string>
             {
@@ -487,7 +488,7 @@ public static class DefaultPlansAndFeatures
                 ["ar"] = "API"
             }
         },
-        Description = new Helper.Translation.TranslationData
+        Description = new TranslationData
         {
             Value = new Dictionary<string, string>
             {
@@ -500,7 +501,7 @@ public static class DefaultPlansAndFeatures
     {
         Key = "allowed_spaces",
         Value = "1",
-        Name = new Helper.Translation.TranslationData
+        Name = new TranslationData
         {
             Value = new Dictionary<string, string>
             {
@@ -508,7 +509,7 @@ public static class DefaultPlansAndFeatures
                 ["ar"] = "Space"
             }
         },
-        Description = new Helper.Translation.TranslationData
+        Description = new TranslationData
         {
             Value = new Dictionary<string, string>
             {
@@ -534,7 +535,7 @@ public static class DefaultPlansAndFeatures
     {
         Key = "number_models",
         Value = "3",
-        Name = new Helper.Translation.TranslationData
+        Name = new TranslationData
         {
             Value = new Dictionary<string, string>
             {
@@ -542,7 +543,7 @@ public static class DefaultPlansAndFeatures
                 ["ar"] = "عدد النماذج AI"
             }
         },
-        Description = new Helper.Translation.TranslationData
+        Description = new TranslationData
         {
             Value = new Dictionary<string, string>
             {
@@ -555,7 +556,7 @@ public static class DefaultPlansAndFeatures
     {
         Key = "allowed_requests",
         Value = "10000",
-        Name = new Helper.Translation.TranslationData
+        Name = new TranslationData
         {
             Value = new Dictionary<string, string>
             {
@@ -563,7 +564,7 @@ public static class DefaultPlansAndFeatures
                 ["ar"] = "الطلبات"
             }
         },
-        Description = new Helper.Translation.TranslationData
+        Description = new TranslationData
         {
             Value = new Dictionary<string, string>
             {
@@ -576,7 +577,7 @@ public static class DefaultPlansAndFeatures
     {
         Key = "processor",
         Value = "2",
-        Name = new Helper.Translation.TranslationData
+        Name = new TranslationData
         {
             Value = new Dictionary<string, string>
             {
@@ -584,7 +585,7 @@ public static class DefaultPlansAndFeatures
                 ["ar"] = "المعالج"
             }
         },
-        Description = new Helper.Translation.TranslationData
+        Description = new TranslationData
         {
             Value = new Dictionary<string, string>
             {
@@ -597,7 +598,7 @@ public static class DefaultPlansAndFeatures
     {
         Key = "ram",
         Value = "2",
-        Name = new Helper.Translation.TranslationData
+        Name = new TranslationData
         {
             Value = new Dictionary<string, string>
             {
@@ -605,7 +606,7 @@ public static class DefaultPlansAndFeatures
                 ["ar"] = "الذاكرة العشوائية"
             }
         },
-        Description = new Helper.Translation.TranslationData
+        Description = new TranslationData
         {
             Value = new Dictionary<string, string>
             {
@@ -618,7 +619,7 @@ public static class DefaultPlansAndFeatures
     {
         Key = "speed",
         Value = "1",
-        Name = new Helper.Translation.TranslationData
+        Name = new TranslationData
         {
             Value = new Dictionary<string, string>
             {
@@ -626,7 +627,7 @@ public static class DefaultPlansAndFeatures
                 ["ar"] = "السرعة"
             }
         },
-        Description = new Helper.Translation.TranslationData
+        Description = new TranslationData
         {
             Value = new Dictionary<string, string>
             {
@@ -639,7 +640,7 @@ public static class DefaultPlansAndFeatures
     {
         Key = "support",
         Value = "no",
-        Name = new Helper.Translation.TranslationData
+        Name = new TranslationData
         {
             Value = new Dictionary<string, string>
             {
@@ -647,7 +648,7 @@ public static class DefaultPlansAndFeatures
                 ["ar"] = "الدعم"
             }
         },
-        Description = new Helper.Translation.TranslationData
+        Description = new TranslationData
         {
             Value = new Dictionary<string, string>
             {
@@ -660,7 +661,7 @@ public static class DefaultPlansAndFeatures
     {
         Key = "customization",
         Value = "no",
-        Name = new Helper.Translation.TranslationData
+        Name = new TranslationData
         {
             Value = new Dictionary<string, string>
             {
@@ -668,7 +669,7 @@ public static class DefaultPlansAndFeatures
                 ["ar"] = "تخصيص"
             }
         },
-        Description = new Helper.Translation.TranslationData
+        Description = new TranslationData
         {
             Value = new Dictionary<string, string>
             {
@@ -681,7 +682,7 @@ public static class DefaultPlansAndFeatures
     {
         Key = "api",
         Value = "yes",
-        Name = new Helper.Translation.TranslationData
+        Name = new TranslationData
         {
             Value = new Dictionary<string, string>
             {
@@ -689,7 +690,7 @@ public static class DefaultPlansAndFeatures
                 ["ar"] = "API"
             }
         },
-        Description = new Helper.Translation.TranslationData
+        Description = new TranslationData
         {
             Value = new Dictionary<string, string>
             {
@@ -702,7 +703,7 @@ public static class DefaultPlansAndFeatures
     {
         Key = "allowed_spaces",
         Value = "3",
-        Name = new Helper.Translation.TranslationData
+        Name = new TranslationData
         {
             Value = new Dictionary<string, string>
             {
@@ -710,7 +711,7 @@ public static class DefaultPlansAndFeatures
                 ["ar"] = "Space"
             }
         },
-        Description = new Helper.Translation.TranslationData
+        Description = new TranslationData
         {
             Value = new Dictionary<string, string>
             {
@@ -723,7 +724,7 @@ public static class DefaultPlansAndFeatures
     {
         Key = "scalability",
         Value = "Twice amonth",
-        Name = new Helper.Translation.TranslationData
+        Name = new TranslationData
         {
             Value = new Dictionary<string, string>
             {
@@ -731,7 +732,7 @@ public static class DefaultPlansAndFeatures
                 ["ar"] = "قابلية التوسيع"
             }
         },
-        Description = new Helper.Translation.TranslationData
+        Description = new TranslationData
         {
             Value = new Dictionary<string, string>
             {
@@ -755,7 +756,7 @@ public static class DefaultPlansAndFeatures
     {
         Key = "number_models",
         Value = "12",
-        Name = new Helper.Translation.TranslationData
+        Name = new TranslationData
         {
             Value = new Dictionary<string, string>
             {
@@ -763,7 +764,7 @@ public static class DefaultPlansAndFeatures
                 ["ar"] = "عدد النماذج AI"
             }
         },
-        Description = new Helper.Translation.TranslationData
+        Description = new TranslationData
         {
             Value = new Dictionary<string, string>
             {
@@ -776,7 +777,7 @@ public static class DefaultPlansAndFeatures
     {
         Key = "allowed_requests",
         Value = "100000",
-        Name = new Helper.Translation.TranslationData
+        Name = new TranslationData
         {
             Value = new Dictionary<string, string>
             {
@@ -784,7 +785,7 @@ public static class DefaultPlansAndFeatures
                 ["ar"] = "الطلبات"
             }
         },
-        Description = new Helper.Translation.TranslationData
+        Description = new TranslationData
         {
             Value = new Dictionary<string, string>
             {
@@ -797,7 +798,7 @@ public static class DefaultPlansAndFeatures
     {
         Key = "processor",
         Value = "4",
-        Name = new Helper.Translation.TranslationData
+        Name = new TranslationData
         {
             Value = new Dictionary<string, string>
             {
@@ -805,7 +806,7 @@ public static class DefaultPlansAndFeatures
                 ["ar"] = "المعالج"
             }
         },
-        Description = new Helper.Translation.TranslationData
+        Description = new TranslationData
         {
             Value = new Dictionary<string, string>
             {
@@ -818,7 +819,7 @@ public static class DefaultPlansAndFeatures
     {
         Key = "ram",
         Value = "8",
-        Name = new Helper.Translation.TranslationData
+        Name = new TranslationData
         {
             Value = new Dictionary<string, string>
             {
@@ -826,7 +827,7 @@ public static class DefaultPlansAndFeatures
                 ["ar"] = "الذاكرة العشوائية"
             }
         },
-        Description = new Helper.Translation.TranslationData
+        Description = new TranslationData
         {
             Value = new Dictionary<string, string>
             {
@@ -839,7 +840,7 @@ public static class DefaultPlansAndFeatures
     {
         Key = "speed",
         Value = "0.5",
-        Name = new Helper.Translation.TranslationData
+        Name = new TranslationData
         {
             Value = new Dictionary<string, string>
             {
@@ -847,7 +848,7 @@ public static class DefaultPlansAndFeatures
                 ["ar"] = "السرعة"
             }
         },
-        Description = new Helper.Translation.TranslationData
+        Description = new TranslationData
         {
             Value = new Dictionary<string, string>
             {
@@ -860,7 +861,7 @@ public static class DefaultPlansAndFeatures
     {
         Key = "support",
         Value = "yes",
-        Name = new Helper.Translation.TranslationData
+        Name = new TranslationData
         {
             Value = new Dictionary<string, string>
             {
@@ -868,7 +869,7 @@ public static class DefaultPlansAndFeatures
                 ["ar"] = "الدعم"
             }
         },
-        Description = new Helper.Translation.TranslationData
+        Description = new TranslationData
         {
             Value = new Dictionary<string, string>
             {
@@ -881,7 +882,7 @@ public static class DefaultPlansAndFeatures
     {
         Key = "customization",
         Value = "yes",
-        Name = new Helper.Translation.TranslationData
+        Name = new TranslationData
         {
             Value = new Dictionary<string, string>
             {
@@ -889,7 +890,7 @@ public static class DefaultPlansAndFeatures
                 ["ar"] = "تخصيص"
             }
         },
-        Description = new Helper.Translation.TranslationData
+        Description = new TranslationData
         {
             Value = new Dictionary<string, string>
             {
@@ -902,7 +903,7 @@ public static class DefaultPlansAndFeatures
     {
         Key = "api",
         Value = "yes",
-        Name = new Helper.Translation.TranslationData
+        Name = new TranslationData
         {
             Value = new Dictionary<string, string>
             {
@@ -910,7 +911,7 @@ public static class DefaultPlansAndFeatures
                 ["ar"] = "API"
             }
         },
-        Description = new Helper.Translation.TranslationData
+        Description = new TranslationData
         {
             Value = new Dictionary<string, string>
             {
@@ -923,7 +924,7 @@ public static class DefaultPlansAndFeatures
     {
         Key = "allowed_spaces",
         Value = "10",
-        Name = new Helper.Translation.TranslationData
+        Name = new TranslationData
         {
             Value = new Dictionary<string, string>
             {
@@ -931,7 +932,7 @@ public static class DefaultPlansAndFeatures
                 ["ar"] = "المساحات المسموح بها"
             }
         },
-        Description = new Helper.Translation.TranslationData
+        Description = new TranslationData
         {
             Value = new Dictionary<string, string>
             {
@@ -944,7 +945,7 @@ public static class DefaultPlansAndFeatures
     {
         Key = "scalability",
         Value = "Unlimited",
-        Name = new Helper.Translation.TranslationData
+        Name = new TranslationData
         {
             Value = new Dictionary<string, string>
             {
@@ -952,7 +953,7 @@ public static class DefaultPlansAndFeatures
                 ["ar"] = "قابلية التوسيع"  // Removed extra colon
             }
         },
-        Description = new Helper.Translation.TranslationData
+        Description = new TranslationData
         {
             Value = new Dictionary<string, string>
             {
@@ -980,7 +981,7 @@ public static class DefaultPlansAndFeatures
     {
         Key = "number_models",
         Value = "12",
-        Name = new Helper.Translation.TranslationData
+        Name = new TranslationData
         {
             Value = new Dictionary<string, string>
             {
@@ -988,7 +989,7 @@ public static class DefaultPlansAndFeatures
                 ["ar"] = "عدد النماذج AI"
             }
         },
-        Description = new Helper.Translation.TranslationData
+        Description = new TranslationData
         {
             Value = new Dictionary<string, string>
             {
@@ -1001,7 +1002,7 @@ public static class DefaultPlansAndFeatures
     {
         Key = "allowed_requests",
         Value = "Unlimited",
-        Name = new Helper.Translation.TranslationData
+        Name = new TranslationData
         {
             Value = new Dictionary<string, string>
             {
@@ -1009,7 +1010,7 @@ public static class DefaultPlansAndFeatures
                 ["ar"] = "الطلبات"
             }
         },
-        Description = new Helper.Translation.TranslationData
+        Description = new TranslationData
         {
             Value = new Dictionary<string, string>
             {
@@ -1022,7 +1023,7 @@ public static class DefaultPlansAndFeatures
     {
         Key = "processor",
         Value = "Unlimited",
-        Name = new Helper.Translation.TranslationData
+        Name = new TranslationData
         {
             Value = new Dictionary<string, string>
             {
@@ -1030,7 +1031,7 @@ public static class DefaultPlansAndFeatures
                 ["ar"] = "المعالج"
             }
         },
-        Description = new Helper.Translation.TranslationData
+        Description = new TranslationData
         {
             Value = new Dictionary<string, string>
             {
@@ -1043,7 +1044,7 @@ public static class DefaultPlansAndFeatures
     {
         Key = "ram",
         Value = "Unlimited",
-        Name = new Helper.Translation.TranslationData
+        Name = new TranslationData
         {
             Value = new Dictionary<string, string>
             {
@@ -1051,7 +1052,7 @@ public static class DefaultPlansAndFeatures
                 ["ar"] = "الذاكرة العشوائية"
             }
         },
-        Description = new Helper.Translation.TranslationData
+        Description = new TranslationData
         {
             Value = new Dictionary<string, string>
             {
@@ -1064,7 +1065,7 @@ public static class DefaultPlansAndFeatures
     {
         Key = "speed",
         Value = "0.5",
-        Name = new Helper.Translation.TranslationData
+        Name = new TranslationData
         {
             Value = new Dictionary<string, string>
             {
@@ -1072,7 +1073,7 @@ public static class DefaultPlansAndFeatures
                 ["ar"] = "السرعة"
             }
         },
-        Description = new Helper.Translation.TranslationData
+        Description = new TranslationData
         {
             Value = new Dictionary<string, string>
             {
@@ -1085,7 +1086,7 @@ public static class DefaultPlansAndFeatures
     {
         Key = "support",
         Value = "yes",
-        Name = new Helper.Translation.TranslationData
+        Name = new TranslationData
         {
             Value = new Dictionary<string, string>
             {
@@ -1093,7 +1094,7 @@ public static class DefaultPlansAndFeatures
                 ["ar"] = "الدعم"
             }
         },
-        Description = new Helper.Translation.TranslationData
+        Description = new TranslationData
         {
             Value = new Dictionary<string, string>
             {
@@ -1106,7 +1107,7 @@ public static class DefaultPlansAndFeatures
     {
         Key = "customization",
         Value = "yes",
-        Name = new Helper.Translation.TranslationData
+        Name = new TranslationData
         {
             Value = new Dictionary<string, string>
             {
@@ -1114,7 +1115,7 @@ public static class DefaultPlansAndFeatures
                 ["ar"] = "تخصيص"
             }
         },
-        Description = new Helper.Translation.TranslationData
+        Description = new TranslationData
         {
             Value = new Dictionary<string, string>
             {
@@ -1127,7 +1128,7 @@ public static class DefaultPlansAndFeatures
     {
         Key = "api",
         Value = "yes",
-        Name = new Helper.Translation.TranslationData
+        Name = new TranslationData
         {
             Value = new Dictionary<string, string>
             {
@@ -1135,7 +1136,7 @@ public static class DefaultPlansAndFeatures
                 ["ar"] = "API"
             }
         },
-        Description = new Helper.Translation.TranslationData
+        Description = new TranslationData
         {
             Value = new Dictionary<string, string>
             {
@@ -1148,7 +1149,7 @@ public static class DefaultPlansAndFeatures
     {
         Key = "allowed_spaces",
         Value = "unlimited",
-        Name = new Helper.Translation.TranslationData
+        Name = new TranslationData
         {
             Value = new Dictionary<string, string>
             {
@@ -1156,7 +1157,7 @@ public static class DefaultPlansAndFeatures
                 ["ar"] = "Space"
             }
         },
-        Description = new Helper.Translation.TranslationData
+        Description = new TranslationData
         {
             Value = new Dictionary<string, string>
             {
@@ -1183,7 +1184,7 @@ public static class DefaultPlansAndFeatures
                 Id = "price_1Qn3ypKMQ7LabgRTSuyGIBVH",
 
                 ProductId = "prod_RgQqgxzSIFATNu",
-               ProductName=new Helper.Translation.TranslationData
+               ProductName=new TranslationData
                {
                    Value = new Dictionary<string, string>()
                {
@@ -1193,7 +1194,7 @@ public static class DefaultPlansAndFeatures
                }
 
               ,
-               Description=new Helper.Translation.TranslationData
+               Description=new TranslationData
                {
                    Value = new Dictionary<string, string>()
                {
@@ -1211,7 +1212,7 @@ public static class DefaultPlansAndFeatures
 {
     Id = "price_1Qn3yrKMQ7LabgRT4wwrFO8N",
     ProductId = "prod_RgQq5zSmM2Xvtm",
-    ProductName = new Helper.Translation.TranslationData
+    ProductName = new TranslationData
     {
         Value = new Dictionary<string, string>
         {
@@ -1219,7 +1220,7 @@ public static class DefaultPlansAndFeatures
             ["ar"] = "Standard"
         }
     },
-    Description = new Helper.Translation.TranslationData
+    Description = new TranslationData
     {
         Value = new Dictionary<string, string>
         {
@@ -1235,7 +1236,7 @@ public static class DefaultPlansAndFeatures
 {
     Id = "price_1Qn3ysKMQ7LabgRTxBd8TqEQ",
     ProductId = "prod_RgQqo1YRO6pPxL",
-    ProductName = new Helper.Translation.TranslationData
+    ProductName = new TranslationData
     {
         Value = new Dictionary<string, string>
         {
@@ -1243,7 +1244,7 @@ public static class DefaultPlansAndFeatures
             ["ar"] = "Professional"
         }
     },
-    Description = new Helper.Translation.TranslationData
+    Description = new TranslationData
     {
         Value = new Dictionary<string, string>
         {
@@ -1260,7 +1261,7 @@ new PlanRequestDso()
 {
     Id = "price_1Qn3ysKMQ7LabgRT1KU7AcSL",
     ProductId = "prod_RgQq2S3XeSvAQS",
-    ProductName = new Helper.Translation.TranslationData
+    ProductName = new TranslationData
     {
         Value = new Dictionary<string, string>
         {
@@ -1268,7 +1269,7 @@ new PlanRequestDso()
             ["ar"] = "Enterprise"
         }
     },
-    Description = new Helper.Translation.TranslationData
+    Description = new TranslationData
     {
         Value = new Dictionary<string, string>
         {

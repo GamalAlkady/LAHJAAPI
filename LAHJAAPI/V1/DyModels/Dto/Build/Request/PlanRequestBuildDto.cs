@@ -1,8 +1,5 @@
 using AutoGenerator;
 using AutoGenerator.Helper.Translation;
-using LAHJAAPI.Models;
-using AutoGenerator.Config;
-using System;
 
 namespace V1.DyModels.Dto.Build.Requests
 {
@@ -18,7 +15,7 @@ namespace V1.DyModels.Dto.Build.Requests
         public String? ProductId { get; set; }
         public TranslationData? ProductName { get; set; } = new();
         public TranslationData? Description { get; set; } = new();
-        public ICollection<String>? Images { get; set; }
+        public List<String> Images { get; set; } = [];
         /// <summary>
         /// BillingPeriod property for DTO.
         /// </summary>
@@ -26,19 +23,13 @@ namespace V1.DyModels.Dto.Build.Requests
         /// <summary>
         /// Amount property for DTO.
         /// </summary>
+        public string? Currency { get; internal set; }
         public Double Amount { get; set; }
         /// <summary>
         /// Active property for DTO.
         /// </summary>
         public Boolean Active { get; set; }
-        /// <summary>
-        /// UpdatedAt property for DTO.
-        /// </summary>
-        public DateTime UpdatedAt { get; set; }
-        /// <summary>
-        /// CreatedAt property for DTO.
-        /// </summary>
-        public DateTime CreatedAt { get; set; }
+
         public ICollection<SubscriptionRequestBuildDto>? Subscriptions { get; set; }
         public ICollection<PlanFeatureRequestBuildDto>? PlanFeatures { get; set; }
     }

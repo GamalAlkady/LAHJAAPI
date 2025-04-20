@@ -1,13 +1,10 @@
-using AutoMapper;
-using Microsoft.Extensions.Logging;
-using System.Collections.Generic;
-using V1.Services.Services;
-using Microsoft.AspNetCore.Mvc;
-using V1.DyModels.VMs;
-using System.Linq.Expressions;
-using V1.DyModels.Dso.Requests;
 using AutoGenerator.Helper.Translation;
-using System;
+using AutoMapper;
+using Microsoft.AspNetCore.Mvc;
+using StripeGateway;
+using V1.DyModels.Dso.Requests;
+using V1.DyModels.VMs;
+using V1.Services.Services;
 
 namespace V1.Controllers.Api
 {
@@ -17,11 +14,17 @@ namespace V1.Controllers.Api
     public class InvoiceController : ControllerBase
     {
         private readonly IUseInvoiceService _invoiceService;
+        private readonly IStripeInvoice _stripeInvoice;
         private readonly IMapper _mapper;
         private readonly ILogger _logger;
-        public InvoiceController(IUseInvoiceService invoiceService, IMapper mapper, ILoggerFactory logger)
+        public InvoiceController(
+            IUseInvoiceService invoiceService,
+            IStripeInvoice stripeInvoice,
+            IMapper mapper,
+            ILoggerFactory logger)
         {
             _invoiceService = invoiceService;
+            _stripeInvoice = stripeInvoice;
             _mapper = mapper;
             _logger = logger.CreateLogger(typeof(InvoiceController).FullName);
         }

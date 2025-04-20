@@ -1,14 +1,13 @@
 ﻿using APILAHJA.Utilities;
 using AutoGenerator;
 using AutoGenerator.Helper;
-using AutoGenerator.Utilities;
 using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
 using V1.DyModels.Dso.Requests;
 using V1.DyModels.VMs;
 using V1.Services.Services;
 
-namespace Api.Controllers
+namespace LAHJAAPI.Controllers
 {
 
     [Route("api/[controller]")]

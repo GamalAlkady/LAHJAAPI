@@ -1,6 +1,6 @@
 ﻿using LAHJAAPI.Models;
 
-namespace Api.Utilities
+namespace LAHJAAPI.Utilities
 {
     public class ClaimsChange
     {

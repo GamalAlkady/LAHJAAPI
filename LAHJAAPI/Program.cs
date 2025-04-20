@@ -1,9 +1,9 @@
 ﻿using Api;
 using ApiCore.Schedulers;
 using AutoGenerator;
-using AutoGenerator.CustomPolicy;
 using AutoGenerator.Notifications.Config;
 using AutoGenerator.Schedulers;
+using LAHJAAPI.CustomPolicy;
 using LAHJAAPI.Data;
 using LAHJAAPI.Models;
 using LAHJAAPI.Utilities;
@@ -15,7 +15,6 @@ using Microsoft.IdentityModel.Logging;
 using Microsoft.OpenApi.Models;
 using System.Reflection;
 using System.Text.Json.Serialization;
-using Utilities;
 
 var builder = WebApplication.CreateBuilder(args);
 

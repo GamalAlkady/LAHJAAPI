@@ -1,6 +1,6 @@
 ﻿using System.Reflection;
 
-namespace Utilities
+namespace LAHJAAPI.Utilities
 {
     public static class Permissions
     {

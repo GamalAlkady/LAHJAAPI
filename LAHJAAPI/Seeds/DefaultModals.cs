@@ -1,9 +1,9 @@
-﻿using AutoGenerator.Services2;
-using LAHJAAPI.Data;
+﻿using LAHJAAPI.Data;
 using LAHJAAPI.Models;
+using LAHJAAPI.Services2;
 using Microsoft.EntityFrameworkCore;
 
-namespace Utilities.Seeds
+namespace LAHJAAPI.Seeds
 {
     public static class DefaultModals
     {

@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace Dto.Stripe.CheckoutDto
+namespace LAHJAAPI.Stripe.Checkout
 {
     public class CheckoutOptions
     {

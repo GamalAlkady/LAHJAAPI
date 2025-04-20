@@ -1,7 +1,7 @@
 ﻿using AutoGenerator;
+using LAHJAAPI.V1.Enums;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
-using Utilities;
 
 namespace V1.DyModels.VMs
 {

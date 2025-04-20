@@ -1,13 +1,9 @@
-using AutoMapper;
-using Microsoft.Extensions.Logging;
-using System.Collections.Generic;
-using V1.Services.Services;
-using Microsoft.AspNetCore.Mvc;
-using V1.DyModels.VMs;
-using System.Linq.Expressions;
-using V1.DyModels.Dso.Requests;
 using AutoGenerator.Helper.Translation;
-using System;
+using AutoMapper;
+using Microsoft.AspNetCore.Mvc;
+using V1.DyModels.Dso.Requests;
+using V1.DyModels.VMs;
+using V1.Services.Services;
 
 namespace V1.Controllers.Api
 {
@@ -31,13 +27,13 @@ namespace V1.Controllers.Api
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-        public async Task<ActionResult<IEnumerable<PlanOutputVM>>> GetAll()
+        public async Task<ActionResult<IEnumerable<PlanOutputVM>>> GetAll(string? lg = "en")
         {
             try
             {
                 _logger.LogInformation("Fetching all Plans...");
                 var result = await _planService.GetAllAsync();
-                var items = _mapper.Map<List<PlanOutputVM>>(result);
+                var items = _mapper.Map<List<PlanOutputVM>>(result, opts => opts.Items[HelperTranslation.KEYLG] = lg);
                 return Ok(items);
             }
             catch (Exception ex)
@@ -153,18 +149,6 @@ namespace V1.Controllers.Api
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
         public async Task<ActionResult<PlanOutputVM>> Create([FromBody] PlanCreateVM model)
         {
-            if (model == null)
-            {
-                _logger.LogWarning("Plan data is null in Create.");
-                return BadRequest("Plan data is required.");
-            }
-
-            if (!ModelState.IsValid)
-            {
-                _logger.LogWarning("Invalid model state in Create: {ModelState}", ModelState);
-                return BadRequest(ModelState);
-            }
-
             try
             {
                 _logger.LogInformation("Creating new Plan with data: {@model}", model);
@@ -176,6 +160,33 @@ namespace V1.Controllers.Api
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error while creating a new Plan");
+                return BadRequest(ex.Message);
+                return StatusCode(500, "Internal Server Error");
+            }
+        }
+
+        [HttpPost("SetPlan", Name = "CreateNewPlan")]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+        public async Task<ActionResult<PlanOutputVM>> SetPlan([FromBody] PlanSetVM model)
+        {
+            try
+            {
+                _logger.LogInformation("Set new Plan with data: {@model}", model);
+                var item = new PlanRequestDso
+                {
+                    Id = model.Id,
+                    ProductId = model.ProductId
+                };
+                var createdEntity = await _planService.SetPlanAsync(item);
+                var createdItem = _mapper.Map<PlanOutputVM>(createdEntity);
+                return Ok(createdItem);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error while creating a new Plan");
+                return BadRequest(ex.Message);
                 return StatusCode(500, "Internal Server Error");
             }
         }

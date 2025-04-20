@@ -1,4 +1,4 @@
-﻿namespace Utilities
+﻿namespace LAHJAAPI.V1.Enums
 {
     public enum ConnectionType
     {

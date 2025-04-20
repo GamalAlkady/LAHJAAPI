@@ -1,4 +1,4 @@
-﻿namespace ASG.Api2.Utilities
+﻿namespace LAHJAAPI.Utilities
 {
     public static class ClaimTypes2
     {

@@ -1,13 +1,12 @@
-using AutoMapper;
-using Microsoft.Extensions.Logging;
-using System.Collections.Generic;
-using V1.Services.Services;
-using Microsoft.AspNetCore.Mvc;
-using V1.DyModels.VMs;
-using System.Linq.Expressions;
-using V1.DyModels.Dso.Requests;
+using AutoGenerator.Helper;
 using AutoGenerator.Helper.Translation;
-using System;
+using AutoGenerator.Utilities;
+using AutoMapper;
+using LAHJAAPI.Services2;
+using Microsoft.AspNetCore.Mvc;
+using V1.DyModels.Dso.Requests;
+using V1.DyModels.VMs;
+using V1.Services.Services;
 
 namespace V1.Controllers.Api
 {
@@ -153,12 +152,6 @@ namespace V1.Controllers.Api
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
         public async Task<ActionResult<ModelGatewayOutputVM>> Create([FromBody] ModelGatewayCreateVM model)
         {
-            if (model == null)
-            {
-                _logger.LogWarning("ModelGateway data is null in Create.");
-                return BadRequest("ModelGateway data is required.");
-            }
-
             if (!ModelState.IsValid)
             {
                 _logger.LogWarning("Invalid model state in Create: {ModelState}", ModelState);
@@ -169,6 +162,7 @@ namespace V1.Controllers.Api
             {
                 _logger.LogInformation("Creating new ModelGateway with data: {@model}", model);
                 var item = _mapper.Map<ModelGatewayRequestDso>(model);
+                item.Token = TokenService.GenerateSecureToken();
                 var createdEntity = await _modelgatewayService.CreateAsync(item);
                 var createdItem = _mapper.Map<ModelGatewayOutputVM>(createdEntity);
                 return Ok(createdItem);
@@ -221,22 +215,19 @@ namespace V1.Controllers.Api
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
         public async Task<ActionResult<ModelGatewayOutputVM>> Update([FromBody] ModelGatewayUpdateVM model)
         {
-            if (model == null)
-            {
-                _logger.LogWarning("Invalid data in Update.");
-                return BadRequest("Invalid data.");
-            }
-
-            if (!ModelState.IsValid)
-            {
-                _logger.LogWarning("Invalid model state in Update: {ModelState}", ModelState);
-                return BadRequest(ModelState);
-            }
-
             try
             {
                 _logger.LogInformation("Updating ModelGateway with ID: {id}", model?.Id);
-                var item = _mapper.Map<ModelGatewayRequestDso>(model);
+                var modelGateway = await _modelgatewayService.GetByIdAsync(model.Id);
+                if (modelGateway == null)
+                {
+                    return NotFound(HandelErrors.NotFound("Record not found make sure that id is correct."));
+                }
+
+                modelGateway.Url = model.Url;
+                modelGateway.Name = model.Name;
+                modelGateway.IsDefault = model.IsDefault;
+                var item = _mapper.Map<ModelGatewayRequestDso>(modelGateway);
                 var updatedEntity = await _modelgatewayService.UpdateAsync(item);
                 if (updatedEntity == null)
                 {
@@ -250,6 +241,39 @@ namespace V1.Controllers.Api
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error while updating ModelGateway with ID: {id}", model?.Id);
+                return StatusCode(500, "Internal Server Error");
+            }
+        }
+
+        [HttpPut("default/{id}", Name = "ChangeDefaultModelGateway")]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> MakeDefault(string id)
+        {
+            try
+            {
+                _logger.LogInformation("Making ModelGateway with ID: {id} default.", id);
+                var modelGateway = await _modelgatewayService.GetByIdAsync(id);
+                if (modelGateway == null)
+                {
+                    return NotFound(HandelErrors.NotFound("Record not found make sure that id is correct."));
+                }
+
+                if (!modelGateway.IsDefault)
+                {
+                    var defaultModel = await _modelgatewayService.GetOneByAsync([new FilterCondition("IsDefault", true)]);
+                    defaultModel.IsDefault = false;
+                    await _modelgatewayService.UpdateAsync(_mapper.Map<ModelGatewayRequestDso>(defaultModel));
+
+                    modelGateway.IsDefault = true;
+                    await _modelgatewayService.UpdateAsync(_mapper.Map<ModelGatewayRequestDso>(modelGateway));
+                }
+                return Ok();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error while making ModelGateway with ID: {id} default", id);
                 return StatusCode(500, "Internal Server Error");
             }
         }

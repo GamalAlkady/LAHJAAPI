@@ -1,6 +1,6 @@
 ﻿using Microsoft.Extensions.Caching.Memory;
 
-namespace AutoGenerator.Services2
+namespace LAHJAAPI.Services2
 {
     public class TokenListService
     {

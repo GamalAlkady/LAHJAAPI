@@ -225,7 +225,10 @@ namespace V1.Controllers.Api
                     return new SubscriptionInfoVM
                     {
                         SubscriptionId = subscription.Id,
-                        //ClientSecret = subscription.LatestInvoice.PaymentSettings..ClientSecret,
+                        //TODO: edit bellow code
+                        //https://docs.stripe.com/billing/subscriptions/build-subscriptions?platform=web&ui=embedded-form
+                        // apove link describe how to get the client secret
+                        //ClientSecret = subscription.LatestInvoice?.DefaultPaymentMethodId
                     };
                 }
                 catch (Stripe.StripeException e)

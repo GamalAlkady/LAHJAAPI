@@ -21,5 +21,6 @@ namespace V1.Services.Services
     //, IPlanBuilderRepository<PlanRequestDso, PlanResponseDso>
     , IBasePublicRepository<PlanRequestDso, PlanResponseDso>
     {
+        Task<PlanResponseDso> SetPlanAsync(PlanRequestDso entity);
     }
 }

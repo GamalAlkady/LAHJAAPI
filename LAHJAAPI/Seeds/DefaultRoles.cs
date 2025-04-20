@@ -1,7 +1,7 @@
-﻿using LAHJAAPI.Models;
-using Microsoft.AspNetCore.Identity;
+﻿using Microsoft.AspNetCore.Identity;
+using Utilities;
 
-namespace Utilities.Seeds
+namespace LAHJAAPI.Seeds
 {
     public static class DefaultRoles
     {

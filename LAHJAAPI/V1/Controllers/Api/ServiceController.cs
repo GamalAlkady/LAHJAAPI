@@ -1,13 +1,9 @@
-using AutoMapper;
-using Microsoft.Extensions.Logging;
-using System.Collections.Generic;
-using V1.Services.Services;
-using Microsoft.AspNetCore.Mvc;
-using V1.DyModels.VMs;
-using System.Linq.Expressions;
-using V1.DyModels.Dso.Requests;
 using AutoGenerator.Helper.Translation;
-using System;
+using AutoMapper;
+using Microsoft.AspNetCore.Mvc;
+using V1.DyModels.Dso.Requests;
+using V1.DyModels.VMs;
+using V1.Services.Services;
 
 namespace V1.Controllers.Api
 {
@@ -153,11 +149,6 @@ namespace V1.Controllers.Api
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
         public async Task<ActionResult<ServiceOutputVM>> Create([FromBody] ServiceCreateVM model)
         {
-            if (model == null)
-            {
-                _logger.LogWarning("Service data is null in Create.");
-                return BadRequest("Service data is required.");
-            }
 
             if (!ModelState.IsValid)
             {
@@ -221,11 +212,6 @@ namespace V1.Controllers.Api
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
         public async Task<ActionResult<ServiceOutputVM>> Update([FromBody] ServiceUpdateVM model)
         {
-            if (model == null)
-            {
-                _logger.LogWarning("Invalid data in Update.");
-                return BadRequest("Invalid data.");
-            }
 
             if (!ModelState.IsValid)
             {

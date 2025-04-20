@@ -1,12 +1,6 @@
-﻿using Quartz;
-using ApiCore.Validators;
-using AutoGenerator.Schedulers;
-using System.Reflection;
-using System;
-
-namespace ApiCore.Helper
+﻿namespace LAHJAAPI.V1.Helper
 {
-    public static class TemplateTagEmail 
+    public static class TemplateTagEmail
     {
 
         public static string GetConfirmationEmailHtml(string confirmationLink)

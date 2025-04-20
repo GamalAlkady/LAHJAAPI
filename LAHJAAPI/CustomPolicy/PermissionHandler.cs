@@ -2,7 +2,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 
-namespace AutoGenerator.CustomPolicy
+namespace LAHJAAPI.CustomPolicy
 {
     public class PermissionHandler : AuthorizationHandler<PermissionRequirement>
     {

@@ -1,10 +1,8 @@
-﻿using AutoGenerator.Seeds;
-using AutoMapper;
+﻿using AutoMapper;
 using LAHJAAPI.Data;
 using Microsoft.EntityFrameworkCore;
-using Utilities.Seeds;
 
-namespace AutoBuilderApiCore.Seeds;
+namespace LAHJAAPI.Seeds;
 
 public static class SeedData
 {

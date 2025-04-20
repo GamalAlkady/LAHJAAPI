@@ -1,4 +1,4 @@
-﻿namespace Api.Utilities
+﻿namespace LAHJAAPI.Utilities
 {
     public enum AuthorizationSessionTypes
     {

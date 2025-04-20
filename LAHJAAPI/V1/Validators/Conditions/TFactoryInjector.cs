@@ -1,8 +1,8 @@
 using APILAHJA.Utilities;
 using AutoGenerator.Notifications;
-using AutoGenerator.Services2;
 using AutoMapper;
 using LAHJAAPI.Data;
+using LAHJAAPI.Services2;
 using LAHJAAPI.Utilities;
 using Microsoft.Extensions.Options;
 

@@ -1,28 +1,32 @@
 using AutoGenerator;
-using AutoMapper;
-using Microsoft.Extensions.Logging;
-using System.Collections.Generic;
+using AutoGenerator.Helper;
+using AutoGenerator.Helper.Translation;
 using AutoGenerator.Services.Base;
+using AutoMapper;
+using StripeGateway;
 using V1.DyModels.Dso.Requests;
 using V1.DyModels.Dso.Responses;
-using LAHJAAPI.Models;
 using V1.DyModels.Dto.Share.Requests;
-using V1.DyModels.Dto.Share.Responses;
 using V1.Repositories.Share;
-using System.Linq.Expressions;
-using V1.Repositories.Builder;
-using AutoGenerator.Repositories.Base;
-using AutoGenerator.Helper;
-using System;
 
 namespace V1.Services.Services
 {
     public class PlanService : BaseService<PlanRequestDso, PlanResponseDso>, IUsePlanService
     {
         private readonly IPlanShareRepository _share;
-        public PlanService(IPlanShareRepository buildPlanShareRepository, IMapper mapper, ILoggerFactory logger) : base(mapper, logger)
+        private readonly IStripeProduct _stripeProduct;
+        private readonly IStripePrice _stripePrice;
+
+        public PlanService(
+            IPlanShareRepository buildPlanShareRepository,
+            IStripeProduct stripeProduct,
+            IStripePrice stripePrice,
+            IMapper mapper,
+            ILoggerFactory logger) : base(mapper, logger)
         {
             _share = buildPlanShareRepository;
+            _stripeProduct = stripeProduct;
+            _stripePrice = stripePrice;
         }
 
         public override Task<int> CountAsync()
@@ -44,6 +48,53 @@ namespace V1.Services.Services
             try
             {
                 _logger.LogInformation("Creating new Plan entity...");
+                Stripe.Product? product = null;
+                if (string.IsNullOrEmpty(entity.ProductId))
+                {
+                    if (entity.ProductName?.Value == null)
+                    {
+                        throw new ArgumentException("ProductName is required.");
+                    }
+
+                    var options = new Stripe.ProductCreateOptions
+                    {
+                        Name = HelperTranslation.CoverTranslationDataToText(entity.ProductName)
+                    };
+
+                    if (entity?.Description?.Value != null)
+                    {
+                        options.Description = HelperTranslation.CoverTranslationDataToText(entity.Description);
+                    }
+
+                    if (entity?.Images.Count > 0)
+                    {
+                        options.Images = entity.Images;
+                    }
+
+                    product = await _stripeProduct.CreateAsync(options);
+
+                    entity.ProductId = product.Id;
+                }
+                else
+                {
+                    product = await _stripeProduct.GetByIdAsync(entity.ProductId);
+                    entity.ProductName = HelperTranslation.ConvertToTranslationData(product.Name);
+                }
+
+
+                if (entity.Amount < 0)
+                {
+                    throw new ArgumentException("Amount must be greater than zero.");
+                }
+                var price = await _stripePrice!.CreateAsync(new()
+                {
+                    Currency = entity.Currency,
+                    UnitAmount = Convert.ToInt64(entity.Amount) * 100,
+                    Recurring = new Stripe.PriceRecurringOptions { Interval = entity.BillingPeriod },
+                    Product = product.Id
+                });
+                entity.Id = price.Id;
+
                 var result = await _share.CreateAsync(entity);
                 var output = GetMapper().Map<PlanResponseDso>(result);
                 _logger.LogInformation("Created Plan entity successfully.");
@@ -52,7 +103,39 @@ namespace V1.Services.Services
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error while creating Plan entity.");
-                return null;
+                throw;
+            }
+        }
+
+        public async Task<PlanResponseDso> SetPlanAsync(PlanRequestDso entity)
+        {
+            try
+            {
+                _logger.LogInformation("Creating new  Plan entity with price...");
+                Stripe.Product? product = null;
+
+                product = await _stripeProduct.GetByIdAsync(entity.ProductId);
+                entity.ProductId = product.Id;
+                entity.ProductName = HelperTranslation.ConvertToTranslationData(product.Name);
+                if (product.Description != null)
+                    entity.Description = HelperTranslation.ConvertToTranslationData(product.Description);
+
+                var price = await _stripePrice!.GetByIdAsync(entity.Id);
+                entity.Id = price.Id;
+                entity.Amount = Convert.ToDouble(price.UnitAmount) / 100;
+                entity.BillingPeriod = price.Recurring.Interval;
+                entity.Currency = price.Currency;
+                entity.Active = price.Active;
+
+                var result = await _share.CreateAsync(entity);
+                var output = GetMapper().Map<PlanResponseDso>(result);
+                _logger.LogInformation("Created Plan entity successfully.");
+                return output;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error while creating Plan entity.");
+                throw;
             }
         }
 

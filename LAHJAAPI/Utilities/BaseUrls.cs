@@ -1,4 +1,4 @@
-﻿namespace ASG.Helper
+﻿namespace LAHJAAPI.Utilities
 {
     public class BaseUrls
     {

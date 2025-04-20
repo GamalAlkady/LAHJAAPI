@@ -108,7 +108,8 @@ namespace AutoGenerator.Helper.Translation
         public string? ToFilter(string? lg)
         {
 
-            if (Value == null && Value.ContainsKey(lg))
+            //if (Value == null && Value.ContainsKey(lg))
+            if (Value == null)
                 return null;
 
             return Value[lg];
@@ -270,6 +271,10 @@ namespace AutoGenerator.Helper.Translation
                 }
 
                 var item = src.GetType().GetProperty(kname)?.GetValue(src) as ITranslationData;
+                if (item == null)
+                {
+                    continue;
+                }
                 var destitem = dest.GetType().GetProperty(kname);
 
 
@@ -285,8 +290,7 @@ namespace AutoGenerator.Helper.Translation
                     if (items != null && items.ContainsKey(KEYLG))
                         destitem.SetValue(dest, item.ToFilter((string)items[KEYLG]));
 
-                    else
-
+                    else if (item != null)
                         destitem.SetValue(dest, ConvertTranslationDataToText(item.Value)); // Convert ITranslationData to text
 
 

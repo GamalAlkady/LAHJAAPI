@@ -1,6 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 
-namespace ASG.ApiService.Utilities
+namespace LAHJAAPI.Utilities
 {
     public class PagedList<T> : List<T>
     {
