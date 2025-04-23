@@ -1,19 +1,20 @@
-﻿using LAHJAAPI.V1.Validators;
+﻿using AutoGenerator.Conditions;
+using LAHJAAPI.V1.Validators;
+using LAHJAAPI.V1.Validators.Conditions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
-using V1.Services.Services;
 
-public class SubscriptionCheckFilter(IUseSubscriptionService subscriptionService) : IAsyncActionFilter
+public class SubscriptionCheckFilter(IConditionChecker checker) : IAsyncActionFilter
 {
 
     public async Task OnActionExecutionAsync(ActionExecutingContext context, ActionExecutionDelegate next)
     {
         try
         {
-            var result = await subscriptionService.IsNotSubscribe();
-            if (result.IsNotSubscribed)
+            var result = await checker.CheckAndResultAsync(SubscriptionValidatorStates.IsNotSubscribe, new DataFilter("userId"));
+            if (result.Success == true)
             {
-                context.Result = new ObjectResult(result.Result)
+                context.Result = new ObjectResult(result.Result ?? result.Message)
                 { StatusCode = StatusCodes.Status402PaymentRequired };
                 return;
             }

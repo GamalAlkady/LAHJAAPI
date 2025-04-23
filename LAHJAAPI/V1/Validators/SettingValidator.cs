@@ -2,7 +2,7 @@ using AutoGenerator.Conditions;
 using LAHJAAPI.V1.Validators.Conditions;
 using V1.DyModels.Dso.ResponseFilters;
 
-namespace ApiCore.Validators
+namespace LAHJAAPI.V1.Validators
 {
     public class SettingValidator : BaseValidator<SettingResponseFilterDso, SettingValidatorStates>, ITValidator
     {

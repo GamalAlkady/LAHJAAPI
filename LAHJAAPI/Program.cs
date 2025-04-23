@@ -41,7 +41,7 @@ builder.Services.
     {
 
         Arags = args,
-        NameRootApi = "ApiCore",
+        NameRootApi = "V1",
         IsMapper = true,
         TypeContext = typeof(DataContext),
         Assembly = Assembly.GetExecutingAssembly(),
@@ -62,9 +62,10 @@ builder.Services.
             SmtpHost = "smtp.gmail.com",
             SmtpPort = 587,
             FromEmail = "gamal333ge@gmail.com",
-            NameApp = "ASG" // عيّن اسم التطبيق هنا كما يناسبك
+            NameApp = "LAHJA-API" // عيّن اسم التطبيق هنا كما يناسبك
 
         }
+
 
     });
 
@@ -136,8 +137,7 @@ builder.Services.AddAuthorization(options =>
 builder.Services.AddCors(
     options => options.AddPolicy(
         "wasm",
-        policy => policy.WithOrigins([builder.Configuration["appsettings:baseurls:api"] ?? "https://localhost:7001",
-            builder.Configuration["FrontendUrl"] ?? "https://localhost:7003"])
+        policy => policy.WithOrigins(["https://localhost:7001", "https://localhost:5002"])
             .AllowAnyMethod()
             .AllowAnyHeader()
             .AllowCredentials()));
@@ -183,24 +183,22 @@ builder.Services.AddLogging(); // ÅÖÇÝÉ ÎÏãÇÊ ÇáÜ Logging
 
 var app = builder.Build();
 app.UseSchedulerDashboard();
-
+app.UseCors("wasm");
 //SeedData.EnsureSeedData(app);
 
 // Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
+
+app.UseSwagger();
+app.UseSwaggerUI(o =>
 {
-    app.UseSwagger();
-    app.UseSwaggerUI(o =>
-    {
-        //o.SwaggerEndpoint("/swagger/v1/swagger.json", "API v1");
-        //o.RoutePrefix = string.Empty;
-        // collapse endpoints 
-        o.DocExpansion(Swashbuckle.AspNetCore.SwaggerUI.DocExpansion.None);
+    //o.SwaggerEndpoint("/swagger/v1/swagger.json", "API v1");
+    //o.RoutePrefix = string.Empty;
+    // collapse endpoints 
+    o.DocExpansion(Swashbuckle.AspNetCore.SwaggerUI.DocExpansion.None);
 
-    });
-}
+});
 
-app.MapSwagger();
+
 app.CustomMapIdentityApi<ApplicationUser>();
 
 app.UseHttpsRedirection();

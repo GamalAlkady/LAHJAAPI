@@ -2,7 +2,6 @@ using AutoGenerator.Conditions;
 using FluentResults;
 using LAHJAAPI.Data;
 using LAHJAAPI.Models;
-using LAHJAAPI.V1.Validators;
 using LAHJAAPI.V1.Validators.Conditions;
 using System.Security.Claims;
 using System.Text.Json;
@@ -10,7 +9,7 @@ using V1.DyModels.Dso.Requests;
 using V1.DyModels.Dso.ResponseFilters;
 using V1.DyModels.VMs;
 
-namespace ApiCore.Validators
+namespace LAHJAAPI.V1.Validators
 {
     public enum SessionValidatorStates
     {

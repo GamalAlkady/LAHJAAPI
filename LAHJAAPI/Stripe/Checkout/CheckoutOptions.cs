@@ -11,4 +11,14 @@ namespace LAHJAAPI.Stripe.Checkout
         public string CancelUrl { get; set; }
 
     }
+
+    public class CheckoutWebOptions
+    {
+        [Required]
+        public string PlanId { get; set; }
+
+        [Required]
+        public string ReturnUrl { get; set; }
+
+    }
 }

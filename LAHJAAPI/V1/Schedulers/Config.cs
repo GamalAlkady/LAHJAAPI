@@ -1,9 +1,7 @@
-using Quartz;
-using ApiCore.Validators;
 using AutoGenerator.Schedulers;
-using System.Reflection;
-using System;
 using LAHJAAPI.V1.Validators.Conditions;
+using Quartz;
+using System.Reflection;
 
 namespace ApiCore.Schedulers
 {

@@ -5,18 +5,18 @@
 
     public interface IBaseConditionChecker
     {
-        bool Check<TEnum>(TEnum type, object context) where TEnum : Enum;
-        Task<bool> CheckAsync<TEnum>(TEnum type, object context) where TEnum : Enum;
+        bool Check<TEnum>(TEnum type, object? context=null) where TEnum : Enum;
+        Task<bool> CheckAsync<TEnum>(TEnum type, object? context = null) where TEnum : Enum;
 
-        bool CheckAll<TEnum>(object context) where TEnum : Enum;
-        Task<bool> CheckAllAsync<TEnum>(object context) where TEnum : Enum;
+        bool CheckAll<TEnum>(object? context = null) where TEnum : Enum;
+        Task<bool> CheckAllAsync<TEnum>(object? context = null) where TEnum : Enum;
 
         bool AreAllConditionsMet<TEnum>(object context, out Dictionary<TEnum, string> failedConditions) where TEnum : Enum;
 
         void RegisterProvider<TEnum>(IConditionProvider<TEnum> provider) where TEnum : Enum;
 
-        ConditionResult CheckAndResult<TEnum>(TEnum type, object context) where TEnum : Enum;
-        Task<ConditionResult> CheckAndResultAsync<TEnum>(TEnum type, object context) where TEnum : Enum;
+        ConditionResult CheckAndResult<TEnum>(TEnum type, object? context = null) where TEnum : Enum;
+        Task<ConditionResult> CheckAndResultAsync<TEnum>(TEnum type, object? context = null) where TEnum : Enum;
 
         // دالة لفحص الشرط مع النتيجة ورسالة الخطأ
         bool CheckWithError<TEnum>(TEnum type, object context, out string errorMessage) where TEnum : Enum;
@@ -32,8 +32,8 @@
 
 
 
-        Task<bool> CheckAnyAsync<TEnum>(object context) where TEnum : Enum;
-        bool CheckAny<TEnum>(object context) where TEnum : Enum;
+        Task<bool> CheckAnyAsync<TEnum>(object? context = null) where TEnum : Enum;
+        bool CheckAny<TEnum>(object? context = null) where TEnum : Enum;
 
         void ResetConditionState<TEnum>(object context) where TEnum : Enum;
 
@@ -67,7 +67,7 @@
         public IConditionProvider<TEnum>? GetProvider<TEnum>() where TEnum : Enum;
 
 
-
+      
 
 
 
@@ -75,10 +75,10 @@
 
     }
 
-    public class BaseConditionChecker : IBaseConditionChecker
+    public class BaseConditionChecker :  IBaseConditionChecker
     {
         private readonly Dictionary<Type, object> _providers = new();
-
+        
         // الأحداث الخاصة بحالة الشرط
         public event EventHandler<ConditionResult> ConditionMet;
         public event EventHandler<ConditionResult> ConditionFailed;
@@ -87,7 +87,7 @@
 
         public BaseConditionChecker()
         {
-
+           
         }
 
 
@@ -114,14 +114,14 @@
         }
 
         // التحقق من حالة شرط معين - متزامن
-        public bool Check<TEnum>(TEnum type, object context) where TEnum : Enum
+        public  bool Check<TEnum>(TEnum type, object context) where TEnum : Enum
         {
             var res = CheckAsync<TEnum>(type, context).GetAwaiter().GetResult();
             return res;
         }
+         
 
-
-        public IConditionProvider<TEnum>? GetProvider<TEnum>() where TEnum : Enum
+        public   IConditionProvider<TEnum>? GetProvider<TEnum>() where TEnum : Enum
         {
             if (_providers.TryGetValue(typeof(TEnum), out var rawProvider))
             {
@@ -150,7 +150,7 @@
         // التحقق من جميع الشروط - متزامن
         public bool CheckAll<TEnum>(object context) where TEnum : Enum
         {
-
+           
             var res = CheckAllAsync<TEnum>(context).GetAwaiter().GetResult();
             return res;
         }
@@ -188,7 +188,12 @@
                 return false;
             }
             errorMessage = result?.Message ?? "Unknown error";
+            
+               
             return true;
+            
+
+            
         }
 
         // التحقق من جميع الشروط مع تفاصيل الرسائل
@@ -216,9 +221,9 @@
         // التحقق من الشرط مع سياقات متعددة - متزامن
         public bool CheckWithMultipleContexts<TEnum>(TEnum type, object[] contexts) where TEnum : Enum
         {
-
-            var res = CheckWithMultipleContextsAsync(type, contexts).GetAwaiter().GetResult();
-            return res;
+            
+            var  res= CheckWithMultipleContextsAsync(type, contexts).GetAwaiter().GetResult();
+            return res; 
         }
 
         // التحقق من الشرط مع سياقات متعددة - غير متزامن
@@ -243,13 +248,13 @@
             return true;
         }
 
-
-
+      
+       
 
 
         public ConditionResult CheckAndResult<TEnum>(TEnum type, object context) where TEnum : Enum
         {
-
+                
             var result = CheckAndResultAsync(type, context).GetAwaiter().GetResult();
             return result;
 
@@ -270,7 +275,7 @@
             return new ConditionResult(false, null, "Condition not found or provider unavailable");
         }
 
-
+        
 
         public Task<bool> CheckWithErrorASync<TEnum>(TEnum type, object context, out string errorMessage) where TEnum : Enum
         {
@@ -341,7 +346,7 @@
             return res;
         }
 
-
+       
 
         // التحقق من الشرط مع المهلة الزمنية
         public async Task<bool> CheckConditionWithTimeoutAsync<TEnum>(TEnum type, object context, TimeSpan timeout) where TEnum : Enum
@@ -446,10 +451,10 @@
             return false;
         }
 
+   
 
 
-
-
+       
 
         // التحقق من الشرط مع بيانات إضافية - غير متزامن
         public async Task<bool> CheckWithContextDataAsync<TEnum>(TEnum type, object context, object additionalData) where TEnum : Enum
@@ -516,9 +521,9 @@
 
         public async Task ExecuteConditionWithCallbacksAsync<TEnum>(TEnum conditionType, object context, Func<ConditionResult, Task>? onSuccess = null, Func<ConditionResult, Task>? onFailure = null) where TEnum : Enum
         {
-
-            var result = await CheckAndResultAsync(conditionType, context);
-            if (result.Success == true)
+            
+             var result =await CheckAndResultAsync(conditionType, context);
+            if (result.Success==true)
             {
                 OnConditionMet(result);
                 if (onSuccess != null)

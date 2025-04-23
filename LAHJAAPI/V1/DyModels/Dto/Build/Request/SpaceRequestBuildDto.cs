@@ -48,7 +48,7 @@ namespace V1.DyModels.Dto.Build.Requests
         /// SubscriptionId property for DTO.
         /// </summary>
         public String? SubscriptionId { get; set; }
-        public SubscriptionRequestBuildDto? Subscription { get; set; }
-        public ICollection<RequestRequestBuildDto>? Requests { get; set; }
+        //public SubscriptionRequestBuildDto? Subscription { get; set; }
+        //public ICollection<RequestRequestBuildDto>? Requests { get; set; }
     }
 }

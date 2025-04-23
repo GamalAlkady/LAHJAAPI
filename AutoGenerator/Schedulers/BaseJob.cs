@@ -117,10 +117,10 @@ public abstract class BaseJob : CJober, ITJob
             Status = "Success",
             AdditionalData = null
         };
-        RecurringJob.AddOrUpdate(
-    _options.JobName,
-    () => Console.WriteLine(jobeventArgs),
-    Cron.Daily);
+    //    RecurringJob.AddOrUpdate(
+    //_options.JobName,
+    //() => Console.WriteLine(jobeventArgs),
+    //Cron.Daily);
         return Execute(jobeventArgs);
     }
     abstract public Task Execute(JobEventArgs context);

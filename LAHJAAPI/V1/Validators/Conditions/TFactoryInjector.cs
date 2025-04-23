@@ -39,5 +39,6 @@ namespace LAHJAAPI.V1.Validators.Conditions
         public TokenService TokenService { get; }
 
         public AppSettings AppSettings { get; }
+
     }
 }

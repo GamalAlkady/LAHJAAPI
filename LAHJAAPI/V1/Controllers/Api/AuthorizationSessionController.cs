@@ -1,8 +1,6 @@
-﻿using ApiCore.Validators;
-using APILAHJA.Utilities;
+﻿using APILAHJA.Utilities;
 using AutoGenerator.Helper;
 using AutoGenerator.Helper.Translation;
-using AutoGenerator.Utilities;
 using AutoMapper;
 using FluentResults;
 using LAHJAAPI.Services2;
@@ -232,7 +230,6 @@ namespace V1.Controllers.Api
 
         // Create a new AuthorizationSession.
         [ServiceFilter(typeof(SubscriptionCheckFilter))]
-        [ServiceFilter(typeof(SubscriptionCheckFilter))]
         [HttpPost(Name = "CreateAuthorizationSession")]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status200OK)]
@@ -245,11 +242,12 @@ namespace V1.Controllers.Api
                 _logger.LogInformation("Creating new AuthorizationSession with data: {@model}", model);
                 var service = await _serviceService.GetByIdAsync(model.ServiceId);
 
+                if (service == null) return NotFound(HandelErrors.Problem("Create session", "No service found for this id."));
                 bool isNeedSpace = true;
                 if (_checker.Check(ServiceValidatorStates.IsCreateSpace, service.AbsolutePath))
                 {
                     isNeedSpace = false;
-                    if (!_checker.Check(SpaceValidatorStates.IsAvailable, new SpaceFilterVM()))
+                    if (!_checker.Check(SubscriptionValidatorStates.IsAvailableSpaces))
                         return BadRequest(HandelErrors.Problem("Create space", "You cannot create session for a space because you have reached the allowed limit."));
                 }
 

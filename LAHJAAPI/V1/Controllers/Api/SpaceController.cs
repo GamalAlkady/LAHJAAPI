@@ -166,6 +166,13 @@ namespace V1.Controllers.Api
         {
             try
             {
+                var issu = await _checker.CheckAndResultAsync(ModelGatewayValidatorStates.IsCore,
+          ""
+          );
+
+                var issu2 = await _checker.CheckAndResultAsync(ModelGatewayValidatorStates.HasUserId);
+
+
                 if (_checker.CheckAndResult(SpaceValidatorStates.IsValid, new SpaceFilterVM()).Result is ProblemDetails problem)
                 {
                     return StatusCode(problem.Status ?? 500, problem);

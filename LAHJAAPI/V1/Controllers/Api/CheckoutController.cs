@@ -2,9 +2,11 @@
 using Dto.Stripe.CheckoutDto;
 using Dto.Stripe.Customer;
 using LAHJAAPI.Stripe.Checkout;
+using LAHJAAPI.Stripe.Payment;
 using LAHJAAPI.V1.Validators;
 using LAHJAAPI.V1.Validators.Conditions;
 using Microsoft.AspNetCore.Mvc;
+using Stripe;
 using Stripe.Checkout;
 using StripeGateway;
 using V1.DyModels.Dso.Requests;
@@ -86,6 +88,75 @@ namespace Api.Controllers
             }
         }
 
+        [HttpPost("CreateWebCheckout", Name = "CreateWebCheckout")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        public async Task<ActionResult<ResponseClientSecret>> CreateWebCheckout(CheckoutWebOptions checkoutOptions)
+        {
+            try
+            {
+                var user = await userService.GetUserWithSubscription();
+                //if (checker.Check(SubscriptionValidatorStates.IsSubscribe, new SubscriptionResponseFilterDso()))
+                //{
+                //    return Conflict(new ProblemDetails { Detail = "You already have subscription" });
+                //}
+
+                await CreateCustomer(user);
+
+                var plan = await planService.GetByIdAsync(checkoutOptions.PlanId);
+                if (plan is null) return NotFound(new ProblemDetails { Title = "NOT FOUND", Detail = "Plan not found" });
+
+
+                if (plan.Amount == 0)
+                {
+                    // Create a free subscription
+                    return await CreateFreeSubscription(plan.Id, user.CustomerId);
+                }
+
+                var options = new SessionCreateOptions
+                {
+                    Customer = user.CustomerId,
+                    //SuccessUrl = $"{checkoutOptions.SuccessUrl}?session_id={{CHECKOUT_SESSION_ID}}",
+                    //CancelUrl = $"{checkoutOptions.CancelUrl}",
+                    Mode = "subscription",
+                    //Locale = "ar",
+                    BillingAddressCollection = "auto",
+                    ShippingAddressCollection = new SessionShippingAddressCollectionOptions
+                    {
+                        //      AllowedCountries = new List<string>
+                        //{
+                        //  "US",
+                        //  "CA",
+                        //},
+                    },
+                    Expand = new List<string> { "customer" },
+                    LineItems = new List<SessionLineItemOptions>
+                {
+                        new SessionLineItemOptions
+                        {
+                        Price = checkoutOptions.PlanId,
+                        Quantity = 1,
+                    },
+                },
+                    UiMode = "custom",
+                    //UiMode = "embedded",
+                    ReturnUrl = checkoutOptions.ReturnUrl + "?session_id={CHECKOUT_SESSION_ID}",
+                };
+
+                //options.Customer = user.CustomerId;
+                //else options.CustomerEmail = user.Email;
+
+                var session = await stripeCheckout.CreateCheckoutSession(options);
+                return Ok(new ResponseClientSecret { ClientSecret = session.ClientSecret });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new ProblemDetails { Detail = ex.Message });
+            }
+        }
+
+
         private async Task<ActionResult> CreateFreeSubscription(string planId, string customerId)
         {
             logger.LogInformation("Creating free subscription for plan ID: {planId}", planId);
@@ -105,7 +176,8 @@ namespace Api.Controllers
             if (sub != null)
             {
                 logger.LogInformation("Successfully created free subscription with ID: {subscriptionId}", sub.Id);
-                return Ok(new { Message = "You have successfully subscribed to the free plan." });
+                return Ok();
+                //return Ok(new { Message = "You have successfully subscribed to the free plan." });
             }
 
             logger.LogError("Failed to create free subscription for plan ID: {planId}", planId);
@@ -170,5 +242,68 @@ namespace Api.Controllers
                 return BadRequest(new ProblemDetails { Detail = ex.Message });
             }
         }
+
+
+
+        [HttpPost("CreateCustomerSession")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        public async Task<ActionResult<ResponseClientSecret>> CreateCustomerSession([FromBody] PaymentMethodsRequest request)
+        {
+            try
+            {
+                var user = await userService.GetUser();
+                var customerSessionOptions = new CustomerSessionCreateOptions
+                {
+                    Customer = user.CustomerId,
+                    Components = new CustomerSessionComponentsOptions(),
+                };
+                customerSessionOptions.AddExtraParam("components[payment_element][enabled]", true);
+                customerSessionOptions.AddExtraParam(
+                    "components[payment_element][features][payment_method_redisplay]",
+                    "enabled");
+                customerSessionOptions.AddExtraParam(
+                    "components[payment_element][features][payment_method_save]",
+                    "enabled");
+                customerSessionOptions.AddExtraParam(
+                    "components[payment_element][features][payment_method_save_usage]",
+                    "on_session");
+                customerSessionOptions.AddExtraParam(
+                    "components[payment_element][features][payment_method_remove]",
+                    "enabled");
+
+                var customerSession = await stripeCustomer.CreateCustomerSession(customerSessionOptions);
+                return Ok(new CustomerSessionResponse
+                {
+                    CustomerSessionClientSecret = customerSession.ClientSecret,
+                });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new ProblemDetails { Detail = ex.Message });
+            }
+        }
+
+
+        [HttpGet("session-status/{session_id}")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        public ActionResult<SessionResponse> SessionStatus(string session_id)
+        {
+            try
+            {
+                var sessionService = new SessionService();
+                Session session = sessionService.Get(session_id);
+
+                return Ok(new SessionResponse { Status = session.Status, CustomerEmail = session.CustomerDetails.Email });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new ProblemDetails { Detail = ex.Message });
+            }
+        }
     }
+
 }

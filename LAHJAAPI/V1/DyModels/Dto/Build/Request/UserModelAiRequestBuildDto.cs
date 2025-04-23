@@ -11,7 +11,7 @@ namespace V1.DyModels.Dto.Build.Requests
         /// <summary>
         /// Id property for DTO.
         /// </summary>
-        public Int32 Id { get; set; }
+        public Int32 Id { get; set; } 
         /// <summary>
         /// CreatedAt property for DTO.
         /// </summary>

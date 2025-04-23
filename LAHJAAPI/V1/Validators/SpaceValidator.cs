@@ -5,6 +5,7 @@ using LAHJAAPI.V1.Validators.Conditions;
 using Microsoft.AspNetCore.Mvc;
 using V1.DyModels.Dso.Requests;
 using V1.DyModels.Dso.ResponseFilters;
+using V1.DyModels.Dso.Responses;
 using V1.DyModels.VMs;
 
 namespace LAHJAAPI.V1.Validators
@@ -29,8 +30,6 @@ namespace LAHJAAPI.V1.Validators
         IsGpuEnabled,
         IsGlobalEnabled,
         IsCountSpces,
-        IsAvailable,
-        IsAvailableForCreate,
     }
 
 
@@ -56,14 +55,14 @@ namespace LAHJAAPI.V1.Validators
             );
 
 
-            _provider.Register(
-                SpaceValidatorStates.IsValid,
-                new LambdaCondition<SpaceFilterVM>(
-                    nameof(SpaceValidatorStates.IsValid),
-                    context => IsValid(context),
-                    "Space is not valid"
-                )
-            );
+            //_provider.Register(
+            //    SpaceValidatorStates.IsValid,
+            //    new LambdaCondition<SpaceFilterVM>(
+            //        nameof(SpaceValidatorStates.IsValid),
+            //        context => IsValid(context),
+            //        "Space is not valid"
+            //    )
+            //);
 
 
             _provider.Register(SpaceValidatorStates.IsCountSpces,
@@ -95,22 +94,22 @@ namespace LAHJAAPI.V1.Validators
                 )
             );
 
-            _provider.Register(SpaceValidatorStates.IsAvailable,
-                new LambdaCondition<SpaceFilterVM>(
-                    nameof(SpaceValidatorStates.IsAvailable),
-                    context => IsSpacesAvailable(context),
-                    "Spaces not available"
-                )
-            );
+            //_provider.Register(SpaceValidatorStates.IsAvailable,
+            //    new LambdaCondition<SpaceFilterVM>(
+            //        nameof(SpaceValidatorStates.IsAvailable),
+            //        context => IsSpacesAvailable(context),
+            //        "Spaces not available"
+            //    )
+            //);
 
 
-            _provider.Register(SpaceValidatorStates.IsAvailableForCreate,
-                new LambdaCondition<SpaceFilterVM>(
-                    nameof(SpaceValidatorStates.IsAvailableForCreate),
-                    context => IsAvailableForCreate(context),
-                    "Spaces not available"
-                )
-            );
+            //_provider.Register(SpaceValidatorStates.IsAvailableForCreate,
+            //    new LambdaCondition<SpaceFilterVM>(
+            //        nameof(SpaceValidatorStates.IsAvailableForCreate),
+            //        context => IsAvailableForCreate(context),
+            //        "Spaces not available"
+            //    )
+            //);
         }
 
 
@@ -123,41 +122,6 @@ namespace LAHJAAPI.V1.Validators
         }
 
 
-        ProblemDetails? IsValid(SpaceFilterVM context)
-        {
-            if (_checker.Check(TokenValidatorStates.IsServiceIdsEmpty, true))
-            {
-                return new ProblemDetails
-                {
-                    Title = "Coudn't create space",
-                    Detail = "You cannot add a space because this session does not belong to service create space.",
-                    Status = TokenValidatorStates.IsServiceIdsEmpty.ToInt()
-                };
-            }
-
-            if (!IsSpacesAvailable(context))
-            {
-                return new ProblemDetails
-                {
-                    Title = "Coudn't create space",
-                    Detail = "You cannot add a space because you have reached the allowed limit.",
-                    Status = 7000
-                };
-            }
-
-            //var service = _checker.Injector.Context.Services.FirstOrDefault(s => s.AbsolutePath == GeneralServices.CreateSpace.ToString());
-            var serviceId = _checker.Injector.UserClaims.ServicesIds?.FirstOrDefault();
-            if (serviceId is null || !_checker.Check(ServiceValidatorStates.IsFound, serviceId))
-            {
-                return new ProblemDetails
-                {
-                    Title = "Coudn't create space",
-                    Detail = "You coudn't create space with this session. You need to create service CreateSpace.",
-                    Status = GeneralServices.CreateSpace.ToInt()
-                };
-            }
-            return null;
-        }
 
         private bool IsValidSpaceId(string spaceId)
         {
@@ -264,7 +228,23 @@ namespace LAHJAAPI.V1.Validators
             return (failedConditions.Count == 0, failedConditions);
         }
 
-        bool IsSpacesAvailable(SpaceFilterVM spaceFilter)
+        //[RegisterConditionValidator(typeof(SpaceValidatorStates), SpaceValidatorStates.IsAvailable, "Spaces not available")]
+        //async Task<ConditionResult> IsSpacesAvailableAsync(DataFilter<string, Space> data)
+        //{
+        //    //if (data.Share == null) return ConditionResult.ToFailure(null, "Space can not be null");
+
+
+        //    var countSpaces = await _checker.Injector.Context.Spaces.CountAsync(x => x.SubscriptionId == data.Share.Id);
+
+        //    return new ConditionResult((data.Share.AllowedSpaces > countSpaces), "Not Available");
+        //}
+
+        //async Task<bool> IsSpacesAvailable(DataFilter<string, SubscriptionResponseDso> dataFilter)
+        //{
+        //    return (await IsSpacesAvailableAsync(dataFilter)).Success ?? false;
+        //}
+
+        bool IsSpacesAvailable2(DataFilter<string, Space> dataFilter)
         {
             var subscription = _checker.Injector.Context.Subscriptions
                 .FirstOrDefault(x => x.UserId == _checker.Injector.UserClaims.UserId);
@@ -276,19 +256,51 @@ namespace LAHJAAPI.V1.Validators
             return subscription.AllowedSpaces > spaces.Count();
         }
 
-        bool IsAvailableForCreate(SpaceFilterVM spaceFilter)
+        //bool IsAvailableForCreate(DataFilter<string, Space> dataFilter)
+        //{
+        //    if (spaceFilter is null)
+        //    {
+        //        return false;
+        //    }
+        //    if (_checker.Check(ServiceValidatorStates.IsCreateSpace, spaceFilter.AbsolutePath))
+        //    {
+        //        return IsSpacesAvailable(spaceFilter);
+        //    }
+
+
+        //    return false;
+        //}
+
+        [RegisterConditionValidator(typeof(SpaceValidatorStates), SpaceValidatorStates.IsValid, "Space is not valid")]
+        async Task<ConditionResult> IsValidAsync(DataFilter<string, SubscriptionResponseDso> data)
         {
-            if (spaceFilter is null)
+            if (_checker.Check(TokenValidatorStates.IsServiceIdsEmpty, true))
             {
-                return false;
-            }
-            if (_checker.Check(ServiceValidatorStates.IsCreateSpace, spaceFilter.AbsolutePath))
-            {
-                return IsSpacesAvailable(spaceFilter);
+                return ConditionResult.ToFailure(new ProblemDetails
+                {
+                    Title = "Coudn't create space",
+                    Detail = "You cannot add a space because this session does not belong to service create space.",
+                    Status = TokenValidatorStates.IsServiceIdsEmpty.ToInt()
+                });
             }
 
+            if ((await _checker.CheckAndResultAsync(SubscriptionValidatorStates.IsAvailableSpaces)) is { Success: !true } result2)
+            {
+                return result2;
+            }
 
-            return false;
+            //var service = _checker.Injector.Context.Services.FirstOrDefault(s => s.AbsolutePath == GeneralServices.CreateSpace.ToString());
+            var serviceId = _checker.Injector.UserClaims.ServicesIds?.FirstOrDefault();
+            if (serviceId is null || !_checker.Check(ServiceValidatorStates.IsFound, serviceId))
+            {
+                return ConditionResult.ToFailure(new ProblemDetails
+                {
+                    Title = "Coudn't create space",
+                    Detail = "You coudn't create space with this session. You need to create service CreateSpace.",
+                    Status = GeneralServices.CreateSpace.ToInt()
+                });
+            }
+            return ConditionResult.ToSuccess("");
         }
     }
 }

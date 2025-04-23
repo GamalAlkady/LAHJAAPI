@@ -11,7 +11,7 @@ namespace V1.DyModels.Dto.Build.Requests
         /// <summary>
         /// Id property for DTO.
         /// </summary>
-        public String? Id { get; set; }
+        public String? Id { get; set; }= $"invoice_{Guid.NewGuid():N}";
         /// <summary>
         /// CustomerId property for DTO.
         /// </summary>

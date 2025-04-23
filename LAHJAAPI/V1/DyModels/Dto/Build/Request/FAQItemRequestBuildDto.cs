@@ -11,7 +11,7 @@ namespace V1.DyModels.Dto.Build.Requests
         /// <summary>
         /// Id property for DTO.
         /// </summary>
-        public String? Id { get; set; }
+        public String? Id { get; set; }= $"faqltem_{Guid.NewGuid():N}";
         public TranslationData? Question { get; set; } = new();
         public TranslationData? Answer { get; set; } = new();
         public TranslationData? Tag { get; set; } = new();

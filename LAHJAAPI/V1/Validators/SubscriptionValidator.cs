@@ -4,7 +4,6 @@ using LAHJAAPI.V1.Enums;
 using LAHJAAPI.V1.Validators.Conditions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using V1.DyModels.Dso.ResponseFilters;
 
 namespace LAHJAAPI.V1.Validators;
 
@@ -22,17 +21,18 @@ public enum SubscriptionValidatorStates
     HasStatus,
     IsValidStartDate,
     IsValidPeriodDates,
-    IsAllowedSpaces,
+    IsAvailableSpaces,
     IsFull,
     IsValid,
     IsActiveAndResult,
+    FindSubscription,
 }
 
 
-public class SubscriptionValidator : BaseValidator<SubscriptionResponseFilterDso, SubscriptionValidatorStates>, ITValidator
+public class SubscriptionValidator : ValidatorContext<Subscription, SubscriptionValidatorStates>
 {
     private readonly IConditionChecker _checker;
-    private Subscription Subscription { get; set; }
+    private Subscription? Subscription { get; set; }
     public SubscriptionValidator(IConditionChecker checker) : base(checker)
     {
         _checker = checker;
@@ -43,104 +43,13 @@ public class SubscriptionValidator : BaseValidator<SubscriptionResponseFilterDso
 
     protected override void InitializeConditions()
     {
-        _provider.Register(
-            SubscriptionValidatorStates.IsActive,
-            new LambdaCondition<SubscriptionResponseFilterDso>(
-                nameof(SubscriptionValidatorStates.IsActive),
-                context => IsActive(context),
-                "Subscription is not active"
-            )
-        );
-
-        _provider.Register(
-            SubscriptionValidatorStates.IsCanceled,
-            new LambdaCondition<SubscriptionResponseFilterDso>(
-                nameof(SubscriptionValidatorStates.IsCanceled),
-                context => context.Status!.Equals(SubscriptionValidatorStates.IsCanceled.ToString(), StringComparison.OrdinalIgnoreCase),
-                "Your subscription has canceled"
-            )
-        );
-
-        _provider.Register(
-            SubscriptionValidatorStates.IsCancelAtPeriodEnd,
-            new LambdaCondition<SubscriptionResponseFilterDso>(
-                nameof(SubscriptionValidatorStates.IsActive),
-                context => context.CancelAtPeriodEnd,
-                "Subscription is canceled. Do you want to renew it?"
-            )
-        );
-
-
-        _provider.Register(
-            SubscriptionValidatorStates.IsSubscribe,
-            new LambdaCondition<SubscriptionResponseFilterDso>(
-                nameof(SubscriptionValidatorStates.IsSubscribe),
-                context => IsSubscribeAsync(context),
-                "You are not subscription"
-            )
-        );
-
-        _provider.Register(
-            SubscriptionValidatorStates.IsNotSubscribe,
-            new LambdaCondition<SubscriptionResponseFilterDso>(
-                nameof(SubscriptionValidatorStates.IsNotSubscribe),
-                context => IsNotSubscribeAsync(context),
-                "You are not subscription"
-            )
-        );
-
-        _provider.Register(
-            SubscriptionValidatorStates.IsAllowedRequests,
-            new LambdaCondition<SubscriptionResponseFilterDso>(
-                nameof(SubscriptionValidatorStates.IsAllowedRequests),
-                context => IsAllowedRequests(context),
-                "You have exhausted all allowed subscription requests."
-            )
-        );
-
-        _provider.Register(
-              SubscriptionValidatorStates.IsSubscriptionId,
-              new LambdaCondition<string>(
-                  nameof(SubscriptionValidatorStates.IsSubscriptionId),
-                  context => isSubscriptionId(context),
-                  "Customer Id is required"
-              )
-          );
-
-
-        _provider.Register(
-            SubscriptionValidatorStates.IsCustomerId,
-            new LambdaCondition<string>(
-                nameof(SubscriptionValidatorStates.IsCustomerId),
-                context => isCustomerId(context),
-                "Customer Id is required"
-            )
-        );
-
-        _provider.Register(
-            SubscriptionValidatorStates.IsAllowedSpaces,
-            new LambdaCondition<int>(nameof(SubscriptionValidatorStates.IsAllowedSpaces),
-            context => IsAllowedSpaces(context),
-            "Space not allowed"
-        ));
-
-
-        _provider.Register(
-        SubscriptionValidatorStates.IsActiveAndResult,
-        new LambdaCondition<string>(
-            nameof(SubscriptionValidatorStates.IsActiveAndResult),
-            context => VaildIsServiceIdResultAsync(context),
-            "You are not subscription"
-        )
-    );
-
     }
 
-    Subscription GetSubscription(SubscriptionResponseFilterDso context)
+    async Task<Subscription> GetSubscription()
     {
-        Subscription ??= _checker.Injector.Context.Set<Subscription>()
+        Subscription ??= await _checker.Injector.Context.Set<Subscription>()
             .Where(s => s.UserId == _checker.Injector.UserClaims.UserId)
-            .FirstOrDefault() ?? throw new ArgumentNullException("No subscription found");
+            .FirstOrDefaultAsync();
         return Subscription;
     }
 
@@ -158,120 +67,110 @@ public class SubscriptionValidator : BaseValidator<SubscriptionResponseFilterDso
         return result.AllowedSpaces >= result.SpaceCount;
     }
 
-
-    bool IsAllowedSpaces(params object[] args)
+    [RegisterConditionValidator(typeof(SubscriptionValidatorStates), SubscriptionValidatorStates.IsAvailableSpaces, "Spaces are not avaliable")]
+    async Task<ConditionResult> IsSpacesAvailableAsync(DataFilter<string, Subscription> data)
     {
-        if (args.Length != 2 || args[0] is not int count || args[1] is not string subId)
-            return false;
-
-        var result = _checker.Injector.Context.Set<Subscription>()
-            .FirstOrDefault(x => x.Id == subId);
-
-        return result?.AllowedSpaces >= count;
+        if (data.Share == null) return ConditionResult.ToFailure(null, "Subscription is not be null");
+        var countSpaces = await _checker.Injector.Context.Spaces.CountAsync(x => x.SubscriptionId == data.Share.Id);
+        data.Value = countSpaces.ToString();
+        if ((data.Share?.AllowedSpaces > countSpaces))
+            return ConditionResult.ToSuccess(data.Share, "Not Available");
+        return ConditionResult.ToFailure(new ProblemDetails
+        {
+            Title = "Coudn't create space",
+            Detail = "You cannot add a space because the subscription is not active.",
+            Status = SubscriptionValidatorStates.IsActive.ToInt()
+        });
     }
 
-    private bool isSubscriptionId(string subId)
+
+    [RegisterConditionValidator(typeof(SubscriptionValidatorStates), SubscriptionValidatorStates.IsActive, "Subscription not active", IsCachability = true)]
+    private async Task<ConditionResult> IsActive(DataFilter<string, Subscription> data)
     {
-        var result = _checker.Injector.Context.Set<Subscription>()
-         .Any(user => user.Id == subId);
+        //GetSubscription(context);
+        if (data.Share == null) return ConditionResult.ToFailure(null, "Subscription is null.Please provide correct id or share");
+        if (data.Share.Status!.Equals("active", StringComparison.OrdinalIgnoreCase))
+            return ConditionResult.ToSuccess(data.Share, "Subscription is not active");
+        return ConditionResult.ToFailure(new ProblemDetails
+        {
+            Title = "Subscription is not active",
+            Detail = "You are not subscription",
+            Status = (int)SubscriptionValidatorStates.IsNotSubscribe
+        }, "Subscription is null.Please provide id or share");
+    }
+
+    [RegisterConditionValidator(typeof(SubscriptionValidatorStates), SubscriptionValidatorStates.IsCanceled, "Subscription is canceled")]
+    private Task<ConditionResult> IsCanceled(DataFilter<string, Subscription> data)
+    {
+        if (data.Share == null) return ConditionResult.ToFailureAsync(null, "Subscription is null.Please provide correct id or share");
+        return Task.FromResult(new ConditionResult(Subscription.Status!.Equals("canceled", StringComparison.OrdinalIgnoreCase), Subscription, "Subscription is canceled"));
+    }
+
+    [RegisterConditionValidator(typeof(SubscriptionValidatorStates), SubscriptionValidatorStates.IsCancelAtPeriodEnd, "Subscription is will cancel at period end")]
+    private Task<ConditionResult> IsCancelAtPeriodEnd(DataFilter<string, Subscription> data)
+    {
+        if (data.Share == null) return ConditionResult.ToFailureAsync(null, "Subscription is null.Please provide correct id or share");
+        return Task.FromResult(new ConditionResult(data.Share.CancelAtPeriodEnd, new ProblemDetails
+        {
+            Title = "Subscription will  cancel at period end",
+            Detail = "Subscription is canceled. Do you want to renew it?",
+            Status = (int)SubscriptionValidatorStates.IsCancelAtPeriodEnd
+        }, "Subscription is will cancel at period end"));
+    }
+    [RegisterConditionValidator(typeof(SubscriptionValidatorStates), SubscriptionValidatorStates.IsAllowedRequests, "You have exhausted all allowed subscription requests.")]
+    async Task<ConditionResult> IsAllowedRequests(DataFilter<string, Subscription> data)
+    {
+        if (data.Share == null) return ConditionResult.ToFailure(null, "Subscription is null.Please provide correct id or share");
+        var requests = await _checker.Injector.Context.Requests
+            .CountAsync(r => r.SubscriptionId == data.Share.Id
+            && r.Status == RequestStatus.Success.ToString()
+            && r.CreatedAt >= data.Share.CurrentPeriodStart && r.CreatedAt <= data.Share.CurrentPeriodEnd);
+
+        return new ConditionResult(requests < data.Share.AllowedRequests, data.Share, "You have exhausted all allowed subscription requests.");
+    }
+
+    [RegisterConditionValidator(typeof(SubscriptionValidatorStates), SubscriptionValidatorStates.IsSubscribe, "You are not subscriped.")]
+    async Task<ConditionResult> IsSubscribeAsync(DataFilter<string, Subscription> data)
+    {
+        var checks = new Func<DataFilter<string, Subscription>, Task<ConditionResult>>[]
+    {
+        IsCancelAtPeriodEnd,
+        IsCanceled,
+    };
+
+        foreach (var check in checks)
+        {
+            var result = await check(data);
+            if (result.Success == true)
+            {
+                result.Success = false;
+                return result;
+            }
+        }
+
+        return await IsActive(data);
+    }
+
+    [RegisterConditionValidator(typeof(SubscriptionValidatorStates), SubscriptionValidatorStates.IsNotSubscribe, "You are not subscriped.")]
+    async Task<ConditionResult> IsNotSubscribeAsync(DataFilter<string, Subscription> data)
+    {
+        var result = await IsSubscribeAsync(data);
+        result.Success = !result.Success;
         return result;
     }
 
-    bool isCustomerId(string userId)
+    protected override async Task<Subscription?> GetModel(string? id)
     {
-        return _checker.Check(ApplicationUserValidatorStates.HasCustomerId, userId);
+        var userId = _injector.UserClaims.UserId;
 
+        //if (_subscription is { Id: var id1, UserId: var userId } && (id1 == id || userId == id))
+        if (Subscription != null && (Subscription.Id == id || Subscription.UserId == userId))
+            return Subscription;
+
+        if (id is null || id.Equals("userId", StringComparison.CurrentCultureIgnoreCase))
+            return await GetSubscription();
+
+        Subscription = await base.GetModel(id);
+        return Subscription;
     }
-
-    bool IsActive(SubscriptionResponseFilterDso context)
-    {
-        GetSubscription(context);
-        return Subscription.Status!.Equals("active", StringComparison.OrdinalIgnoreCase);
-    }
-
-    bool IsCanceled(SubscriptionResponseFilterDso context)
-    {
-        GetSubscription(context);
-        return Subscription.Status!.Equals("canceled", StringComparison.OrdinalIgnoreCase);
-    }
-
-    bool IsCancelAtPeriodEnd(SubscriptionResponseFilterDso context)
-    {
-        GetSubscription(context);
-        return Subscription.CancelAtPeriodEnd;
-    }
-
-    bool IsAllowedRequests(SubscriptionResponseFilterDso context)
-    {
-        var subscription = GetSubscription(context);
-        var requests = _checker.Injector.Context.Requests
-            .Where(r => r.SubscriptionId == subscription.Id
-            && r.Status == RequestStatus.Success.ToString()
-            && r.CreatedAt >= subscription.CurrentPeriodStart && r.CreatedAt <= subscription.CurrentPeriodEnd)
-            .ToList();
-
-        return subscription.AllowedRequests >= requests.Count;
-    }
-
-    bool IsNotAllowedRequests(SubscriptionResponseFilterDso context)
-    {
-        //await GetSubscription(context);
-        return !IsAllowedRequests(context);
-    }
-
-    bool IsSubscribeAsync(SubscriptionResponseFilterDso context)
-    {
-        if (IsCancelAtPeriodEnd(context) || IsCanceled(context)) return false;
-
-        return IsActive(context);
-    }
-
-    ProblemDetails? IsNotSubscribeAsync(SubscriptionResponseFilterDso context)
-    {
-        if (IsCanceled(context))
-        {
-            return new ProblemDetails
-            {
-                Title = "Subscription has canceled",
-                Detail = "Your subscription has canceled",
-                Status = (int)SubscriptionValidatorStates.IsCanceled,
-                //Type = "https://example.com/canceled"
-            };
-        }
-        else if (IsCancelAtPeriodEnd(context))
-        {
-            return new ProblemDetails
-            {
-                Title = "Subscription will cancel cancel at periodend",
-                Detail = "Subscription is canceled. Do you want to renew it?",
-                Status = (int)SubscriptionValidatorStates.IsCancelAtPeriodEnd
-            };
-        }
-        else if (!IsActive(context))
-        {
-            return new ProblemDetails
-            {
-                Title = "Subscription is not active",
-                Detail = "You are not subscription",
-                Status = (int)SubscriptionValidatorStates.IsNotSubscribe
-            };
-        }
-        return null;
-    }
-
-
-    private async Task<ConditionResult> VaildIsServiceIdResultAsync(string subId)
-    {
-        var subscription = GetSubscription(null);
-        var result = await _checker.Injector.Context.Subscriptions
-                             .Include(s => s.PlanId)
-
-                            .FirstOrDefaultAsync(s => s.Id == subscription.Id);
-
-        if (result.Status!.Equals("active", StringComparison.OrdinalIgnoreCase))
-            return new ConditionResult(true, result, "");
-        return new ConditionResult(false, null, "error");
-    }
-
-
 }

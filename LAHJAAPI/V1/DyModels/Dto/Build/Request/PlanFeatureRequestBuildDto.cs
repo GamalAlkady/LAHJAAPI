@@ -8,7 +8,7 @@ namespace V1.DyModels.Dto.Build.Requests
         /// <summary>
         /// Id property for DTO.
         /// </summary>
-        public Int32 Id { get; set; }
+        public string Id { get; set; }=$"planfeature_{Guid.NewGuid():N}";
         public required string Key { get; set; }
         public required string Value { get; set; }
         public TranslationData? Name { get; set; } = new();
@@ -17,6 +17,6 @@ namespace V1.DyModels.Dto.Build.Requests
         /// PlanId property for DTO.
         /// </summary>
         public String? PlanId { get; set; }
-        public PlanRequestBuildDto? Plan { get; set; }
+        //public PlanRequestBuildDto? Plan { get; set; }
     }
 }
