@@ -77,6 +77,7 @@ namespace V1.Services.Services
         {
             if (NumberRequests != 0 && !refresh) return NumberRequests;
             await GetUserSubscription(subsriptionId);
+            //NumberRequests = await _requestRepository.GetCount(Subscription.Id, null, Subscription.CurrentPeriodStart, Subscription.CurrentPeriodEnd, RequestStatus.Success.ToString());
 
             var response = await _requestRepository.GetAllByAsync([
              new FilterCondition("SubscriptionId", Subscription.Id),

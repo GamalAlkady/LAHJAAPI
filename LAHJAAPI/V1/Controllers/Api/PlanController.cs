@@ -33,7 +33,7 @@ namespace LAHJAAPI.V1.Controllers.Api
             {
                 _logger.LogInformation("Fetching all Plans...");
                 var result = await _planService.GetAllAsync();
-                var items = _mapper.Map<List<PlanOutputVM>>(result, opts => opts.Items.Add(HelperTranslation.KEYLG, lg));
+                var items = _mapper.Map<List<PlanOutputVM>>(result);
                 return Ok(items);
             }
             catch (Exception ex)

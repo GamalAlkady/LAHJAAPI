@@ -614,21 +614,21 @@ namespace LAHJAAPI.V1.Controllers.Api
             }
         }
 
-        [HttpGet("CountAllowedRequests")]
+        [HttpGet("NumberAllowedRequests")]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-        public async Task<ActionResult<int>> CountAllowedRequests()
+        public async Task<ActionResult<int>> NumberAllowedRequests()
         {
             try
             {
-                _logger.LogInformation("Counting allowed requests...");
+                _logger.LogInformation("Fetching number of allowed requests...");
                 var count = await _subscriptionService.GetNumberRequests();
                 return Ok(count);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error while counting allowed requests");
+                _logger.LogError(ex, "Error while fetching number of allowed requests");
                 return StatusCode(500, "Internal Server Error");
             }
         }
