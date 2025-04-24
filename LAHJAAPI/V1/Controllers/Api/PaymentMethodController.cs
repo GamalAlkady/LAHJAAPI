@@ -1,14 +1,14 @@
 ﻿using APILAHJA.Utilities;
-using LAHJAAPI.Stripe.Payment;
+using LAHJAAPI.V1.DyModels.VM.Stripe.Payment;
 using Microsoft.AspNetCore.Mvc;
 using Stripe;
 using StripeGateway;
 
 namespace LAHJAAPI.V1.Controllers.Api
 {
-    [Route("api/[controller]")]
+    [Route("api/v1/user/[controller]")]
     [ApiController]
-    public class PaymentController(
+    public class PaymentMethodController(
         IStripeSetupIntent stripeSetupIntent,
         IStripeCustomer stripeCustomer,
         IStripePaymentMethod stripePaymentMethod,

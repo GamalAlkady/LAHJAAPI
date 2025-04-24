@@ -1,18 +1,14 @@
-using AutoMapper;
-using Microsoft.Extensions.Logging;
-using System.Collections.Generic;
-using V1.Services.Services;
-using Microsoft.AspNetCore.Mvc;
-using V1.DyModels.VMs;
-using System.Linq.Expressions;
-using V1.DyModels.Dso.Requests;
 using AutoGenerator.Helper.Translation;
-using System;
+using AutoMapper;
+using Microsoft.AspNetCore.Mvc;
+using V1.DyModels.Dso.Requests;
+using V1.DyModels.VMs;
+using V1.Services.Services;
 
-namespace V1.Controllers.Api
+namespace LAHJAAPI.V1.Controllers.Api
 {
     //[ApiExplorerSettings(GroupName = "V1")]
-    [Route("api/V1/Api/[controller]")]
+    [Route("api/v1/user/[controller]")]
     [ApiController]
     public class ServiceMethodController : ControllerBase
     {

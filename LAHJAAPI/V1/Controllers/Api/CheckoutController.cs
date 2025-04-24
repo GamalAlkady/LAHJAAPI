@@ -1,8 +1,7 @@
 ﻿using AutoMapper;
-using Dto.Stripe.CheckoutDto;
-using Dto.Stripe.Customer;
-using LAHJAAPI.Stripe.Checkout;
-using LAHJAAPI.Stripe.Payment;
+using LAHJAAPI.V1.DyModels.VM.Stripe.Checkout;
+using LAHJAAPI.V1.DyModels.VM.Stripe.Customer;
+using LAHJAAPI.V1.DyModels.VM.Stripe.Payment;
 using LAHJAAPI.V1.Validators;
 using LAHJAAPI.V1.Validators.Conditions;
 using Microsoft.AspNetCore.Mvc;
@@ -14,9 +13,9 @@ using V1.DyModels.Dso.ResponseFilters;
 using V1.DyModels.Dso.Responses;
 using V1.Services.Services;
 
-namespace Api.Controllers
+namespace LAHJAAPI.V1.Controllers.Api
 {
-    [Route("api/[controller]")]
+    [Route("api/v1/user/[controller]")]
     [ApiController]
     public class CheckoutController(
         IUseApplicationUserService userService,
@@ -160,11 +159,11 @@ namespace Api.Controllers
         private async Task<ActionResult> CreateFreeSubscription(string planId, string customerId)
         {
             logger.LogInformation("Creating free subscription for plan ID: {planId}", planId);
-            var sub = await stripeSubscription.CreateAsync(new Stripe.SubscriptionCreateOptions()
+            var sub = await stripeSubscription.CreateAsync(new SubscriptionCreateOptions()
             {
                 Customer = customerId,
-                Items = new List<Stripe.SubscriptionItemOptions>{
-                        new Stripe.SubscriptionItemOptions
+                Items = new List<SubscriptionItemOptions>{
+                        new SubscriptionItemOptions
                         {
                             Price = planId,
                         },
@@ -193,7 +192,7 @@ namespace Api.Controllers
                 var customer = customers.FirstOrDefault();
                 if (customer == null)
                 {
-                    customer = await stripeCustomer.CreateAsync(new Stripe.CustomerCreateOptions()
+                    customer = await stripeCustomer.CreateAsync(new CustomerCreateOptions()
                     {
                         Name = user.DisplayName,
                         Email = user.Email

@@ -3,8 +3,6 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.14.35906.104
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AutoGenerator", "AutoGenerator\AutoGenerator.csproj", "{C50F2460-9CF9-4099-8EDD-92F536C13BE3}"
-EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Infrastrucure", "Infrastrucure", "{02EA681E-C7D8-13C7-8484-4AC65E1B71E8}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LAHJAAPI", "LAHJAAPI\LAHJAAPI.csproj", "{A51C3AD5-6C27-62A0-74BA-AD18CABFDE55}"
@@ -15,8 +13,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Microservices", "Microservi
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StripeGateway", "StripeGateway\StripeGateway.csproj", "{46BD8406-72F3-EC94-41B4-E7F71BE2F745}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AutoNotificationService", "AutoNotificationService\AutoNotificationService.csproj", "{1370BDAB-01D3-7303-F5A9-DB027413F0C9}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Web", "..\Web\Web.csproj", "{BDAAE4BA-8512-F499-7C7F-A68C84A524DB}"
 EndProject
 Global
@@ -25,10 +21,6 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{C50F2460-9CF9-4099-8EDD-92F536C13BE3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{C50F2460-9CF9-4099-8EDD-92F536C13BE3}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{C50F2460-9CF9-4099-8EDD-92F536C13BE3}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{C50F2460-9CF9-4099-8EDD-92F536C13BE3}.Release|Any CPU.Build.0 = Release|Any CPU
 		{A51C3AD5-6C27-62A0-74BA-AD18CABFDE55}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{A51C3AD5-6C27-62A0-74BA-AD18CABFDE55}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A51C3AD5-6C27-62A0-74BA-AD18CABFDE55}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -41,10 +33,6 @@ Global
 		{46BD8406-72F3-EC94-41B4-E7F71BE2F745}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{46BD8406-72F3-EC94-41B4-E7F71BE2F745}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{46BD8406-72F3-EC94-41B4-E7F71BE2F745}.Release|Any CPU.Build.0 = Release|Any CPU
-		{1370BDAB-01D3-7303-F5A9-DB027413F0C9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{1370BDAB-01D3-7303-F5A9-DB027413F0C9}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{1370BDAB-01D3-7303-F5A9-DB027413F0C9}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{1370BDAB-01D3-7303-F5A9-DB027413F0C9}.Release|Any CPU.Build.0 = Release|Any CPU
 		{BDAAE4BA-8512-F499-7C7F-A68C84A524DB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{BDAAE4BA-8512-F499-7C7F-A68C84A524DB}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{BDAAE4BA-8512-F499-7C7F-A68C84A524DB}.Release|Any CPU.ActiveCfg = Release|Any CPU

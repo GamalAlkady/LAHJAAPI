@@ -9,7 +9,7 @@
 >> dotnet ef migrations remove // remove
 
 
-dotnet ef migrations add initialcreation --project '../AutoGenerator/AutoGenerator.csproj' -c  DataContext
+dotnet ef migrations add initialcreation --project '../Models' -c  DataContext
 
 dotnet ef migrations remove initialcreation --project '../ASG.Models' -c  DataContext
 

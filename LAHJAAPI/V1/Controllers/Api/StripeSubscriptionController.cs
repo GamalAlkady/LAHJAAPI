@@ -3,11 +3,11 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.OutputCaching;
 using StripeGateway;
 
-namespace Api.Controllers
+namespace LAHJAAPI.V1.Controllers.Api
 {
 
     [ApiExplorerSettings(IgnoreApi = true)]
-    [Route("api/[controller]")]
+    [Route("api/v1/user/[controller]")]
     [ApiController]
     [OutputCache(PolicyName = "CustomPolicy")]
     public class StripeSubscriptionController(IStripeSubscription stripeSubscription, IMapper mapper) : Controller

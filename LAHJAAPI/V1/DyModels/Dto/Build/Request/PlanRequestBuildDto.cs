@@ -25,7 +25,7 @@ namespace V1.DyModels.Dto.Build.Requests
         /// </summary>
         public Double Amount { get; set; }
 
-        public string? Currency { get; set; }
+        public string? Currency { get; set; } = "SAR";       // daily , weekly , monthly ,.. 
 
         /// <summary>
         /// Active property for DTO.

@@ -5,10 +5,10 @@ using V1.DyModels.Dso.Requests;
 using V1.DyModels.VMs;
 using V1.Services.Services;
 
-namespace V1.Controllers.Api
+namespace LAHJAAPI.V1.Controllers.Api
 {
     //[ApiExplorerSettings(GroupName = "V1")]
-    [Route("api/V1/Api/[controller]")]
+    [Route("api/v1/user/[controller]")]
     [ApiController]
     public class ServiceController : ControllerBase
     {

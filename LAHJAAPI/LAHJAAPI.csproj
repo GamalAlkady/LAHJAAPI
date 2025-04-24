@@ -27,10 +27,12 @@
 	  <PackageReference Include="MimeKit" Version="4.11.0" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
 	  <PackageReference Include="FluentResults" Version="3.16.0" />
+	  <PackageReference Include="WasmAI.AutoGenerator" Version="1.0.1-beta" />
   </ItemGroup>
 
   <ItemGroup>
     <Folder Include="Base\" />
+    <Folder Include="Controllers\" />
   </ItemGroup>
 
   <ItemGroup>
@@ -38,8 +40,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\AutoGenerator\AutoGenerator.csproj" />
-    <ProjectReference Include="..\AutoNotificationService\AutoNotificationService.csproj" />
+  
     <ProjectReference Include="..\Models\Models.csproj" />
     <ProjectReference Include="..\StripeGateway\StripeGateway.csproj" />
   </ItemGroup>

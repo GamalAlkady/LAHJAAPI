@@ -69,9 +69,6 @@ builder.Services.
 
     });
 
-//TODO: preapare the shared
-//TODO: preapare the services
-//TODO: preapare the controller
 //TODO: read about Mock I see it in deepseek => repositories
 
 

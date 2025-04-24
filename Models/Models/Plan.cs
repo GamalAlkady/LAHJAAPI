@@ -15,6 +15,7 @@ namespace LAHJAAPI.Models
         public string? Description { get; set; }
         public List<string>? Images { get; set; }
         public string BillingPeriod { get; set; } = "monthly";       // daily , weekly , monthly ,.. 
+        public string? Currency { get; set; } = "SAR";       // daily , weekly , monthly ,.. 
         public required double Amount { get; set; }
         public bool Active { get; set; } = true;
         public DateTime UpdatedAt { get; set; } = DateTime.Now;

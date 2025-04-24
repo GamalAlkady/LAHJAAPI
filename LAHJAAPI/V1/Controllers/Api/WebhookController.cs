@@ -11,11 +11,11 @@ using StripeGateway;
 using V1.DyModels.Dso.Requests;
 using V1.Services.Services;
 
-namespace Api.Controllers;
+namespace LAHJAAPI.V1.Controllers.Api;
 
 [ApiExplorerSettings(IgnoreApi = true)]
 [AllowAnonymous]
-[Route("api/[controller]")]
+[Route("api/v1/user/[controller]")]
 [ApiController]
 public class WebhookController(
     IStripeWebhook stripeWebhook,
@@ -48,7 +48,7 @@ public class WebhookController(
                         Customer? customer = stripeEvent.Data.Object as Customer;
                         using var scope = serviceScopeFactory.CreateScope();
                         var context = scope.ServiceProvider.GetRequiredService<DataContext>();
-                        var userManager = scope.ServiceProvider.GetRequiredService<UserManager<LAHJAAPI.Models.ApplicationUser>>();
+                        var userManager = scope.ServiceProvider.GetRequiredService<UserManager<Models.ApplicationUser>>();
                         if (customer?.Email == null) break;
 
                         var user = await userManager.FindByEmailAsync(customer.Email);
@@ -62,7 +62,7 @@ public class WebhookController(
                 // Handle the event
                 case EventTypes.CustomerSubscriptionCreated:
                     {
-                        var subscription = stripeEvent.Data.Object as Stripe.Subscription;
+                        var subscription = stripeEvent.Data.Object as Subscription;
                         var price = subscription.Items.First().Price;
 
                         Console.ForegroundColor = ConsoleColor.Green;
@@ -75,7 +75,7 @@ public class WebhookController(
                     }
                 case EventTypes.CustomerSubscriptionUpdated:
                     {
-                        var subscription = stripeEvent.Data.Object as Stripe.Subscription;
+                        var subscription = stripeEvent.Data.Object as Subscription;
                         var price = subscription.Items.First().Price;
 
                         Console.ForegroundColor = ConsoleColor.Green;
@@ -87,7 +87,7 @@ public class WebhookController(
 
                 case EventTypes.CustomerSubscriptionDeleted:
                     {
-                        var subscription = stripeEvent.Data.Object as Stripe.Subscription;
+                        var subscription = stripeEvent.Data.Object as Subscription;
                         await DeleteSubscription(subscription);
 
                         Console.ForegroundColor = ConsoleColor.Yellow;
@@ -120,7 +120,7 @@ public class WebhookController(
         }
     }
 
-    private async Task CreateSubscription(Stripe.Subscription subscription, Price price)
+    private async Task CreateSubscription(Subscription subscription, Price price)
     {
         using var scope = serviceScopeFactory.CreateScope();
         // Resolve DataContext from the new scope
@@ -138,7 +138,7 @@ public class WebhookController(
 
         var oldSubscription = await context.Subscriptions.FirstOrDefaultAsync(u => u.UserId == user.Id);
 
-        var newSubscription = new LAHJAAPI.Models.Subscription()
+        var newSubscription = new Models.Subscription()
         {
             Id = subscription.Id,
             UserId = user.Id,// store the
@@ -164,7 +164,7 @@ public class WebhookController(
 
     }
 
-    private async Task UpdateSubscription(Stripe.Subscription subscription, Price price)
+    private async Task UpdateSubscription(Subscription subscription, Price price)
     {
         //bool condition = false;
         //while (!condition)
@@ -230,7 +230,7 @@ public class WebhookController(
         //} // end while
     }
 
-    private async Task DeleteSubscription(Stripe.Subscription subscription, CancellationToken cancellationToken = default)
+    private async Task DeleteSubscription(Subscription subscription, CancellationToken cancellationToken = default)
     {
         using (var scope = serviceScopeFactory.CreateScope())
         {

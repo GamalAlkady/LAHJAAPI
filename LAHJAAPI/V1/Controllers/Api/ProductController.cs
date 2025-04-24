@@ -1,15 +1,15 @@
 using AutoMapper;
-using Dto.Stripe.Product;
+using LAHJAAPI.V1.DyModels.VM.Stripe.Product;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Caching.Memory;
 using Stripe;
 using StripeGateway;
 
-namespace ASG.Api.Controllers
+namespace LAHJAAPI.V1.Controllers.Api
 {
     [AllowAnonymous]
-    [Route("api/products")]
+    [Route("api/v1/user/[controller]")]
     [ApiController]
     public class ProductController(IStripeProduct stripeProduct, IMemoryCache memoryCache, IMapper mapper) : Controller
     {

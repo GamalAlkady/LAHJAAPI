@@ -6,7 +6,6 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 	<ItemGroup>
-		<PackageReference Include="Microsoft.AspNet.Identity.EntityFramework" Version="2.2.4" />
 		<PackageReference Include="Microsoft.AspNetCore.Identity" Version="2.3.1" />
 		<PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="8.0.15" />
 		<PackageReference Include="Microsoft.Extensions.Identity.Stores" Version="9.0.3" />
@@ -17,7 +16,7 @@
 		</PackageReference>
 	</ItemGroup>
 	<ItemGroup>
-	  <ProjectReference Include="..\AutoGenerator\AutoGenerator.csproj" />
+		<PackageReference Include="WasmAI.AutoGenerator" Version="1.0.1-beta" />
 	</ItemGroup>
 
 </Project>

@@ -43,6 +43,7 @@ public static class IdentityApiEndpointRouteBuilderExtensions
         var timeProvider = endpoints.ServiceProvider.GetRequiredService<TimeProvider>();
         var bearerTokenOptions = endpoints.ServiceProvider.GetRequiredService<IOptionsMonitor<BearerTokenOptions>>();
         var emailSender = endpoints.ServiceProvider.GetRequiredService<IEmailSender<TUser>>();
+        //var checker = endpoints.ServiceProvider.GetRequiredService<IConditionChecker>();
         var linkGenerator = endpoints.ServiceProvider.GetRequiredService<LinkGenerator>();
         var appSettings = endpoints.ServiceProvider.GetRequiredService<IOptions<AppSettings>>().Value;
         //var tokenListService = endpoints.ServiceProvider.GetRequiredService<TokenlistService>();
@@ -260,6 +261,12 @@ public static class IdentityApiEndpointRouteBuilderExtensions
             {
                 return TypedResults.Ok<string>("Your email has already been confirmed.");
             }
+            //await checker.Injector.Notifier.NotifyAsyn(new EmailModel()
+            //{
+            //    Body = TemplateTagEmail.GetConfirmationEmailHtml(resendRequest.ReturnUrl),
+            //    Subject = "Confirmation Email In LAHJA",
+            //    ToEmail = resendRequest.Email,
+            //});
             await SendConfirmationEmailAsync(user, userManager, context, resendRequest.ReturnUrl, resendRequest.Email);
             return TypedResults.Ok();
         }).WithTags("Auth");

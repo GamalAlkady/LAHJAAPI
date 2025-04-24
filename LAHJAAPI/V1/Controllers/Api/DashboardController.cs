@@ -8,7 +8,7 @@ namespace Api.Controllers
 {
     [ServiceFilter(typeof(SubscriptionCheckFilter))]
     [ApiController]
-    [Route("api/[controller]")]
+    [Route("api/v1/user/[controller]")]
     //[OutputCache(PolicyName = "CustomPolicy", Tags = new[] { "requests" })]
     public class DashboardController(
         IStatisticsService statisticsService,

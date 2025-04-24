@@ -6,7 +6,7 @@ using V1.Services.Services;
 
 namespace Api.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("api/v1/user/[controller]")]
     [ApiController]
 
     public class MasterController

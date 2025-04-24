@@ -1,7 +1,7 @@
 ﻿using AutoMapper;
-using Dto.Stripe.Product;
+using LAHJAAPI.V1.DyModels.VM.Stripe.PriceDto;
+using LAHJAAPI.V1.DyModels.VM.Stripe.Product;
 using Stripe;
-using StripeGateway;
 
 namespace Api.Config
 {

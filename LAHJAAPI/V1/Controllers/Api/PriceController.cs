@@ -1,12 +1,13 @@
 using AutoMapper;
+using LAHJAAPI.V1.DyModels.VM.Stripe.PriceDto;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Caching.Memory;
 using Stripe;
 using StripeGateway;
 
-namespace ASG.Api2.Controllers
+namespace LAHJAAPI.V1.Controllers.Api
 {
-    [Route("api/[controller]")]
+    [Route("api/v1/user/[controller]")]
     [ApiController]
     public class PriceController(IStripePrice stripePrice, IMapper mapper, IMemoryCache memoryCache) : Controller
     {

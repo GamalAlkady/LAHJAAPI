@@ -45,7 +45,7 @@ namespace Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Advertisements", (string)null);
+                    b.ToTable("Advertisements");
                 });
 
             modelBuilder.Entity("LAHJAAPI.Models.AdvertisementTab", b =>
@@ -70,7 +70,7 @@ namespace Data.Migrations
 
                     b.HasIndex("AdvertisementId");
 
-                    b.ToTable("AdvertisementTab", (string)null);
+                    b.ToTable("AdvertisementTabs");
                 });
 
             modelBuilder.Entity("LAHJAAPI.Models.ApplicationUser", b =>
@@ -219,7 +219,7 @@ namespace Data.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("AuthorizationSessions", (string)null);
+                    b.ToTable("AuthorizationSessions");
                 });
 
             modelBuilder.Entity("LAHJAAPI.Models.CategoryModel", b =>
@@ -236,7 +236,7 @@ namespace Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Categories", (string)null);
+                    b.ToTable("Categories");
                 });
 
             modelBuilder.Entity("LAHJAAPI.Models.Dialect", b =>
@@ -259,7 +259,7 @@ namespace Data.Migrations
 
                     b.HasIndex("LanguageId");
 
-                    b.ToTable("Dialects", (string)null);
+                    b.ToTable("Dialects");
                 });
 
             modelBuilder.Entity("LAHJAAPI.Models.EventRequest", b =>
@@ -285,7 +285,7 @@ namespace Data.Migrations
 
                     b.HasIndex("RequestId");
 
-                    b.ToTable("EventRequests", (string)null);
+                    b.ToTable("EventRequests");
                 });
 
             modelBuilder.Entity("LAHJAAPI.Models.Invoice", b =>
@@ -310,7 +310,7 @@ namespace Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Invoices", (string)null);
+                    b.ToTable("Invoices");
                 });
 
             modelBuilder.Entity("LAHJAAPI.Models.Language", b =>
@@ -328,7 +328,7 @@ namespace Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Languages", (string)null);
+                    b.ToTable("Languages");
                 });
 
             modelBuilder.Entity("LAHJAAPI.Models.ModelAi", b =>
@@ -371,7 +371,7 @@ namespace Data.Migrations
 
                     b.HasIndex("ModelGatewayId");
 
-                    b.ToTable("ModelAis", (string)null);
+                    b.ToTable("ModelAis");
                 });
 
             modelBuilder.Entity("LAHJAAPI.Models.ModelGateway", b =>
@@ -395,7 +395,7 @@ namespace Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("ModelGateways", (string)null);
+                    b.ToTable("ModelGateways");
                 });
 
             modelBuilder.Entity("LAHJAAPI.Models.Payment", b =>
@@ -430,7 +430,7 @@ namespace Data.Migrations
 
                     b.HasIndex("InvoiceId");
 
-                    b.ToTable("Payments", (string)null);
+                    b.ToTable("Payments");
                 });
 
             modelBuilder.Entity("LAHJAAPI.Models.Plan", b =>
@@ -451,6 +451,9 @@ namespace Data.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<string>("Currency")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("Description")
                         .HasColumnType("nvarchar(max)");
 
@@ -470,7 +473,7 @@ namespace Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Plans", (string)null);
+                    b.ToTable("Plans");
                 });
 
             modelBuilder.Entity("LAHJAAPI.Models.PlanFeature", b =>
@@ -506,7 +509,7 @@ namespace Data.Migrations
 
                     b.HasIndex("PlanId");
 
-                    b.ToTable("PlanFeatures", (string)null);
+                    b.ToTable("PlanFeatures");
                 });
 
             modelBuilder.Entity("LAHJAAPI.Models.PlanServices", b =>
@@ -533,7 +536,7 @@ namespace Data.Migrations
 
                     b.HasIndex("ServiceId");
 
-                    b.ToTable("PlanServices", (string)null);
+                    b.ToTable("PlanServices");
                 });
 
             modelBuilder.Entity("LAHJAAPI.Models.Request", b =>
@@ -588,7 +591,7 @@ namespace Data.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("Requests", (string)null);
+                    b.ToTable("Requests");
                 });
 
             modelBuilder.Entity("LAHJAAPI.Models.Service", b =>
@@ -615,7 +618,7 @@ namespace Data.Migrations
 
                     b.HasIndex("ModelAiId");
 
-                    b.ToTable("Services", (string)null);
+                    b.ToTable("Services");
                 });
 
             modelBuilder.Entity("LAHJAAPI.Models.ServiceMethod", b =>
@@ -641,7 +644,7 @@ namespace Data.Migrations
 
                     b.HasIndex("ServiceId");
 
-                    b.ToTable("ServiceMethods", (string)null);
+                    b.ToTable("ServiceMethods");
                 });
 
             modelBuilder.Entity("LAHJAAPI.Models.Setting", b =>
@@ -654,7 +657,7 @@ namespace Data.Migrations
 
                     b.HasKey("Name");
 
-                    b.ToTable("Settings", (string)null);
+                    b.ToTable("Settings");
                 });
 
             modelBuilder.Entity("LAHJAAPI.Models.Space", b =>
@@ -699,7 +702,7 @@ namespace Data.Migrations
 
                     b.HasIndex("SubscriptionId");
 
-                    b.ToTable("Spaces", (string)null);
+                    b.ToTable("Spaces");
                 });
 
             modelBuilder.Entity("LAHJAAPI.Models.Subscription", b =>
@@ -756,7 +759,7 @@ namespace Data.Migrations
                         .IsUnique()
                         .HasFilter("[UserId] IS NOT NULL");
 
-                    b.ToTable("Subscriptions", (string)null);
+                    b.ToTable("Subscriptions");
                 });
 
             modelBuilder.Entity("LAHJAAPI.Models.TypeModel", b =>
@@ -779,7 +782,7 @@ namespace Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Types", (string)null);
+                    b.ToTable("Types");
                 });
 
             modelBuilder.Entity("LAHJAAPI.Models.UserModelAi", b =>
@@ -803,7 +806,7 @@ namespace Data.Migrations
 
                     b.HasIndex("ModelAiId");
 
-                    b.ToTable("UserModelAis", (string)null);
+                    b.ToTable("UserModelAis");
                 });
 
             modelBuilder.Entity("LAHJAAPI.Models.UserService", b =>
@@ -824,7 +827,7 @@ namespace Data.Migrations
 
                     b.HasIndex("ServiceId");
 
-                    b.ToTable("UserServices", (string)null);
+                    b.ToTable("UserServices");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>
