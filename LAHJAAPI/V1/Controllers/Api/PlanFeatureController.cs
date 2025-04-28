@@ -1,6 +1,9 @@
+using AutoGenerator;
+using AutoGenerator.Helper;
 using AutoGenerator.Helper.Translation;
 using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
+using Quartz.Util;
 using V1.DyModels.Dso.Requests;
 using V1.DyModels.VMs;
 using V1.Services.Services;
@@ -34,6 +37,30 @@ namespace LAHJAAPI.V1.Controllers.Api
                 _logger.LogInformation("Fetching all PlanFeatures...");
                 var result = await _planfeatureService.GetAllAsync();
                 var items = _mapper.Map<List<PlanFeatureOutputVM>>(result);
+                return Ok(items);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error while fetching all PlanFeatures");
+                return StatusCode(500, "Internal Server Error");
+            }
+        }
+
+        [HttpGet("ByPlanId/{planId}", Name = "GetPlanFeaturesByPlanId")]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+        public async Task<ActionResult<PagedResponse<IEnumerable<PlanFeatureOutputVM>>>> GetAllByPlanId(string planId, string? lg)
+        {
+            try
+            {
+                _logger.LogInformation("Fetching all PlanFeatures...");
+                var result = await _planfeatureService.GetAllByAsync([new FilterCondition("PlanId", planId)]);
+                if (result.TotalRecords == 0) { return NoContent(); }
+                if (lg.IsNullOrWhiteSpace())
+                    return Ok(result.ToResponse(_mapper.Map<IEnumerable<PlanFeatureOutputVM>>(result.Data)));
+
+                var items = result.ToResponse(_mapper.Map<IEnumerable<PlanFeatureOutputVM>>(result.Data, opts => opts.Items[HelperTranslation.KEYLG] = lg));
                 return Ok(items);
             }
             catch (Exception ex)

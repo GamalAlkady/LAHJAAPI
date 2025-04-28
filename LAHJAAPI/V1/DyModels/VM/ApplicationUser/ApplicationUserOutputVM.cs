@@ -36,8 +36,7 @@ namespace V1.DyModels.VMs
         public List<UserModelAiOutputVM>? UserModelAis { get; set; }
         //
         public List<UserServiceOutputVM>? UserServices { get; set; }
-        //
-        public List<RequestOutputVM>? Requests { get; set; }
+
 
         ///
         public String? Id { get; set; }
@@ -51,12 +50,7 @@ namespace V1.DyModels.VMs
         public String? NormalizedEmail { get; set; }
         ///
         public Boolean EmailConfirmed { get; set; }
-        ///
-        public String? PasswordHash { get; set; }
-        ///
-        public String? SecurityStamp { get; set; }
-        ///
-        public String? ConcurrencyStamp { get; set; }
+
         ///
         public String? PhoneNumber { get; set; }
         ///

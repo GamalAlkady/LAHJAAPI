@@ -48,7 +48,7 @@ namespace LAHJAAPI.V1.Controllers.Api
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-        public async Task<ActionResult<ServiceInfoVM>> GetById(string? id)
+        public async Task<ActionResult<ServiceOutputVM>> GetById(string? id)
         {
             if (string.IsNullOrWhiteSpace(id))
             {
@@ -66,7 +66,7 @@ namespace LAHJAAPI.V1.Controllers.Api
                     return NotFound();
                 }
 
-                var item = _mapper.Map<ServiceInfoVM>(entity);
+                var item = _mapper.Map<ServiceOutputVM>(entity);
                 return Ok(item);
             }
             catch (Exception ex)
@@ -206,27 +206,21 @@ namespace LAHJAAPI.V1.Controllers.Api
         }
 
         // Update an existing Service.
-        [HttpPut(Name = "UpdateService")]
+        [HttpPut("{id}", Name = "UpdateService")]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-        public async Task<ActionResult<ServiceOutputVM>> Update([FromBody] ServiceUpdateVM model)
+        public async Task<ActionResult<ServiceOutputVM>> Update(string id, [FromBody] ServiceUpdateVM model)
         {
-
-            if (!ModelState.IsValid)
-            {
-                _logger.LogWarning("Invalid model state in Update: {ModelState}", ModelState);
-                return BadRequest(ModelState);
-            }
 
             try
             {
-                _logger.LogInformation("Updating Service with ID: {id}", model?.Id);
+                _logger.LogInformation("Updating Service with ID: {id}", id);
                 var item = _mapper.Map<ServiceRequestDso>(model);
                 var updatedEntity = await _serviceService.UpdateAsync(item);
                 if (updatedEntity == null)
                 {
-                    _logger.LogWarning("Service not found for update with ID: {id}", model?.Id);
+                    _logger.LogWarning("Service not found for update with ID: {id}", id);
                     return NotFound();
                 }
 
@@ -235,7 +229,7 @@ namespace LAHJAAPI.V1.Controllers.Api
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error while updating Service with ID: {id}", model?.Id);
+                _logger.LogError(ex, "Error while updating Service with ID: {id}", id);
                 return StatusCode(500, "Internal Server Error");
             }
         }
@@ -255,9 +249,14 @@ namespace LAHJAAPI.V1.Controllers.Api
 
             try
             {
+                if (!await _serviceService.ExistsAsync(id))
+                {
+                    _logger.LogWarning("Service not found with ID: {id}", id);
+                    return NotFound();
+                }
                 _logger.LogInformation("Deleting Service with ID: {id}", id);
                 await _serviceService.DeleteAsync(id);
-                return NoContent();
+                return Ok();
             }
             catch (Exception ex)
             {

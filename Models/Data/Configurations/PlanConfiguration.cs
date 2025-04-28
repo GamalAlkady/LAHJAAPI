@@ -15,7 +15,7 @@ namespace Models.Data.Configurations
             .IsRequired(false)
             .OnDelete(DeleteBehavior.Restrict);
 
-            builder.Navigation(e => e.PlanServices).AutoInclude();
+            builder.Navigation(e => e.PlanFeatures).AutoInclude();
 
         }
     }

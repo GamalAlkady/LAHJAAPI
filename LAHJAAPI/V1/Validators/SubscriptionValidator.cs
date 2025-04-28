@@ -67,10 +67,11 @@ public class SubscriptionValidator : ValidatorContext<Subscription, Subscription
         return result.AllowedSpaces >= result.SpaceCount;
     }
 
+    //TODO: Check spaces from plan features by build validator
     [RegisterConditionValidator(typeof(SubscriptionValidatorStates), SubscriptionValidatorStates.IsAvailableSpaces, "Spaces are not avaliable")]
     async Task<ConditionResult> IsSpacesAvailableAsync(DataFilter<string, Subscription> data)
     {
-        if (data.Share == null) return ConditionResult.ToFailure(null, "Subscription is not be null");
+        data.Share ??= await GetModel(null);
         var countSpaces = await _checker.Injector.Context.Spaces.CountAsync(x => x.SubscriptionId == data.Share.Id);
         data.Value = countSpaces.ToString();
         if ((data.Share?.AllowedSpaces > countSpaces))
@@ -78,8 +79,8 @@ public class SubscriptionValidator : ValidatorContext<Subscription, Subscription
         return ConditionResult.ToFailure(new ProblemDetails
         {
             Title = "Coudn't create space",
-            Detail = "You cannot add a space because the subscription is not active.",
-            Status = SubscriptionValidatorStates.IsActive.ToInt()
+            Detail = "You have exhausted all allowed subscription spaces.",
+            Status = SubscriptionValidatorStates.IsAvailableSpaces.ToInt()
         });
     }
 

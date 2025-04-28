@@ -266,17 +266,17 @@ namespace LAHJAAPI.V1.Controllers.Api
                 }
                 else newEventRequest.Details = eventRequestCreate.Details;
 
-                await _requestService.ExecuteTransactionAsync(async () =>
-                {
-                    //await _eventRequestService.CreateAsync(newEventRequest);
-                    await _eventRequestService.CreateAsync(newEventRequest);
-                    var requestVm = _mapper.Map<RequestOutputVM>(request);
-                    var requestRequest = _mapper.Map<RequestRequestDso>(requestVm);
-                    //requestRequest.Events.Add(newEventRequest);
-                    await _requestService.UpdateAsync(requestRequest);
-                    return true;
+                //await _requestService.ExecuteTransactionAsync(async () =>
+                //{
+                //await _eventRequestService.CreateAsync(newEventRequest);
+                await _eventRequestService.CreateAsync(newEventRequest);
+                var requestVm = _mapper.Map<RequestOutputVM>(request);
+                var requestRequest = _mapper.Map<RequestRequestDso>(requestVm);
+                //requestRequest.Events.Add(newEventRequest);
+                await _requestService.UpdateAsync(requestRequest);
+                //    return true;
 
-                });
+                //});
                 return Ok(_mapper.Map<EventRequestOutputVM>(newEventRequest));
 
                 //return BadRequest(HandelErrors.Problem("Create Event", "Transaction failed."));
@@ -289,11 +289,11 @@ namespace LAHJAAPI.V1.Controllers.Api
         }
 
         // Update an existing Request.
-        [HttpPut(Name = "UpdateRequest")]
+        [HttpPut("{id}", Name = "UpdateRequest")]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-        public async Task<ActionResult<RequestOutputVM>> Update([FromBody] RequestUpdateVM model)
+        public async Task<ActionResult<RequestOutputVM>> Update(string id, [FromBody] RequestUpdateVM model)
         {
             if (model == null)
             {
@@ -309,12 +309,12 @@ namespace LAHJAAPI.V1.Controllers.Api
 
             try
             {
-                _logger.LogInformation("Updating Request with ID: {id}", model?.Id);
+                _logger.LogInformation("Updating Request with ID: {id}", id);
                 var item = _mapper.Map<RequestRequestDso>(model);
                 var updatedEntity = await _requestService.UpdateAsync(item);
                 if (updatedEntity == null)
                 {
-                    _logger.LogWarning("Request not found for update with ID: {id}", model?.Id);
+                    _logger.LogWarning("Request not found for update with ID: {id}", id);
                     return NotFound();
                 }
 
@@ -323,7 +323,7 @@ namespace LAHJAAPI.V1.Controllers.Api
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error while updating Request with ID: {id}", model?.Id);
+                _logger.LogError(ex, "Error while updating Request with ID: {id}", id);
                 return StatusCode(500, "Internal Server Error");
             }
         }
@@ -333,7 +333,7 @@ namespace LAHJAAPI.V1.Controllers.Api
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> Delete(string? id)
+        public async Task<IActionResult> Delete(string id)
         {
             if (string.IsNullOrWhiteSpace(id))
             {
@@ -343,9 +343,14 @@ namespace LAHJAAPI.V1.Controllers.Api
 
             try
             {
+                if (!await _requestService.ExistsAsync(id))
+                {
+                    _logger.LogWarning("Request not found with ID: {id}", id);
+                    return NotFound();
+                }
                 _logger.LogInformation("Deleting Request with ID: {id}", id);
                 await _requestService.DeleteAsync(id);
-                return NoContent();
+                return Ok();
             }
             catch (Exception ex)
             {

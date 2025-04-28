@@ -1,3 +1,4 @@
+using AutoGenerator.Helper;
 using AutoGenerator.Helper.Translation;
 using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
@@ -211,11 +212,11 @@ namespace LAHJAAPI.V1.Controllers.Api
         }
 
         // Update an existing Setting.
-        [HttpPut(Name = "UpdateSetting")]
+        [HttpPut("{name}", Name = "UpdateSetting")]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-        public async Task<ActionResult<SettingOutputVM>> Update([FromBody] SettingUpdateVM model)
+        public async Task<ActionResult<SettingOutputVM>> Update(string name, [FromBody] SettingUpdateVM model)
         {
             if (model == null)
             {
@@ -231,12 +232,19 @@ namespace LAHJAAPI.V1.Controllers.Api
 
             try
             {
-                _logger.LogInformation("Updating Setting with ID: {id}", model?.Id);
+                var existingSetting = await _settingService.GetOneByAsync([new FilterCondition("Name", name)]);
+                if (existingSetting == null)
+                {
+                    _logger.LogWarning("Setting not found for update with Name: {name}", name);
+                    return NotFound();
+                }
+                _logger.LogInformation("Updating Setting with Name: {name}", name);
                 var item = _mapper.Map<SettingRequestDso>(model);
+                item.Name = name; // Ensure the name is set for the update
                 var updatedEntity = await _settingService.UpdateAsync(item);
                 if (updatedEntity == null)
                 {
-                    _logger.LogWarning("Setting not found for update with ID: {id}", model?.Id);
+                    _logger.LogWarning("Setting not found for update with Name: {name}", name);
                     return NotFound();
                 }
 
@@ -245,7 +253,8 @@ namespace LAHJAAPI.V1.Controllers.Api
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error while updating Setting with ID: {id}", model?.Id);
+                _logger.LogError(ex, "Error while updating Setting with Name: {name}", name);
+                return BadRequest(ex.Message);
                 return StatusCode(500, "Internal Server Error");
             }
         }
@@ -265,9 +274,14 @@ namespace LAHJAAPI.V1.Controllers.Api
 
             try
             {
+                if (!await _settingService.ExistsAsync(id, "Name"))
+                {
+                    _logger.LogWarning("Setting not found with ID: {id}", id);
+                    return NotFound();
+                }
                 _logger.LogInformation("Deleting Setting with ID: {id}", id);
                 await _settingService.DeleteAsync(id);
-                return NoContent();
+                return Ok();
             }
             catch (Exception ex)
             {

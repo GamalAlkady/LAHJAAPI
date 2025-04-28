@@ -1,6 +1,8 @@
+using AutoGenerator.Helper;
 using AutoGenerator.Helper.Translation;
 using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
+using Quartz.Util;
 using V1.DyModels.Dso.Requests;
 using V1.DyModels.VMs;
 using V1.Services.Services;
@@ -12,29 +14,36 @@ namespace LAHJAAPI.V1.Controllers.Api
     [ApiController]
     public class CategoryTabController : ControllerBase
     {
-        private readonly IUseCategoryTabService _categorytabService;
+        private readonly IUseCategoryTabService _categoryTabService;
         private readonly IMapper _mapper;
         private readonly ILogger _logger;
-        public CategoryTabController(IUseCategoryTabService categorytabService, IMapper mapper, ILoggerFactory logger)
+
+        public CategoryTabController(
+            IUseCategoryTabService categoryTabService,
+            IMapper mapper,
+            ILoggerFactory logger)
         {
-            _categorytabService = categorytabService;
+            _categoryTabService = categoryTabService;
             _mapper = mapper;
             _logger = logger.CreateLogger(typeof(CategoryTabController).FullName);
         }
 
-        // Get all CategoryTabs.
+        // Get all CategoryTabs
         [HttpGet(Name = "GetCategoryTabs")]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-        public async Task<ActionResult<IEnumerable<CategoryTabOutputVM>>> GetAll()
+        public async Task<ActionResult<IEnumerable<CategoryTabOutputVM>>> GetAll(string? lg)
         {
             try
             {
                 _logger.LogInformation("Fetching all CategoryTabs...");
-                var result = await _categorytabService.GetAllAsync();
-                var items = _mapper.Map<List<CategoryTabOutputVM>>(result);
-                return Ok(items);
+                var result = await _categoryTabService.GetAllAsync();
+
+                if (lg.IsNullOrWhiteSpace())
+                    return Ok(_mapper.Map<List<CategoryTabOutputVM>>(result));
+
+                return Ok(_mapper.Map<List<CategoryTabOutputVM>>(result, opt => opt.Items[HelperTranslation.KEYLG] = lg));
             }
             catch (Exception ex)
             {
@@ -43,30 +52,53 @@ namespace LAHJAAPI.V1.Controllers.Api
             }
         }
 
-        // Get a CategoryTab by ID.
-        [HttpGet("{id}", Name = "GetCategoryTab")]
+        // Get active CategoryTabs
+        [HttpGet("Active", Name = "GetActiveCategoryTabs")]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-        public async Task<ActionResult<CategoryTabInfoVM>> GetById(string? id)
+        public async Task<ActionResult<IEnumerable<CategoryTabOutputVM>>> GetActive(string? lg)
         {
-            if (string.IsNullOrWhiteSpace(id))
+            try
             {
-                _logger.LogWarning("Invalid CategoryTab ID received.");
-                return BadRequest("Invalid CategoryTab ID.");
-            }
+                _logger.LogInformation("Fetching active CategoryTabs...");
+                var result = await _categoryTabService.GetAllByAsync([new FilterCondition("active", true)]);
 
+                if (lg.IsNullOrWhiteSpace())
+                    return Ok(_mapper.Map<List<CategoryTabOutputVM>>(result.Data));
+
+                return Ok(_mapper.Map<List<CategoryTabOutputVM>>(result.Data, opt => opt.Items[HelperTranslation.KEYLG] = lg));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error while fetching active CategoryTabs");
+                return StatusCode(500, "Internal Server Error");
+            }
+        }
+
+        // Get CategoryTab by ID
+        [HttpGet("{id}", Name = "GetCategoryTab")]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+        public async Task<ActionResult<CategoryTabOutputVM>> GetById(string id, string? lg)
+        {
             try
             {
                 _logger.LogInformation("Fetching CategoryTab with ID: {id}", id);
-                var entity = await _categorytabService.GetByIdAsync(id);
-                if (entity == null)
-                {
-                    _logger.LogWarning("CategoryTab not found with ID: {id}", id);
-                    return NotFound();
-                }
+                var entity = await _categoryTabService.GetByIdAsync(id);
 
-                var item = _mapper.Map<CategoryTabInfoVM>(entity);
+                //if (entity == null)
+                //{
+                //    _logger.LogWarning("CategoryTab not found with ID: {id}", id);
+                //    return NotFound();
+                //}
+
+                if (lg.IsNullOrWhiteSpace())
+                    return Ok(_mapper.Map<CategoryTabOutputVM>(entity));
+
+                var item = _mapper.Map<CategoryTabOutputVM>(entity, opts => opts.Items.Add(HelperTranslation.KEYLG, lg));
                 return Ok(item);
             }
             catch (Exception ex)
@@ -76,27 +108,22 @@ namespace LAHJAAPI.V1.Controllers.Api
             }
         }
 
-        // // Get a CategoryTab by Lg.
-        [HttpGet("GetCategoryTabByLanguage", Name = "GetCategoryTabByLg")]
+        // Get CategoryTab by language filter
+        [HttpGet("ByLanguage", Name = "GetCategoryTabByLanguage")]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-        public async Task<ActionResult<CategoryTabOutputVM>> GetCategoryTabByLg(CategoryTabFilterVM model)
+        public async Task<ActionResult<CategoryTabOutputVM>> GetByLanguage([FromQuery] CategoryTabFilterVM model)
         {
-            var id = model.Id;
-            if (string.IsNullOrWhiteSpace(id))
-            {
-                _logger.LogWarning("Invalid CategoryTab ID received.");
-                return BadRequest("Invalid CategoryTab ID.");
-            }
-
             try
             {
-                _logger.LogInformation("Fetching CategoryTab with ID: {id}", id);
-                var entity = await _categorytabService.GetByIdAsync(id);
+                _logger.LogInformation("Fetching CategoryTab with ID: {id} and language: {lg}", model.Id, model.Lg);
+                var entity = await _categoryTabService.GetByIdAsync(model.Id);
+
                 if (entity == null)
                 {
-                    _logger.LogWarning("CategoryTab not found with ID: {id}", id);
+                    _logger.LogWarning("CategoryTab not found with ID: {id}", model.Id);
                     return NotFound();
                 }
 
@@ -105,54 +132,51 @@ namespace LAHJAAPI.V1.Controllers.Api
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error while fetching CategoryTab with ID: {id}", id);
+                _logger.LogError(ex, "Error while fetching CategoryTab with ID: {id}", model.Id);
                 return StatusCode(500, "Internal Server Error");
             }
         }
 
-        // // Get a CategoryTabs by Lg.
-        [HttpGet("GetCategoryTabsByLanguage", Name = "GetCategoryTabsByLg")]
+        // Get CategoryTabs by language
+        [HttpGet("ByLanguage/All", Name = "GetCategoryTabsByLanguage")]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-        public async Task<ActionResult<IEnumerable<CategoryTabOutputVM>>> GetCategoryTabsByLg(string? lg)
+        public async Task<ActionResult<IEnumerable<CategoryTabOutputVM>>> GetByLanguage(string lg)
         {
-            if (string.IsNullOrWhiteSpace(lg))
-            {
-                _logger.LogWarning("Invalid CategoryTab lg received.");
-                return BadRequest("Invalid CategoryTab lg null ");
-            }
-
             try
             {
-                var categorytabs = await _categorytabService.GetAllAsync();
-                if (categorytabs == null)
+                _logger.LogInformation("Fetching CategoryTabs with language: {lg}", lg);
+                var result = await _categoryTabService.GetAllAsync();
+
+                if (result == null || !result.Any())
                 {
-                    _logger.LogWarning("CategoryTabs not found  by  ");
+                    _logger.LogWarning("No CategoryTabs found");
                     return NotFound();
                 }
 
-                var items = _mapper.Map<IEnumerable<CategoryTabOutputVM>>(categorytabs, opt => opt.Items.Add(HelperTranslation.KEYLG, lg));
+                var items = _mapper.Map<List<CategoryTabOutputVM>>(result, opt => opt.Items.Add(HelperTranslation.KEYLG, lg));
                 return Ok(items);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error while fetching CategoryTabs with Lg: {lg}", lg);
+                _logger.LogError(ex, "Error while fetching CategoryTabs with language: {lg}", lg);
                 return StatusCode(500, "Internal Server Error");
             }
         }
 
-        // Create a new CategoryTab.
+        // Create new CategoryTab
         [HttpPost(Name = "CreateCategoryTab")]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
         public async Task<ActionResult<CategoryTabOutputVM>> Create([FromBody] CategoryTabCreateVM model)
         {
             if (model == null)
             {
-                _logger.LogWarning("CategoryTab data is null in Create.");
-                return BadRequest("CategoryTab data is required.");
+                _logger.LogWarning("CategoryTab data is null in Create");
+                return BadRequest("CategoryTab data is required");
             }
 
             if (!ModelState.IsValid)
@@ -165,28 +189,28 @@ namespace LAHJAAPI.V1.Controllers.Api
             {
                 _logger.LogInformation("Creating new CategoryTab with data: {@model}", model);
                 var item = _mapper.Map<CategoryTabRequestDso>(model);
-                var createdEntity = await _categorytabService.CreateAsync(item);
+                var createdEntity = await _categoryTabService.CreateAsync(item);
                 var createdItem = _mapper.Map<CategoryTabOutputVM>(createdEntity);
                 return Ok(createdItem);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error while creating a new CategoryTab");
+                _logger.LogError(ex, "Error while creating new CategoryTab");
                 return StatusCode(500, "Internal Server Error");
             }
         }
 
-        // Create multiple CategoryTabs.
+        // Create multiple CategoryTabs
         [HttpPost("createRange")]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
         public async Task<ActionResult<IEnumerable<CategoryTabOutputVM>>> CreateRange([FromBody] IEnumerable<CategoryTabCreateVM> models)
         {
-            if (models == null)
+            if (models == null || !models.Any())
             {
-                _logger.LogWarning("Data is null in CreateRange.");
-                return BadRequest("Data is required.");
+                _logger.LogWarning("Empty data in CreateRange");
+                return BadRequest("Data is required");
             }
 
             if (!ModelState.IsValid)
@@ -197,9 +221,9 @@ namespace LAHJAAPI.V1.Controllers.Api
 
             try
             {
-                _logger.LogInformation("Creating multiple CategoryTabs.");
+                _logger.LogInformation("Creating {count} CategoryTabs", models.Count());
                 var items = _mapper.Map<List<CategoryTabRequestDso>>(models);
-                var createdEntities = await _categorytabService.CreateRangeAsync(items);
+                var createdEntities = await _categoryTabService.CreateRangeAsync(items);
                 var createdItems = _mapper.Map<List<CategoryTabOutputVM>>(createdEntities);
                 return Ok(createdItems);
             }
@@ -210,34 +234,33 @@ namespace LAHJAAPI.V1.Controllers.Api
             }
         }
 
-        // Update an existing CategoryTab.
-        [HttpPut(Name = "UpdateCategoryTab")]
+        // Update CategoryTab
+        [HttpPut("{id}", Name = "UpdateCategoryTab")]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-        public async Task<ActionResult<CategoryTabOutputVM>> Update([FromBody] CategoryTabUpdateVM model)
+        public async Task<ActionResult<CategoryTabOutputVM>> Update(string id, [FromBody] CategoryTabUpdateVM model)
         {
-            if (model == null)
-            {
-                _logger.LogWarning("Invalid data in Update.");
-                return BadRequest("Invalid data.");
-            }
-
-            if (!ModelState.IsValid)
-            {
-                _logger.LogWarning("Invalid model state in Update: {ModelState}", ModelState);
-                return BadRequest(ModelState);
-            }
-
             try
             {
-                _logger.LogInformation("Updating CategoryTab with ID: {id}", model?.Id);
+                _logger.LogInformation("Updating CategoryTab with ID: {id}", id);
+                var existingItem = await _categoryTabService.GetByIdAsync(id);
+
+                if (existingItem == null)
+                {
+                    _logger.LogWarning("CategoryTab not found with ID: {id}", id);
+                    return NotFound();
+                }
+
                 var item = _mapper.Map<CategoryTabRequestDso>(model);
-                var updatedEntity = await _categorytabService.UpdateAsync(item);
+                item.Id = id;
+                var updatedEntity = await _categoryTabService.UpdateAsync(item);
+
                 if (updatedEntity == null)
                 {
-                    _logger.LogWarning("CategoryTab not found for update with ID: {id}", model?.Id);
-                    return NotFound();
+                    _logger.LogError("Failed to update CategoryTab with ID: {id}", id);
+                    return BadRequest($"Failed to update CategoryTap with ID: {id}");
                 }
 
                 var updatedItem = _mapper.Map<CategoryTabOutputVM>(updatedEntity);
@@ -245,29 +268,30 @@ namespace LAHJAAPI.V1.Controllers.Api
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error while updating CategoryTab with ID: {id}", model?.Id);
+                _logger.LogError(ex, "Error while updating CategoryTab with ID: {id}", id);
                 return StatusCode(500, "Internal Server Error");
             }
         }
 
-        // Delete a CategoryTab.
+        // Delete CategoryTab
         [HttpDelete("{id}", Name = "DeleteCategoryTab")]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> Delete(string? id)
+        public async Task<IActionResult> Delete(string id)
         {
-            if (string.IsNullOrWhiteSpace(id))
-            {
-                _logger.LogWarning("Invalid CategoryTab ID received in Delete.");
-                return BadRequest("Invalid CategoryTab ID.");
-            }
-
             try
             {
                 _logger.LogInformation("Deleting CategoryTab with ID: {id}", id);
-                await _categorytabService.DeleteAsync(id);
-                return NoContent();
+
+                if (!await _categoryTabService.ExistsAsync(id))
+                {
+                    _logger.LogWarning("CategoryTab not found with ID: {id}", id);
+                    return NotFound();
+                }
+
+                await _categoryTabService.DeleteAsync(id);
+                return Ok();
             }
             catch (Exception ex)
             {
@@ -276,17 +300,16 @@ namespace LAHJAAPI.V1.Controllers.Api
             }
         }
 
-        // Get count of CategoryTabs.
-        [HttpGet("CountCategoryTab")]
+        // Get CategoryTabs count
+        [HttpGet("Count", Name = "CountCategoryTabs")]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
         public async Task<ActionResult<int>> Count()
         {
             try
             {
                 _logger.LogInformation("Counting CategoryTabs...");
-                var count = await _categorytabService.CountAsync();
+                var count = await _categoryTabService.CountAsync();
                 return Ok(count);
             }
             catch (Exception ex)

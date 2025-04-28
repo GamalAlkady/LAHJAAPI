@@ -122,19 +122,6 @@ namespace LAHJAAPI.V1.Validators
         }
 
 
-
-        private bool IsValidSpaceId(string spaceId)
-        {
-            if (spaceId != "")
-            {
-                var result = _checker.Injector.Context.Set<Space>()
-                    .Any(x => x.Id == spaceId);
-
-                return result;
-            }
-            return false;
-        }
-
         private bool IsCountSpces(string subId)
         {
             var spaces = _checker.Injector.Context.Set<Space>()
@@ -228,21 +215,6 @@ namespace LAHJAAPI.V1.Validators
             return (failedConditions.Count == 0, failedConditions);
         }
 
-        //[RegisterConditionValidator(typeof(SpaceValidatorStates), SpaceValidatorStates.IsAvailable, "Spaces not available")]
-        //async Task<ConditionResult> IsSpacesAvailableAsync(DataFilter<string, Space> data)
-        //{
-        //    //if (data.Share == null) return ConditionResult.ToFailure(null, "Space can not be null");
-
-
-        //    var countSpaces = await _checker.Injector.Context.Spaces.CountAsync(x => x.SubscriptionId == data.Share.Id);
-
-        //    return new ConditionResult((data.Share.AllowedSpaces > countSpaces), "Not Available");
-        //}
-
-        //async Task<bool> IsSpacesAvailable(DataFilter<string, SubscriptionResponseDso> dataFilter)
-        //{
-        //    return (await IsSpacesAvailableAsync(dataFilter)).Success ?? false;
-        //}
 
         bool IsSpacesAvailable2(DataFilter<string, Space> dataFilter)
         {
@@ -256,20 +228,6 @@ namespace LAHJAAPI.V1.Validators
             return subscription.AllowedSpaces > spaces.Count();
         }
 
-        //bool IsAvailableForCreate(DataFilter<string, Space> dataFilter)
-        //{
-        //    if (spaceFilter is null)
-        //    {
-        //        return false;
-        //    }
-        //    if (_checker.Check(ServiceValidatorStates.IsCreateSpace, spaceFilter.AbsolutePath))
-        //    {
-        //        return IsSpacesAvailable(spaceFilter);
-        //    }
-
-
-        //    return false;
-        //}
 
         [RegisterConditionValidator(typeof(SpaceValidatorStates), SpaceValidatorStates.IsValid, "Space is not valid")]
         async Task<ConditionResult> IsValidAsync(DataFilter<string, SubscriptionResponseDso> data)
@@ -284,7 +242,7 @@ namespace LAHJAAPI.V1.Validators
                 });
             }
 
-            if ((await _checker.CheckAndResultAsync(SubscriptionValidatorStates.IsAvailableSpaces)) is { Success: !true } result2)
+            if ((await _checker.CheckAndResultAsync(SubscriptionValidatorStates.IsAvailableSpaces, new DataFilter("userId"))) is { Success: !true } result2)
             {
                 return result2;
             }

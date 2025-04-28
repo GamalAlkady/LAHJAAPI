@@ -143,14 +143,17 @@ namespace LAHJAAPI.V1.Validators
         [RegisterConditionValidator(typeof(ServiceValidatorStates), ServiceValidatorStates.IsCreateSpace, "Not a valid service model", Value = ServiceType.Space)]
         private Task<ConditionResult> ValidateIsServiceType(DataFilter<string, Service> f)
         {
-            if (f.Value == null && f.Name == null)
-                return Task.FromResult(ConditionResult.ToFailure(f.Share?.Name, "Both Name and Value are null"));
-
-            f.Share = _injector.Context.Services.FirstOrDefault(x => x.Name.Contains(f.Name ?? f.Value!));
+            if (f.Share == null && f.Value == null && f.Name == null)
+                return Task.FromResult(ConditionResult.ToFailure(f.Share?.AbsolutePath, "Both Name and Value are null"));
+            if (f.Share != null)
+            {
+                return Task.FromResult(new ConditionResult(f.Share.AbsolutePath.Equals(f.Name ?? f.Value, StringComparison.OrdinalIgnoreCase), f.Share));
+            }
+            f.Share = _injector.Context.Services.FirstOrDefault(x => x.AbsolutePath.Contains(f.Name ?? f.Value!));
             bool valid = f.Share != null;
             return valid
                 ? ConditionResult.ToSuccessAsync(f.Share)
-                : ConditionResult.ToFailureAsync(f.Name ?? f.Value, $"Not a valid {f.Name ?? f.Value} model");
+                : ConditionResult.ToFailureAsync(f.Name ?? f.Value);
         }
 
         protected override async Task<Service?> GetModel(string? id)

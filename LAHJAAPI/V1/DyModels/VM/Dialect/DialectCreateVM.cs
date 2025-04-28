@@ -1,7 +1,6 @@
 using AutoGenerator;
 using AutoGenerator.Helper.Translation;
-using LAHJAAPI.Models;
-using System;
+using System.ComponentModel.DataAnnotations;
 
 namespace V1.DyModels.VMs
 {
@@ -10,12 +9,13 @@ namespace V1.DyModels.VMs
     /// </summary>
     public class DialectCreateVM : ITVM
     {
-        //
-        public TranslationData? Name { get; set; }
-        //
+        [Required]
+        public TranslationData Name { get; set; }
+
         public TranslationData? Description { get; set; }
-        ///
+
+        [Required]
         public String? LanguageId { get; set; }
-        public LanguageCreateVM? Language { get; set; }
+        //public LanguageCreateVM? Language { get; set; }
     }
 }

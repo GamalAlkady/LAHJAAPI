@@ -1,7 +1,9 @@
 using AutoGenerator.Helper;
 using AutoGenerator.Helper.Translation;
 using AutoMapper;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Quartz.Util;
 using V1.DyModels.Dso.Requests;
 using V1.DyModels.VMs;
 using V1.Services.Services;
@@ -24,18 +26,21 @@ namespace LAHJAAPI.V1.Controllers.Api
         }
 
         // Get all Advertisements.
+        [AllowAnonymous]
         [HttpGet(Name = "GetAdvertisements")]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-        public async Task<ActionResult<IEnumerable<AdvertisementOutputVM>>> GetAll(string lg = "en")
+        public async Task<ActionResult<IEnumerable<AdvertisementOutputVM>>> GetAll(string? lg)
         {
             try
             {
                 _logger.LogInformation("Fetching all Advertisements...");
                 var result = await _advertisementService.GetAllAsync();
-                var items = _mapper.Map<List<AdvertisementOutputVM>>(result, opt => opt.Items[HelperTranslation.KEYLG] = lg);
-                return Ok(items);
+                //TODO: error when mapping multi entities while key lg = ar 
+                if (lg.IsNullOrWhiteSpace())
+                    return Ok(_mapper.Map<List<AdvertisementOutputVM>>(result));
+                return Ok(_mapper.Map<List<AdvertisementOutputVM>>(result, opt => opt.Items[HelperTranslation.KEYLG] = lg));
             }
             catch (Exception ex)
             {
@@ -44,19 +49,20 @@ namespace LAHJAAPI.V1.Controllers.Api
             }
         }
 
-
+        [AllowAnonymous]
         [HttpGet("ActiveAdvertisements", Name = "GetActiveAdvertisements")]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-        public async Task<ActionResult<IEnumerable<AdvertisementOutputVM>>> GetActiveAdvertisements(string lg = "en")
+        public async Task<ActionResult<IEnumerable<AdvertisementOutputVM>>> GetActiveAdvertisements(string? lg)
         {
             try
             {
                 _logger.LogInformation("Fetching all active Advertisements...");
                 var result = await _advertisementService.GetAllByAsync([new FilterCondition("active", true)]);
-                var items = _mapper.Map<List<AdvertisementOutputVM>>(result.Data, opt => opt.Items[HelperTranslation.KEYLG] = lg);
-                return Ok(items);
+                if (lg.IsNullOrWhiteSpace())
+                    return Ok(_mapper.Map<List<AdvertisementOutputVM>>(result.Data));
+                return Ok(_mapper.Map<List<AdvertisementOutputVM>>(result.Data, opt => opt.Items[HelperTranslation.KEYLG] = lg));
             }
             catch (Exception ex)
             {
@@ -70,14 +76,8 @@ namespace LAHJAAPI.V1.Controllers.Api
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-        public async Task<ActionResult<AdvertisementOutputVM>> GetById(string id, string lg = "en")
+        public async Task<ActionResult<AdvertisementOutputVM>> GetById(string id, string? lg)
         {
-            if (string.IsNullOrWhiteSpace(id))
-            {
-                _logger.LogWarning("Invalid Advertisement ID received.");
-                return BadRequest("Invalid Advertisement ID.");
-            }
-
             try
             {
                 _logger.LogInformation("Fetching Advertisement with ID: {id}", id);
@@ -87,57 +87,32 @@ namespace LAHJAAPI.V1.Controllers.Api
                     _logger.LogWarning("Advertisement not found with ID: {id}", id);
                     return NotFound();
                 }
-
-                var item = _mapper.Map<AdvertisementOutputVM>(entity, opts => opts.Items[HelperTranslation.KEYLG] = lg);
+                if (lg.IsNullOrWhiteSpace())
+                    return Ok(_mapper.Map<AdvertisementOutputVM>(entity));
+                var item = _mapper.Map<AdvertisementOutputVM>(entity, opts => opts.Items.Add(HelperTranslation.KEYLG, lg));
                 return Ok(item);
+            }
+            catch (NullReferenceException ex)
+            {
+                _logger.LogError(ex, "Error while fetching Advertisement with ID: {id}", id);
+                return BadRequest(ex.Message);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error while fetching Advertisement with ID: {id}", id);
+                return BadRequest(ex.Message);
                 return StatusCode(500, "Internal Server Error");
             }
         }
 
-        // // Get a Advertisement by Lg.
-        [HttpGet("GetAdvertisementByLanguage", Name = "GetAdvertisementByLg")]
-        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-        public async Task<ActionResult<AdvertisementOutputVM>> GetAdvertisementByLg(AdvertisementFilterVM model)
-        {
-            var id = model.Id;
-            if (string.IsNullOrWhiteSpace(id))
-            {
-                _logger.LogWarning("Invalid Advertisement ID received.");
-                return BadRequest("Invalid Advertisement ID.");
-            }
 
-            try
-            {
-                _logger.LogInformation("Fetching Advertisement with ID: {id}", id);
-                var entity = await _advertisementService.GetByIdAsync(id);
-                if (entity == null)
-                {
-                    _logger.LogWarning("Advertisement not found with ID: {id}", id);
-                    return NotFound();
-                }
-
-                var item = _mapper.Map<AdvertisementOutputVM>(entity, opt => opt.Items.Add(HelperTranslation.KEYLG, model.Lg));
-                return Ok(item);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error while fetching Advertisement with ID: {id}", id);
-                return StatusCode(500, "Internal Server Error");
-            }
-        }
 
         // // Get a Advertisements by Lg.
         [HttpGet("GetAdvertisementsByLanguage", Name = "GetAdvertisementsByLg")]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-        public async Task<ActionResult<IEnumerable<AdvertisementOutputVM>>> GetAdvertisementsByLg(string? lg)
+        public async Task<ActionResult<IEnumerable<AdvertisementOutputVM>>> GetAdvertisementsByLg(string lg)
         {
             if (string.IsNullOrWhiteSpace(lg))
             {
@@ -150,16 +125,18 @@ namespace LAHJAAPI.V1.Controllers.Api
                 var advertisements = await _advertisementService.GetAllAsync();
                 if (advertisements == null)
                 {
-                    _logger.LogWarning("Advertisements not found  by  ");
+                    _logger.LogWarning("No Advertisements found for lg: {lg}", lg);
                     return NotFound();
                 }
 
+                //TODO: error when mapping multi entities while key lg = ar 
                 var items = _mapper.Map<IEnumerable<AdvertisementOutputVM>>(advertisements, opt => opt.Items.Add(HelperTranslation.KEYLG, lg));
                 return Ok(items);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error while fetching Advertisements with Lg: {lg}", lg);
+                return BadRequest(ex.Message);
                 return StatusCode(500, "Internal Server Error");
             }
         }
@@ -233,32 +210,27 @@ namespace LAHJAAPI.V1.Controllers.Api
         }
 
         // Update an existing Advertisement.
-        [HttpPut(Name = "UpdateAdvertisement")]
+        [HttpPut("{id}", Name = "UpdateAdvertisement")]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-        public async Task<ActionResult<AdvertisementOutputVM>> Update([FromBody] AdvertisementUpdateVM model)
+        public async Task<ActionResult<AdvertisementOutputVM>> Update(string id, [FromBody] AdvertisementUpdateVM model)
         {
-            if (model == null)
-            {
-                _logger.LogWarning("Invalid data in Update.");
-                return BadRequest("Invalid data.");
-            }
-
-            if (!ModelState.IsValid)
-            {
-                _logger.LogWarning("Invalid model state in Update: {ModelState}", ModelState);
-                return BadRequest(ModelState);
-            }
-
             try
             {
-                _logger.LogInformation("Updating Advertisement with ID: {id}", model?.Id);
-                var item = _mapper.Map<AdvertisementRequestDso>(model);
-                var updatedEntity = await _advertisementService.UpdateAsync(item);
+                var item = await _advertisementService.GetByIdAsync(id);
+                if (item == null)
+                {
+                    _logger.LogWarning("Advertisement not found for update with ID: {id}", id);
+                    return NotFound(string.Format("Advertisement not found for update with ID: {id}", id));
+                }
+                _logger.LogInformation("Updating Advertisement with ID: {id}", id);
+                var newItem = _mapper.Map<AdvertisementRequestDso>(model);
+                newItem.Id = id; // Ensure the ID is set for the update
+                var updatedEntity = await _advertisementService.UpdateAsync(newItem);
                 if (updatedEntity == null)
                 {
-                    _logger.LogWarning("Advertisement not found for update with ID: {id}", model?.Id);
+                    _logger.LogWarning("Advertisement not found for update with ID: {id}", id);
                     return NotFound();
                 }
 
@@ -267,7 +239,8 @@ namespace LAHJAAPI.V1.Controllers.Api
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error while updating Advertisement with ID: {id}", model?.Id);
+                _logger.LogError(ex, "Error while updating Advertisement with ID: {id}", id);
+                return BadRequest(ex.Message);
                 return StatusCode(500, "Internal Server Error");
             }
         }
@@ -277,19 +250,18 @@ namespace LAHJAAPI.V1.Controllers.Api
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> Delete(string? id)
+        public async Task<IActionResult> Delete(string id)
         {
-            if (string.IsNullOrWhiteSpace(id))
-            {
-                _logger.LogWarning("Invalid Advertisement ID received in Delete.");
-                return BadRequest("Invalid Advertisement ID.");
-            }
-
             try
             {
+                if (!await _advertisementService.ExistsAsync(id))
+                {
+                    _logger.LogWarning("Advertisement not found with ID: {id}", id);
+                    return NotFound(HandelErrors.NotFound($"Advertisement not found with ID: {id}"));
+                }
                 _logger.LogInformation("Deleting Advertisement with ID: {id}", id);
                 await _advertisementService.DeleteAsync(id);
-                return NoContent();
+                return Ok();
             }
             catch (Exception ex)
             {

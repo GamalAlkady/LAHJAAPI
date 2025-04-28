@@ -33,22 +33,23 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services
     .AddStripeGateway(builder.Configuration)
     .AddDataContext(builder.Configuration)
+    //.AddSubPayServicer(IConditionChecker)
     ;
 #endregion
 
-builder.Services.
-    AddAutoBuilderApiCore(new()
-    {
+builder.Services
+       .AddAutoBuilderApiCore<DataContext, ApplicationUser>(new()
+       {
 
-        Arags = args,
-        NameRootApi = "V1",
-        IsMapper = true,
-        TypeContext = typeof(DataContext),
-        Assembly = Assembly.GetExecutingAssembly(),
-        AssemblyModels = typeof(LAHJAAPI.Models.Advertisement).Assembly,
-        DbConnectionString = builder.Configuration.GetConnectionString("DefaultConnection"),
+           Arags = args,
+           NameRootApi = "V1",
+           IsMapper = true,
+           TypeContext = typeof(DataContext),
+           Assembly = Assembly.GetExecutingAssembly(),
+           AssemblyModels = typeof(LAHJAAPI.Models.Advertisement).Assembly,
+           DbConnectionString = builder.Configuration.GetConnectionString("DefaultConnection"),
 
-    })
+       })
     .AddAutoValidator()
     .AddAutoConfigScheduler()
 
@@ -63,10 +64,7 @@ builder.Services.
             SmtpPort = 587,
             FromEmail = "gamal333ge@gmail.com",
             NameApp = "LAHJA-API" // عيّن اسم التطبيق هنا كما يناسبك
-
         }
-
-
     });
 
 //TODO: read about Mock I see it in deepseek => repositories

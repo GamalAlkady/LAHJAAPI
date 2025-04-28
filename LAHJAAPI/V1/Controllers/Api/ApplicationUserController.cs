@@ -1,7 +1,7 @@
 using AutoGenerator.Helper.Translation;
 using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
-using V1.DyModels.Dso.Requests;
+using Quartz.Util;
 using V1.DyModels.VMs;
 using V1.Services.Services;
 
@@ -48,13 +48,8 @@ namespace LAHJAAPI.V1.Controllers.Api
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-        public async Task<ActionResult<ApplicationUserInfoVM>> GetById(string? id)
+        public async Task<ActionResult<ApplicationUserOutputVM>> GetById(string id, string? lg)
         {
-            if (string.IsNullOrWhiteSpace(id))
-            {
-                _logger.LogWarning("Invalid ApplicationUser ID received.");
-                return BadRequest("Invalid ApplicationUser ID.");
-            }
 
             try
             {
@@ -65,43 +60,10 @@ namespace LAHJAAPI.V1.Controllers.Api
                     _logger.LogWarning("ApplicationUser not found with ID: {id}", id);
                     return NotFound();
                 }
+                if (lg.IsNullOrWhiteSpace())
+                    return Ok(_mapper.Map<ApplicationUserOutputVM>(entity));
 
-                var item = _mapper.Map<ApplicationUserInfoVM>(entity);
-                return Ok(item);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error while fetching ApplicationUser with ID: {id}", id);
-                return StatusCode(500, "Internal Server Error");
-            }
-        }
-
-        // // Get a ApplicationUser by Lg.
-        [HttpGet("GetApplicationUserByLanguage", Name = "GetApplicationUserByLg")]
-        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-        public async Task<ActionResult<ApplicationUserOutputVM>> GetApplicationUserByLg(ApplicationUserFilterVM model)
-        {
-            var id = model.Id;
-            if (string.IsNullOrWhiteSpace(id))
-            {
-                _logger.LogWarning("Invalid ApplicationUser ID received.");
-                return BadRequest("Invalid ApplicationUser ID.");
-            }
-
-            try
-            {
-                _logger.LogInformation("Fetching ApplicationUser with ID: {id}", id);
-                var entity = await _applicationuserService.GetByIdAsync(id);
-                if (entity == null)
-                {
-                    _logger.LogWarning("ApplicationUser not found with ID: {id}", id);
-                    return NotFound();
-                }
-
-                var item = _mapper.Map<ApplicationUserOutputVM>(entity, opt => opt.Items.Add(HelperTranslation.KEYLG, model.Lg));
-                return Ok(item);
+                return Ok(_mapper.Map<ApplicationUserOutputVM>(entity, opts => opts.Items[HelperTranslation.KEYLG] = lg));
             }
             catch (Exception ex)
             {
@@ -142,132 +104,20 @@ namespace LAHJAAPI.V1.Controllers.Api
             }
         }
 
-        // Create a new ApplicationUser.
-        [HttpPost(Name = "CreateApplicationUser")]
-        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-        public async Task<ActionResult<ApplicationUserOutputVM>> Create([FromBody] ApplicationUserCreateVM model)
-        {
-            if (model == null)
-            {
-                _logger.LogWarning("ApplicationUser data is null in Create.");
-                return BadRequest("ApplicationUser data is required.");
-            }
-
-            if (!ModelState.IsValid)
-            {
-                _logger.LogWarning("Invalid model state in Create: {ModelState}", ModelState);
-                return BadRequest(ModelState);
-            }
-
-            try
-            {
-                _logger.LogInformation("Creating new ApplicationUser with data: {@model}", model);
-                var item = _mapper.Map<ApplicationUserRequestDso>(model);
-                var createdEntity = await _applicationuserService.CreateAsync(item);
-                var createdItem = _mapper.Map<ApplicationUserOutputVM>(createdEntity);
-                return Ok(createdItem);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error while creating a new ApplicationUser");
-                return StatusCode(500, "Internal Server Error");
-            }
-        }
-
-        // Create multiple ApplicationUsers.
-        [HttpPost("createRange")]
-        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-        public async Task<ActionResult<IEnumerable<ApplicationUserOutputVM>>> CreateRange([FromBody] IEnumerable<ApplicationUserCreateVM> models)
-        {
-            if (models == null)
-            {
-                _logger.LogWarning("Data is null in CreateRange.");
-                return BadRequest("Data is required.");
-            }
-
-            if (!ModelState.IsValid)
-            {
-                _logger.LogWarning("Invalid model state in CreateRange: {ModelState}", ModelState);
-                return BadRequest(ModelState);
-            }
-
-            try
-            {
-                _logger.LogInformation("Creating multiple ApplicationUsers.");
-                var items = _mapper.Map<List<ApplicationUserRequestDso>>(models);
-                var createdEntities = await _applicationuserService.CreateRangeAsync(items);
-                var createdItems = _mapper.Map<List<ApplicationUserOutputVM>>(createdEntities);
-                return Ok(createdItems);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error while creating multiple ApplicationUsers");
-                return StatusCode(500, "Internal Server Error");
-            }
-        }
-
-        // Update an existing ApplicationUser.
-        [HttpPut(Name = "UpdateApplicationUser")]
-        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-        public async Task<ActionResult<ApplicationUserOutputVM>> Update([FromBody] ApplicationUserUpdateVM model)
-        {
-            if (model == null)
-            {
-                _logger.LogWarning("Invalid data in Update.");
-                return BadRequest("Invalid data.");
-            }
-
-            if (!ModelState.IsValid)
-            {
-                _logger.LogWarning("Invalid model state in Update: {ModelState}", ModelState);
-                return BadRequest(ModelState);
-            }
-
-            try
-            {
-                _logger.LogInformation("Updating ApplicationUser with ID: {id}", model?.Id);
-                var item = _mapper.Map<ApplicationUserRequestDso>(model);
-                var updatedEntity = await _applicationuserService.UpdateAsync(item);
-                if (updatedEntity == null)
-                {
-                    _logger.LogWarning("ApplicationUser not found for update with ID: {id}", model?.Id);
-                    return NotFound();
-                }
-
-                var updatedItem = _mapper.Map<ApplicationUserOutputVM>(updatedEntity);
-                return Ok(updatedItem);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error while updating ApplicationUser with ID: {id}", model?.Id);
-                return StatusCode(500, "Internal Server Error");
-            }
-        }
 
         // Delete a ApplicationUser.
         [HttpDelete("{id}", Name = "DeleteApplicationUser")]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> Delete(string? id)
+        public async Task<IActionResult> Delete(string id)
         {
-            if (string.IsNullOrWhiteSpace(id))
-            {
-                _logger.LogWarning("Invalid ApplicationUser ID received in Delete.");
-                return BadRequest("Invalid ApplicationUser ID.");
-            }
 
             try
             {
                 _logger.LogInformation("Deleting ApplicationUser with ID: {id}", id);
                 await _applicationuserService.DeleteAsync(id);
-                return NoContent();
+                return Ok();
             }
             catch (Exception ex)
             {

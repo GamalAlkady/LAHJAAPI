@@ -14,9 +14,9 @@
 			<PrivateAssets>all</PrivateAssets>
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 		</PackageReference>
+		<PackageReference Include="WasmAI.AutoGenerator" Version="1.0.1-e" />
 	</ItemGroup>
-	<ItemGroup>
-		<PackageReference Include="WasmAI.AutoGenerator" Version="1.0.1-beta" />
-	</ItemGroup>
+
+
 
 </Project>

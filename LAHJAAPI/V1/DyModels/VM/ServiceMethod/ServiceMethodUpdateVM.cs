@@ -1,7 +1,4 @@
 using AutoGenerator;
-using AutoGenerator.Helper.Translation;
-using LAHJAAPI.Models;
-using System;
 
 namespace V1.DyModels.VMs
 {
@@ -10,9 +7,10 @@ namespace V1.DyModels.VMs
     /// </summary>
     public class ServiceMethodUpdateVM : ITVM
     {
+        public String? Method { get; set; }
         ///
-        public string? Id { get; set; }
+        public String? InputParameters { get; set; }
         ///
-        public ServiceMethodCreateVM? Body { get; set; }
+        public String? OutputParameters { get; set; }
     }
 }

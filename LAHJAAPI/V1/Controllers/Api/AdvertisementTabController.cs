@@ -1,7 +1,9 @@
 using AutoGenerator.Helper;
 using AutoGenerator.Helper.Translation;
 using AutoMapper;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Quartz.Util;
 using V1.DyModels.Dso.Requests;
 using V1.DyModels.VMs;
 using V1.Services.Services;
@@ -24,18 +26,20 @@ namespace LAHJAAPI.V1.Controllers.Api
         }
 
         // Get all AdvertisementTabs.
+        [AllowAnonymous]
         [HttpGet(Name = "GetAdvertisementTabs")]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-        public async Task<ActionResult<IEnumerable<AdvertisementTabOutputVM>>> GetAll()
+        public async Task<ActionResult<IEnumerable<AdvertisementTabOutputVM>>> GetAll(string? lg)
         {
             try
             {
                 _logger.LogInformation("Fetching all AdvertisementTabs...");
                 var result = await _advertisementtabService.GetAllAsync();
-                var items = _mapper.Map<List<AdvertisementTabOutputVM>>(result);
-                return Ok(items);
+                if (lg.IsNullOrWhiteSpace())
+                    return Ok(_mapper.Map<List<AdvertisementTabOutputVM>>(result));
+                return Ok(_mapper.Map<List<AdvertisementTabOutputVM>>(result, opts => opts.Items[HelperTranslation.KEYLG] = lg));
             }
             catch (Exception ex)
             {
@@ -49,13 +53,8 @@ namespace LAHJAAPI.V1.Controllers.Api
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-        public async Task<ActionResult<AdvertisementTabOutputVM>> GetById(string? id, string lg = "en")
+        public async Task<ActionResult<AdvertisementTabOutputVM>> GetById(string id, string? lg)
         {
-            if (string.IsNullOrWhiteSpace(id))
-            {
-                _logger.LogWarning("Invalid AdvertisementTab ID received.");
-                return BadRequest("Invalid AdvertisementTab ID.");
-            }
 
             try
             {
@@ -67,8 +66,9 @@ namespace LAHJAAPI.V1.Controllers.Api
                     return NotFound();
                 }
 
-                var item = _mapper.Map<AdvertisementTabOutputVM>(entity, opt => opt.Items[HelperTranslation.KEYLG] = lg);
-                return Ok(item);
+                if (lg.IsNullOrWhiteSpace())
+                    return Ok(_mapper.Map<AdvertisementTabOutputVM>(entity));
+                return Ok(_mapper.Map<AdvertisementTabOutputVM>(entity, opts => opts.Items[HelperTranslation.KEYLG] = lg));
             }
             catch (Exception ex)
             {
@@ -76,19 +76,13 @@ namespace LAHJAAPI.V1.Controllers.Api
                 return StatusCode(500, "Internal Server Error");
             }
         }
-
+        [AllowAnonymous]
         [HttpGet("GetByAdvertisementId/{advertisementId}", Name = "GetByAdvertisementId")]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-        public async Task<ActionResult<AdvertisementTabOutputVM>> GetByAdvertisementId(string advertisementId, string lg = "en")
+        public async Task<ActionResult<AdvertisementTabOutputVM>> GetByAdvertisementId(string advertisementId, string? lg)
         {
-            if (string.IsNullOrWhiteSpace(advertisementId))
-            {
-                _logger.LogWarning("Invalid AdvertisementTab ID received.");
-                return BadRequest("Invalid AdvertisementTab ID.");
-            }
-
             try
             {
                 _logger.LogInformation("Fetching AdvertisementTab with advertisementId: {id}", advertisementId);
@@ -99,8 +93,10 @@ namespace LAHJAAPI.V1.Controllers.Api
                     return NotFound();
                 }
 
-                var item = _mapper.Map<AdvertisementTabOutputVM>(entity, opt => opt.Items[HelperTranslation.KEYLG] = lg);
-                return Ok(item);
+                if (lg.IsNullOrWhiteSpace())
+                    return Ok(_mapper.Map<AdvertisementTabOutputVM>(entity));
+                return Ok(_mapper.Map<AdvertisementTabOutputVM>(entity, opts => opts.Items[HelperTranslation.KEYLG] = lg));
+
             }
             catch (Exception ex)
             {
@@ -109,39 +105,6 @@ namespace LAHJAAPI.V1.Controllers.Api
             }
         }
 
-        // // Get a AdvertisementTab by Lg.
-        [HttpGet("GetAdvertisementTabByLanguage", Name = "GetAdvertisementTabByLg")]
-        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-        public async Task<ActionResult<AdvertisementTabOutputVM>> GetAdvertisementTabByLg(AdvertisementTabFilterVM model)
-        {
-            var id = model.Id;
-            if (string.IsNullOrWhiteSpace(id))
-            {
-                _logger.LogWarning("Invalid AdvertisementTab ID received.");
-                return BadRequest("Invalid AdvertisementTab ID.");
-            }
-
-            try
-            {
-                _logger.LogInformation("Fetching AdvertisementTab with ID: {id}", id);
-                var entity = await _advertisementtabService.GetByIdAsync(id);
-                if (entity == null)
-                {
-                    _logger.LogWarning("AdvertisementTab not found with ID: {id}", id);
-                    return NotFound();
-                }
-
-                var item = _mapper.Map<AdvertisementTabOutputVM>(entity, opt => opt.Items.Add(HelperTranslation.KEYLG, model.Lg));
-                return Ok(item);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error while fetching AdvertisementTab with ID: {id}", id);
-                return StatusCode(500, "Internal Server Error");
-            }
-        }
 
         // // Get a AdvertisementTabs by Lg.
         [HttpGet("GetAdvertisementTabsByLanguage", Name = "GetAdvertisementTabsByLg")]
@@ -244,11 +207,11 @@ namespace LAHJAAPI.V1.Controllers.Api
         }
 
         // Update an existing AdvertisementTab.
-        [HttpPut(Name = "UpdateAdvertisementTab")]
+        [HttpPut("{id}", Name = "UpdateAdvertisementTab")]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-        public async Task<ActionResult<AdvertisementTabOutputVM>> Update([FromBody] AdvertisementTabUpdateVM model)
+        public async Task<ActionResult<AdvertisementTabOutputVM>> Update(string id, [FromBody] AdvertisementTabUpdateVM model)
         {
             if (model == null)
             {
@@ -264,21 +227,25 @@ namespace LAHJAAPI.V1.Controllers.Api
 
             try
             {
-                _logger.LogInformation("Updating AdvertisementTab with ID: {id}", model?.Id);
-                var item = _mapper.Map<AdvertisementTabRequestDso>(model);
-                var updatedEntity = await _advertisementtabService.UpdateAsync(item);
-                if (updatedEntity == null)
+                var item = await _advertisementtabService.GetByIdAsync(id);
+                if (item == null)
                 {
-                    _logger.LogWarning("AdvertisementTab not found for update with ID: {id}", model?.Id);
-                    return NotFound();
+                    _logger.LogWarning("AdvertisementTab not found for update with ID: {id}", id);
+                    return NotFound(HandelErrors.NotFound($"AdvertisementTab not found for update with ID: {id}"));
                 }
+                _logger.LogInformation("Updating AdvertisementTab with ID: {id}", id);
+                var newItem = _mapper.Map<AdvertisementTabRequestDso>(model);
+                newItem.Id = id;
+                newItem.AdvertisementId = item.AdvertisementId;
+
+                var updatedEntity = await _advertisementtabService.UpdateAsync(newItem);
 
                 var updatedItem = _mapper.Map<AdvertisementTabOutputVM>(updatedEntity);
                 return Ok(updatedItem);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error while updating AdvertisementTab with ID: {id}", model?.Id);
+                _logger.LogError(ex, "Error while updating AdvertisementTab with ID: {id}", id);
                 return StatusCode(500, "Internal Server Error");
             }
         }
@@ -288,19 +255,20 @@ namespace LAHJAAPI.V1.Controllers.Api
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> Delete(string? id)
+        public async Task<IActionResult> Delete(string id)
         {
-            if (string.IsNullOrWhiteSpace(id))
-            {
-                _logger.LogWarning("Invalid AdvertisementTab ID received in Delete.");
-                return BadRequest("Invalid AdvertisementTab ID.");
-            }
 
             try
             {
+                if (!await _advertisementtabService.ExistsAsync(id))
+                {
+                    _logger.LogWarning("AdvertisementTab not found with ID: {id}", id);
+                    return NotFound(HandelErrors.NotFound($"AdvertisementTab not found with ID: {id}"));
+                }
+
                 _logger.LogInformation("Deleting AdvertisementTab with ID: {id}", id);
                 await _advertisementtabService.DeleteAsync(id);
-                return NoContent();
+                return Ok();
             }
             catch (Exception ex)
             {

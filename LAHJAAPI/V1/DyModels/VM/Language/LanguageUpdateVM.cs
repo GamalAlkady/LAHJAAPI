@@ -1,7 +1,5 @@
 using AutoGenerator;
 using AutoGenerator.Helper.Translation;
-using LAHJAAPI.Models;
-using System;
 
 namespace V1.DyModels.VMs
 {
@@ -10,9 +8,9 @@ namespace V1.DyModels.VMs
     /// </summary>
     public class LanguageUpdateVM : ITVM
     {
+
+        public TranslationData? Name { get; set; }
         ///
-        public string? Id { get; set; }
-        ///
-        public LanguageCreateVM? Body { get; set; }
+        public String? Code { get; set; }
     }
 }

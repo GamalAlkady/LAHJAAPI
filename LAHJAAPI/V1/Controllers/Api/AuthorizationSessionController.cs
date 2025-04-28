@@ -1,4 +1,5 @@
 ﻿using APILAHJA.Utilities;
+using AutoGenerator.Conditions;
 using AutoGenerator.Helper;
 using AutoGenerator.Helper.Translation;
 using AutoMapper;
@@ -10,6 +11,7 @@ using LAHJAAPI.V1.Validators.Conditions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
+using Quartz.Util;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text.Json;
@@ -91,13 +93,8 @@ namespace LAHJAAPI.V1.Controllers.Api
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-        public async Task<ActionResult<AuthorizationSessionInfoVM>> GetById(string? id)
+        public async Task<ActionResult<AuthorizationSessionOutputVM>> GetById(string id, string? lg)
         {
-            if (string.IsNullOrWhiteSpace(id))
-            {
-                _logger.LogWarning("Invalid AuthorizationSession ID received.");
-                return BadRequest("Invalid AuthorizationSession ID.");
-            }
 
             try
             {
@@ -109,8 +106,9 @@ namespace LAHJAAPI.V1.Controllers.Api
                     return NotFound();
                 }
 
-                var item = _mapper.Map<AuthorizationSessionInfoVM>(entity);
-                return Ok(item);
+                if (lg.IsNullOrWhiteSpace()) return Ok(_mapper.Map<AuthorizationSessionOutputVM>(entity));
+                return Ok(_mapper.Map<AuthorizationSessionOutputVM>(entity, opts => opts.Items[HelperTranslation.KEYLG] = lg));
+
             }
             catch (Exception ex)
             {
@@ -119,39 +117,6 @@ namespace LAHJAAPI.V1.Controllers.Api
             }
         }
 
-        // // Get a AuthorizationSession by Lg.
-        [HttpGet("GetAuthorizationSessionByLanguage", Name = "GetAuthorizationSessionByLg")]
-        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-        public async Task<ActionResult<AuthorizationSessionOutputVM>> GetAuthorizationSessionByLg(AuthorizationSessionFilterVM model)
-        {
-            var id = model.Id;
-            if (string.IsNullOrWhiteSpace(id))
-            {
-                _logger.LogWarning("Invalid AuthorizationSession ID received.");
-                return BadRequest("Invalid AuthorizationSession ID.");
-            }
-
-            try
-            {
-                _logger.LogInformation("Fetching AuthorizationSession with ID: {id}", id);
-                var entity = await _authorizationsessionService.GetByIdAsync(id);
-                if (entity == null)
-                {
-                    _logger.LogWarning("AuthorizationSession not found with ID: {id}", id);
-                    return NotFound();
-                }
-
-                var item = _mapper.Map<AuthorizationSessionOutputVM>(entity, opt => opt.Items.Add(HelperTranslation.KEYLG, model.Lg));
-                return Ok(item);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error while fetching AuthorizationSession with ID: {id}", id);
-                return StatusCode(500, "Internal Server Error");
-            }
-        }
 
         // // Get a AuthorizationSessions by Lg.
         [HttpGet("GetAuthorizationSessionsByLanguage", Name = "GetAuthorizationSessionsByLg")]
@@ -197,15 +162,7 @@ namespace LAHJAAPI.V1.Controllers.Api
         {
             try
             {
-                //var webToken = _appSettings.Value.Jwt.WebSecret;
-                //var result = _tokenService.ValidateToken(validateToken.Token, webToken);
-                //if (result.IsFailed) return Unauthorized(result.Errors); // التوكن غير صالح
-
-                //var claims = result.Value;
-                //var sessionToken = claims.FindFirstValue("SessionToken");
-
-                //result = _tokenService.ValidateToken(sessionToken);
-
+                //TODO: When create token for service createspace make it temporary
                 var result = (Result<string>)_checker.CheckAndResult(SessionValidatorStates.ValidateCoreToken, validateToken.Token).Result;
                 if (result.IsFailed) return BadRequest(result.Errors);
                 var item = await _sessionService.GetOneByAsync([new FilterCondition("SessionToken", result.Value)]);
@@ -240,15 +197,16 @@ namespace LAHJAAPI.V1.Controllers.Api
             try
             {
                 _logger.LogInformation("Creating new AuthorizationSession with data: {@model}", model);
-                var service = await _serviceService.GetByIdAsync(model.ServiceId);
+                var result = await _checker.CheckAndResultAsync(ServiceValidatorStates.IsCreateSpace, new DataFilter(model.ServiceId));
+                if (result.Result == null) return NotFound(HandelErrors.Problem("Create session", "No service found for this id."));
 
-                if (service == null) return NotFound(HandelErrors.Problem("Create session", "No service found for this id."));
+                var service = _mapper.Map<ServiceResponseDso>(result.Result);
                 bool isNeedSpace = true;
-                if (_checker.Check(ServiceValidatorStates.IsCreateSpace, service.AbsolutePath))
+                if (result.Success == true)
                 {
                     isNeedSpace = false;
-                    if (!_checker.Check(SubscriptionValidatorStates.IsAvailableSpaces))
-                        return BadRequest(HandelErrors.Problem("Create space", "You cannot create session for a space because you have reached the allowed limit."));
+                    if (await _checker.CheckAndResultAsync(SubscriptionValidatorStates.IsAvailableSpaces) is { Success: false } result2)
+                        return BadRequest(result2.Result);
                 }
 
                 //var (type, expire, webToken, spaceId) = await ValidateWebToken(model.Token);
@@ -300,7 +258,6 @@ namespace LAHJAAPI.V1.Controllers.Api
         {
             try
             {
-                //TODO: test this endpoint
                 var services = await _serviceService.GetListWithoutSome(model.ServicesIds);
                 if (services.Count == 0) return NotFound(HandelErrors.Problem("Create session", "Services ids that you send not aceptable."));
                 var servicesIds = services.Select(s => s.Id).ToList();
@@ -339,47 +296,6 @@ namespace LAHJAAPI.V1.Controllers.Api
             }
         }
 
-        // Update an existing AuthorizationSession.
-        [ServiceFilter(typeof(SubscriptionCheckFilter))]
-        [HttpPut(Name = "UpdateAuthorizationSession")]
-        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-        public async Task<ActionResult<AuthorizationSessionOutputVM>> Update([FromBody] AuthorizationSessionUpdateVM model)
-        {
-            if (model == null)
-            {
-                _logger.LogWarning("Invalid data in Update.");
-                return BadRequest("Invalid data.");
-            }
-
-            if (!ModelState.IsValid)
-            {
-                _logger.LogWarning("Invalid model state in Update: {ModelState}", ModelState);
-                return BadRequest(ModelState);
-            }
-
-            try
-            {
-                _logger.LogInformation("Updating AuthorizationSession with ID: {id}", model?.Id);
-                var item = _mapper.Map<AuthorizationSessionRequestDso>(model);
-                var updatedEntity = await _authorizationsessionService.UpdateAsync(item);
-                if (updatedEntity == null)
-                {
-                    _logger.LogWarning("AuthorizationSession not found for update with ID: {id}", model?.Id);
-                    return NotFound();
-                }
-
-                var updatedItem = _mapper.Map<AuthorizationSessionOutputVM>(updatedEntity);
-                return Ok(updatedItem);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error while updating AuthorizationSession with ID: {id}", model?.Id);
-                return StatusCode(500, "Internal Server Error");
-            }
-        }
-
         // Delete a AuthorizationSession.
         [HttpDelete("{id}", Name = "DeleteAuthorizationSession")]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -407,7 +323,7 @@ namespace LAHJAAPI.V1.Controllers.Api
         }
 
         // Get count of AuthorizationSessions.
-        [HttpGet("CountAuthorizationSession")]
+        [HttpGet("Count", Name = "CountAuthorizationSession")]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
@@ -428,8 +344,8 @@ namespace LAHJAAPI.V1.Controllers.Api
 
 
 
-        [HttpPost("encryptFromWeb")]
-        public async Task<ActionResult<string>> EncryptFromWebAsync(EncryptTokenRequest encryptToken)
+        [HttpPost("SimulationPlatForm", Name = "SimulationPlatForm")]
+        public ActionResult<string> SimulationPlatForm(EncryptTokenRequest encryptToken)
         {
             var webToken = _appSettings.Value.Jwt.WebSecret;
             List<Claim> claims = [new Claim("Data", JsonSerializer.Serialize(encryptToken))];
@@ -438,8 +354,8 @@ namespace LAHJAAPI.V1.Controllers.Api
             return Ok(encrptedToken);
         }
 
-        [HttpGet("encryptFromCore2")]
-        public async Task<ActionResult<string>> EncryptFromCoreAsync2(string encrptedToken, string coreToken)
+        [HttpGet("SimulationCore", Name = "SimulationCore")]
+        public ActionResult<string> SimulationCore(string encrptedToken, string coreToken)
         {
             var decrptedToken = _tokenService.ValidateToken(encrptedToken, coreToken);
             if (decrptedToken.IsFailed) return Unauthorized(decrptedToken.Errors);
@@ -456,7 +372,7 @@ namespace LAHJAAPI.V1.Controllers.Api
         [HttpGet("ValidateWebTokenAsync")]
         public async Task<ActionResult> ValidateWebTokenAsync(string token)
         {
-            var decrptedToken = await ValidateWebToken(token);
+            var decrptedToken = ValidateWebToken(token);
 
             return Ok(new { decrptedToken });
         }
@@ -608,7 +524,7 @@ namespace LAHJAAPI.V1.Controllers.Api
                 host: Request.Host);
         }
 
-        private async Task<DataTokenRequest> ValidateWebToken(string token)
+        private DataTokenRequest ValidateWebToken(string token)
         {
             try
             {

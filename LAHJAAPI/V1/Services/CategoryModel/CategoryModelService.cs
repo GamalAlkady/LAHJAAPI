@@ -1,19 +1,11 @@
 using AutoGenerator;
-using AutoMapper;
-using Microsoft.Extensions.Logging;
-using System.Collections.Generic;
+using AutoGenerator.Helper;
 using AutoGenerator.Services.Base;
+using AutoMapper;
 using V1.DyModels.Dso.Requests;
 using V1.DyModels.Dso.Responses;
-using LAHJAAPI.Models;
 using V1.DyModels.Dto.Share.Requests;
-using V1.DyModels.Dto.Share.Responses;
 using V1.Repositories.Share;
-using System.Linq.Expressions;
-using V1.Repositories.Builder;
-using AutoGenerator.Repositories.Base;
-using AutoGenerator.Helper;
-using System;
 
 namespace V1.Services.Services
 {
@@ -225,8 +217,8 @@ namespace V1.Services.Services
             try
             {
                 _logger.LogInformation("Retrieving all CategoryModel entities...");
-                var results = await _share.GetAllAsync();
                 var response = await _share.GetAllByAsync(conditions, options);
+
                 return response.ToResponse(GetMapper().Map<IEnumerable<CategoryModelResponseDso>>(response.Data));
             }
             catch (Exception ex)

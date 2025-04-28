@@ -1,7 +1,9 @@
 using AutoGenerator.Helper;
 using AutoGenerator.Helper.Translation;
 using AutoMapper;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Quartz.Util;
 using V1.DyModels.Dso.Requests;
 using V1.DyModels.Dso.Responses;
 using V1.DyModels.VMs;
@@ -17,7 +19,11 @@ namespace LAHJAAPI.V1.Controllers.Api
         private readonly IUseDialectService _dialectService;
         private readonly IMapper _mapper;
         private readonly ILogger _logger;
-        public DialectController(IUseDialectService dialectService, IMapper mapper, ILoggerFactory logger)
+
+        public DialectController(
+            IUseDialectService dialectService,
+            IMapper mapper,
+            ILoggerFactory logger)
         {
             _dialectService = dialectService;
             _mapper = mapper;
@@ -29,14 +35,17 @@ namespace LAHJAAPI.V1.Controllers.Api
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-        public async Task<ActionResult<IEnumerable<DialectOutputVM>>> GetAll()
+        public async Task<ActionResult<IEnumerable<DialectOutputVM>>> GetAll(string? lg)
         {
             try
             {
                 _logger.LogInformation("Fetching all Dialects...");
                 var result = await _dialectService.GetAllAsync();
-                var items = _mapper.Map<List<DialectOutputVM>>(result);
-                return Ok(items);
+
+                if (lg.IsNullOrWhiteSpace())
+                    return Ok(_mapper.Map<List<DialectOutputVM>>(result));
+
+                return Ok(_mapper.Map<List<DialectOutputVM>>(result, opt => opt.Items[HelperTranslation.KEYLG] = lg));
             }
             catch (Exception ex)
             {
@@ -50,25 +59,23 @@ namespace LAHJAAPI.V1.Controllers.Api
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-        public async Task<ActionResult<DialectOutputVM>> GetById(string id, string lg = "en")
+        public async Task<ActionResult<DialectOutputVM>> GetById(string id, string? lg)
         {
-            if (string.IsNullOrWhiteSpace(id))
-            {
-                _logger.LogWarning("Invalid Dialect ID received.");
-                return BadRequest("Invalid Dialect ID.");
-            }
-
             try
             {
                 _logger.LogInformation("Fetching Dialect with ID: {id}", id);
                 var entity = await _dialectService.GetByIdAsync(id);
+
                 if (entity == null)
                 {
                     _logger.LogWarning("Dialect not found with ID: {id}", id);
                     return NotFound();
                 }
 
-                var item = _mapper.Map<DialectOutputVM>(entity, opt => opt.Items.Add(HelperTranslation.KEYLG, lg));
+                if (lg.IsNullOrWhiteSpace())
+                    return Ok(_mapper.Map<DialectOutputVM>(entity));
+
+                var item = _mapper.Map<DialectOutputVM>(entity, opts => opts.Items.Add(HelperTranslation.KEYLG, lg));
                 return Ok(item);
             }
             catch (Exception ex)
@@ -78,133 +85,66 @@ namespace LAHJAAPI.V1.Controllers.Api
             }
         }
 
-        [HttpGet("GetDialectByLanguage/{langId}", Name = "GetDialectByLanguage")]
+        // Get Dialect by Language ID.
+        [AllowAnonymous]
+        [HttpGet("ByLanguage/{langId}", Name = "GetDialectByLanguage")]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-        public async Task<ActionResult<DialectOutputVM>> GetDialectByLanguageId(string langId, string lg = "en")
+        public async Task<ActionResult<DialectOutputVM>> GetByLanguageId(string langId, string? lg)
         {
-            if (string.IsNullOrWhiteSpace(langId))
-            {
-                _logger.LogWarning("InvallangId Dialect language id received.");
-                return BadRequest("InvallangId Dialect language id.");
-            }
-
             try
             {
-                _logger.LogInformation("Fetching Dialect with language id: {langId}", langId);
+                _logger.LogInformation("Fetching Dialect with Language ID: {langId}", langId);
                 var entity = await _dialectService.GetOneByAsync([new FilterCondition(nameof(DialectResponseDso.LanguageId), langId)]);
+
                 if (entity == null)
                 {
-                    _logger.LogWarning("Dialect not found with language id: {langId}", langId);
+                    _logger.LogWarning("Dialect not found with Language ID: {langId}", langId);
                     return NotFound();
                 }
+
+                if (lg.IsNullOrWhiteSpace())
+                    return Ok(_mapper.Map<DialectOutputVM>(entity));
 
                 var item = _mapper.Map<DialectOutputVM>(entity, opt => opt.Items.Add(HelperTranslation.KEYLG, lg));
                 return Ok(item);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error while fetching Dialect with language id: {langId}", langId);
+                _logger.LogError(ex, "Error while fetching Dialect with Language ID: {langId}", langId);
                 return StatusCode(500, "Internal Server Error");
             }
         }
 
-
-        [HttpGet("GetDialectsByLanguage/{langId}", Name = "GetDialectsByLanguage")]
+        // Get Dialects by Language ID.
+        [AllowAnonymous]
+        [HttpGet("ByLanguage/All/{langId}", Name = "GetDialectsByLanguage")]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-        public async Task<ActionResult<List<DialectOutputVM>>> GetDialectsByLanguage(string langId, string lg = "en")
+        public async Task<ActionResult<List<DialectOutputVM>>> GetDialectsByLanguage(string langId, string? lg)
         {
-            if (string.IsNullOrWhiteSpace(langId))
-            {
-                _logger.LogWarning("InvallangId Dialects language id received.");
-                return BadRequest("InvallangId Dialects language id.");
-            }
-
             try
             {
-                _logger.LogInformation("Fetching Dialects with language id: {langId}", langId);
-                var entity = await _dialectService.GetAllByAsync([new FilterCondition(nameof(DialectResponseDso.LanguageId), langId)]);
-                if (entity.TotalRecords == 0)
+                _logger.LogInformation("Fetching Dialects with Language ID: {langId}", langId);
+                var result = await _dialectService.GetAllByAsync([new FilterCondition(nameof(DialectResponseDso.LanguageId), langId)]);
+
+                if (result.TotalRecords == 0)
                 {
-                    _logger.LogWarning("Dialects not found with language id: {langId}", langId);
+                    _logger.LogWarning("Dialects not found with Language ID: {langId}", langId);
                     return NotFound();
                 }
 
-                var item = _mapper.Map<List<DialectOutputVM>>(entity.Data, opt => opt.Items.Add(HelperTranslation.KEYLG, lg));
-                return Ok(item);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error while fetching Dialects with language id: {langId}", langId);
-                return StatusCode(500, "Internal Server Error");
-            }
-        }
+                if (lg.IsNullOrWhiteSpace())
+                    return Ok(_mapper.Map<List<DialectOutputVM>>(result.Data));
 
-        // // Get a Dialect by Lg.
-        [HttpGet("GetDialectByLanguage", Name = "GetDialectByLg")]
-        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-        public async Task<ActionResult<DialectOutputVM>> GetDialectByLg(DialectFilterVM model)
-        {
-            var id = model.Id;
-            if (string.IsNullOrWhiteSpace(id))
-            {
-                _logger.LogWarning("Invalid Dialect ID received.");
-                return BadRequest("Invalid Dialect ID.");
-            }
-
-            try
-            {
-                _logger.LogInformation("Fetching Dialect with ID: {id}", id);
-                var entity = await _dialectService.GetByIdAsync(id);
-                if (entity == null)
-                {
-                    _logger.LogWarning("Dialect not found with ID: {id}", id);
-                    return NotFound();
-                }
-
-                var item = _mapper.Map<DialectOutputVM>(entity, opt => opt.Items.Add(HelperTranslation.KEYLG, model.Lg));
-                return Ok(item);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error while fetching Dialect with ID: {id}", id);
-                return StatusCode(500, "Internal Server Error");
-            }
-        }
-
-        // // Get a Dialects by Lg.
-        [HttpGet("GetDialectsByLanguage", Name = "GetDialectsByLg")]
-        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-        public async Task<ActionResult<IEnumerable<DialectOutputVM>>> GetDialectsByLg(string? lg)
-        {
-            if (string.IsNullOrWhiteSpace(lg))
-            {
-                _logger.LogWarning("Invalid Dialect lg received.");
-                return BadRequest("Invalid Dialect lg null ");
-            }
-
-            try
-            {
-                var dialects = await _dialectService.GetAllAsync();
-                if (dialects == null)
-                {
-                    _logger.LogWarning("Dialects not found  by  ");
-                    return NotFound();
-                }
-
-                var items = _mapper.Map<IEnumerable<DialectOutputVM>>(dialects, opt => opt.Items.Add(HelperTranslation.KEYLG, lg));
+                var items = _mapper.Map<List<DialectOutputVM>>(result.Data, opt => opt.Items.Add(HelperTranslation.KEYLG, lg));
                 return Ok(items);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error while fetching Dialects with Lg: {lg}", lg);
+                _logger.LogError(ex, "Error while fetching Dialects with Language ID: {langId}", langId);
                 return StatusCode(500, "Internal Server Error");
             }
         }
@@ -233,6 +173,11 @@ namespace LAHJAAPI.V1.Controllers.Api
                 _logger.LogInformation("Creating new Dialect with data: {@model}", model);
                 var item = _mapper.Map<DialectRequestDso>(model);
                 var createdEntity = await _dialectService.CreateAsync(item);
+                if (createdEntity is null)
+                {
+                    _logger.LogError("Could not save Dialect with data: {model}", model);
+                    return BadRequest("Could not save Dialect");
+                }
                 var createdItem = _mapper.Map<DialectOutputVM>(createdEntity);
                 return Ok(createdItem);
             }
@@ -278,32 +223,30 @@ namespace LAHJAAPI.V1.Controllers.Api
         }
 
         // Update an existing Dialect.
-        [HttpPut(Name = "UpdateDialect")]
+        [HttpPut("{id}", Name = "UpdateDialect")]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-        public async Task<ActionResult<DialectOutputVM>> Update([FromBody] DialectUpdateVM model)
+        public async Task<ActionResult<DialectOutputVM>> Update(string id, [FromBody] DialectUpdateVM model)
         {
-            if (model == null)
-            {
-                _logger.LogWarning("Invalid data in Update.");
-                return BadRequest("Invalid data.");
-            }
-
-            if (!ModelState.IsValid)
-            {
-                _logger.LogWarning("Invalid model state in Update: {ModelState}", ModelState);
-                return BadRequest(ModelState);
-            }
-
             try
             {
-                _logger.LogInformation("Updating Dialect with ID: {id}", model?.Id);
-                var item = _mapper.Map<DialectRequestDso>(model);
-                var updatedEntity = await _dialectService.UpdateAsync(item);
+                var item = await _dialectService.GetByIdAsync(id);
+                if (item == null)
+                {
+                    _logger.LogWarning("Dialect not found for update with ID: {id}", id);
+                    return NotFound($"Dialect not found with ID: {id}");
+                }
+
+                _logger.LogInformation("Updating Dialect with ID: {id}", id);
+                var newItem = _mapper.Map<DialectRequestDso>(model);
+                newItem.Id = id; // Ensure ID is set
+                newItem.LanguageId = item.LanguageId; // Preserve LanguageId
+                var updatedEntity = await _dialectService.UpdateAsync(newItem);
+
                 if (updatedEntity == null)
                 {
-                    _logger.LogWarning("Dialect not found for update with ID: {id}", model?.Id);
+                    _logger.LogWarning("Dialect not found for update with ID: {id}", id);
                     return NotFound();
                 }
 
@@ -312,7 +255,7 @@ namespace LAHJAAPI.V1.Controllers.Api
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error while updating Dialect with ID: {id}", model?.Id);
+                _logger.LogError(ex, "Error while updating Dialect with ID: {id}", id);
                 return StatusCode(500, "Internal Server Error");
             }
         }
@@ -322,19 +265,19 @@ namespace LAHJAAPI.V1.Controllers.Api
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> Delete(string? id)
+        public async Task<IActionResult> Delete(string id)
         {
-            if (string.IsNullOrWhiteSpace(id))
-            {
-                _logger.LogWarning("Invalid Dialect ID received in Delete.");
-                return BadRequest("Invalid Dialect ID.");
-            }
-
             try
             {
+                if (!await _dialectService.ExistsAsync(id))
+                {
+                    _logger.LogWarning("Dialect not found with ID: {id}", id);
+                    return NotFound($"Dialect not found with ID: {id}");
+                }
+
                 _logger.LogInformation("Deleting Dialect with ID: {id}", id);
                 await _dialectService.DeleteAsync(id);
-                return NoContent();
+                return Ok();
             }
             catch (Exception ex)
             {

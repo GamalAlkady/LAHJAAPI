@@ -1,6 +1,9 @@
+using AutoGenerator.Helper;
 using AutoGenerator.Helper.Translation;
 using AutoMapper;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Quartz.Util;
 using V1.DyModels.Dso.Requests;
 using V1.DyModels.VMs;
 using V1.Services.Services;
@@ -12,99 +15,104 @@ namespace LAHJAAPI.V1.Controllers.Api
     [ApiController]
     public class TypeModelController : ControllerBase
     {
-        private readonly IUseTypeModelService _typemodelService;
+        private readonly IUseTypeModelService _typeModelService;
         private readonly IMapper _mapper;
         private readonly ILogger _logger;
-        public TypeModelController(IUseTypeModelService typemodelService, IMapper mapper, ILoggerFactory logger)
+
+        public TypeModelController(
+            IUseTypeModelService typeModelService,
+            IMapper mapper,
+            ILoggerFactory logger)
         {
-            _typemodelService = typemodelService;
+            _typeModelService = typeModelService;
             _mapper = mapper;
             _logger = logger.CreateLogger(typeof(TypeModelController).FullName);
         }
 
-        // Get all TypeModels.
+        // Get all TypeModels
         [HttpGet(Name = "GetTypeModels")]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-        public async Task<ActionResult<IEnumerable<TypeModelOutputVM>>> GetAll()
+        public async Task<ActionResult<IEnumerable<TypeModelOutputVM>>> GetAll(string? lg = "en")
         {
             try
             {
                 _logger.LogInformation("Fetching all TypeModels...");
-                var result = await _typemodelService.GetAllAsync();
-                var items = _mapper.Map<List<TypeModelOutputVM>>(result);
-                return Ok(items);
+                var result = await _typeModelService.GetAllAsync();
+
+                if (lg.IsNullOrWhiteSpace())
+                    return Ok(_mapper.Map<List<TypeModelOutputVM>>(result));
+
+                return Ok(_mapper.Map<List<TypeModelOutputVM>>(result, opt => opt.Items[HelperTranslation.KEYLG] = lg));
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error while fetching all TypeModels");
-                return StatusCode(500, "Internal Server Error");
+                return StatusCode(500, HandelErrors.Problem(ex));
             }
         }
 
-        // Get a TypeModel by ID.
+        // Get TypeModel by ID
         [HttpGet("{id}", Name = "GetTypeModel")]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-        public async Task<ActionResult<TypeModelInfoVM>> GetById(string id, string lg = "en")
+        public async Task<ActionResult<TypeModelOutputVM>> GetById(string id, string? lg = "en")
         {
-            if (string.IsNullOrWhiteSpace(id))
-            {
-                _logger.LogWarning("Invalid TypeModel ID received.");
-                return BadRequest("Invalid TypeModel ID.");
-            }
-
             try
             {
                 _logger.LogInformation("Fetching TypeModel with ID: {id}", id);
-                var entity = await _typemodelService.GetByIdAsync(id);
+                var entity = await _typeModelService.GetByIdAsync(id);
+
                 if (entity == null)
                 {
                     _logger.LogWarning("TypeModel not found with ID: {id}", id);
                     return NotFound();
                 }
 
-                var item = _mapper.Map<TypeModelOutputVM>(entity, opt => opt.Items.Add(HelperTranslation.KEYLG, lg));
+                if (lg.IsNullOrWhiteSpace())
+                    return Ok(_mapper.Map<TypeModelOutputVM>(entity));
+
+                var item = _mapper.Map<TypeModelOutputVM>(entity, opts => opts.Items.Add(HelperTranslation.KEYLG, lg));
                 return Ok(item);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error while fetching TypeModel with ID: {id}", id);
-                return StatusCode(500, "Internal Server Error");
+                return StatusCode(500, HandelErrors.Problem(ex));
             }
         }
 
-        [HttpGet("GetTypeModelByName/{name}", Name = "GetTypeModelByName")]
+        // Get TypeModel by Name
+        [AllowAnonymous]
+        [HttpGet("ByName/{name}", Name = "GetTypeModelByName")]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-        public async Task<ActionResult<TypeModelInfoVM>> GetByName(string name, string lg = "en")
+        public async Task<ActionResult<TypeModelOutputVM>> GetByName(string name, string? lg = null)
         {
-            if (string.IsNullOrWhiteSpace(name))
-            {
-                _logger.LogWarning("Invalname TypeModel name received.");
-                return BadRequest("Invalname TypeModel name.");
-            }
-
             try
             {
                 _logger.LogInformation("Fetching TypeModel with name: {name}", name);
-                var entity = await _typemodelService.GetOneByAsync(
+                var entity = await _typeModelService.GetOneByAsync(
                 [
-                    new AutoGenerator.Helper.FilterCondition
+                    new FilterCondition
                     {
                         PropertyName = "Name",
                         Value = name,
-                        Operator = AutoGenerator.Helper.FilterOperator.Contains
+                        Operator = FilterOperator.Contains
                     }
                 ]);
+
                 if (entity == null)
                 {
                     _logger.LogWarning("TypeModel not found with name: {name}", name);
                     return NotFound();
                 }
+
+                if (lg.IsNullOrWhiteSpace())
+                    return Ok(_mapper.Map<TypeModelOutputVM>(entity));
 
                 var item = _mapper.Map<TypeModelOutputVM>(entity, opt => opt.Items.Add(HelperTranslation.KEYLG, lg));
                 return Ok(item);
@@ -112,65 +120,63 @@ namespace LAHJAAPI.V1.Controllers.Api
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error while fetching TypeModel with name: {name}", name);
-                return StatusCode(500, "Internal Server Error");
+                return StatusCode(500, HandelErrors.Problem(ex));
             }
         }
 
-        [HttpGet("ActiveTypes", Name = "GetActiveTypes")]
+        // Get active TypeModels
+        [HttpGet("Active", Name = "GetActiveTypeModels")]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-        public async Task<ActionResult<List<TypeModelInfoVM>>> GetActiveTypes(string lg = "en")
+        public async Task<ActionResult<List<TypeModelOutputVM>>> GetActive(string? lg = null)
         {
             try
             {
                 _logger.LogInformation("Fetching active TypeModels...");
-                var entities = await _typemodelService.GetAllByAsync(
+                var result = await _typeModelService.GetAllByAsync(
                 [
-                    new AutoGenerator.Helper.FilterCondition
+                    new FilterCondition
                     {
                         PropertyName = "Active",
                         Value = true
                     }
                 ]);
-                if (entities == null)
+
+                if (result.TotalRecords == 0)
                 {
-                    _logger.LogWarning("No active TypeModels found.");
+                    _logger.LogWarning("No active TypeModels found");
                     return NotFound();
                 }
 
-                var items = _mapper.Map<List<TypeModelOutputVM>>(entities.Data, opt => opt.Items.Add(HelperTranslation.KEYLG, lg));
+                if (lg.IsNullOrWhiteSpace())
+                    return Ok(_mapper.Map<List<TypeModelOutputVM>>(result.Data));
+
+                var items = _mapper.Map<List<TypeModelOutputVM>>(result.Data, opt => opt.Items.Add(HelperTranslation.KEYLG, lg));
                 return Ok(items);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error while fetching active TypeModels");
-                return BadRequest(ex);
-                return StatusCode(500, "Internal Server Error");
+                return StatusCode(500, HandelErrors.Problem(ex));
             }
         }
 
-        // // Get a TypeModel by Lg.
-        [HttpGet("GetTypeModelByLanguage", Name = "GetTypeModelByLg")]
+        // Get TypeModel by language filter
+        [HttpGet("ByLanguage", Name = "GetTypeModelByLanguage")]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-        public async Task<ActionResult<TypeModelOutputVM>> GetTypeModelByLg(TypeModelFilterVM model)
+        public async Task<ActionResult<TypeModelOutputVM>> GetByLanguage([FromQuery] TypeModelFilterVM model)
         {
-            var id = model.Id;
-            if (string.IsNullOrWhiteSpace(id))
-            {
-                _logger.LogWarning("Invalid TypeModel ID received.");
-                return BadRequest("Invalid TypeModel ID.");
-            }
-
             try
             {
-                _logger.LogInformation("Fetching TypeModel with ID: {id}", id);
-                var entity = await _typemodelService.GetByIdAsync(id);
+                _logger.LogInformation("Fetching TypeModel with ID: {id} and language: {lg}", model.Id, model.Lg);
+                var entity = await _typeModelService.GetByIdAsync(model.Id);
+
                 if (entity == null)
                 {
-                    _logger.LogWarning("TypeModel not found with ID: {id}", id);
+                    _logger.LogWarning("TypeModel not found with ID: {id}", model.Id);
                     return NotFound();
                 }
 
@@ -179,56 +185,46 @@ namespace LAHJAAPI.V1.Controllers.Api
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error while fetching TypeModel with ID: {id}", id);
-                return StatusCode(500, "Internal Server Error");
+                _logger.LogError(ex, "Error while fetching TypeModel with ID: {id}", model.Id);
+                return StatusCode(500, HandelErrors.Problem(ex));
             }
         }
 
-        // // Get a TypeModels by Lg.
-        [HttpGet("GetTypeModelsByLanguage", Name = "GetTypeModelsByLg")]
+        // Get TypeModels by language
+        [HttpGet("ByLanguage/All", Name = "GetTypeModelsByLanguage")]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-        public async Task<ActionResult<IEnumerable<TypeModelOutputVM>>> GetTypeModelsByLg(string? lg)
+        public async Task<ActionResult<IEnumerable<TypeModelOutputVM>>> GetByLanguage(string lg = "en")
         {
-            if (string.IsNullOrWhiteSpace(lg))
-            {
-                _logger.LogWarning("Invalid TypeModel lg received.");
-                return BadRequest("Invalid TypeModel lg null ");
-            }
-
             try
             {
-                var typemodels = await _typemodelService.GetAllAsync();
-                if (typemodels == null)
+                _logger.LogInformation("Fetching TypeModels with language: {lg}", lg);
+                var result = await _typeModelService.GetAllAsync();
+
+                if (result == null || !result.Any())
                 {
-                    _logger.LogWarning("TypeModels not found  by  ");
+                    _logger.LogWarning("No TypeModels found");
                     return NotFound();
                 }
 
-                var items = _mapper.Map<IEnumerable<TypeModelOutputVM>>(typemodels, opt => opt.Items.Add(HelperTranslation.KEYLG, lg));
+                var items = _mapper.Map<List<TypeModelOutputVM>>(result, opt => opt.Items.Add(HelperTranslation.KEYLG, lg));
                 return Ok(items);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error while fetching TypeModels with Lg: {lg}", lg);
-                return StatusCode(500, "Internal Server Error");
+                _logger.LogError(ex, "Error while fetching TypeModels with language: {lg}", lg);
+                return StatusCode(500, HandelErrors.Problem(ex));
             }
         }
 
-        // Create a new TypeModel.
+        // Create new TypeModel
         [HttpPost(Name = "CreateTypeModel")]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
         public async Task<ActionResult<TypeModelOutputVM>> Create([FromBody] TypeModelCreateVM model)
         {
-            if (model == null)
-            {
-                _logger.LogWarning("TypeModel data is null in Create.");
-                return BadRequest("TypeModel data is required.");
-            }
-
             if (!ModelState.IsValid)
             {
                 _logger.LogWarning("Invalid model state in Create: {ModelState}", ModelState);
@@ -239,28 +235,28 @@ namespace LAHJAAPI.V1.Controllers.Api
             {
                 _logger.LogInformation("Creating new TypeModel with data: {@model}", model);
                 var item = _mapper.Map<TypeModelRequestDso>(model);
-                var createdEntity = await _typemodelService.CreateAsync(item);
+                var createdEntity = await _typeModelService.CreateAsync(item);
                 var createdItem = _mapper.Map<TypeModelOutputVM>(createdEntity);
                 return Ok(createdItem);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error while creating a new TypeModel");
-                return StatusCode(500, "Internal Server Error");
+                _logger.LogError(ex, "Error while creating new TypeModel");
+                return StatusCode(500, HandelErrors.Problem(ex));
             }
         }
 
-        // Create multiple TypeModels.
+        // Create multiple TypeModels
         [HttpPost("createRange")]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
         public async Task<ActionResult<IEnumerable<TypeModelOutputVM>>> CreateRange([FromBody] IEnumerable<TypeModelCreateVM> models)
         {
-            if (models == null)
+            if (models == null || !models.Any())
             {
-                _logger.LogWarning("Data is null in CreateRange.");
-                return BadRequest("Data is required.");
+                _logger.LogWarning("Empty data in CreateRange");
+                return BadRequest("Data is required");
             }
 
             if (!ModelState.IsValid)
@@ -271,46 +267,44 @@ namespace LAHJAAPI.V1.Controllers.Api
 
             try
             {
-                _logger.LogInformation("Creating multiple TypeModels.");
+                _logger.LogInformation("Creating {count} TypeModels", models.Count());
                 var items = _mapper.Map<List<TypeModelRequestDso>>(models);
-                var createdEntities = await _typemodelService.CreateRangeAsync(items);
+                var createdEntities = await _typeModelService.CreateRangeAsync(items);
                 var createdItems = _mapper.Map<List<TypeModelOutputVM>>(createdEntities);
                 return Ok(createdItems);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error while creating multiple TypeModels");
-                return StatusCode(500, "Internal Server Error");
+                return StatusCode(500, HandelErrors.Problem(ex));
             }
         }
 
-        // Update an existing TypeModel.
-        [HttpPut(Name = "UpdateTypeModel")]
+        // Update TypeModel
+        [HttpPut("{id}", Name = "UpdateTypeModel")]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-        public async Task<ActionResult<TypeModelOutputVM>> Update([FromBody] TypeModelUpdateVM model)
+        public async Task<ActionResult<TypeModelOutputVM>> Update(string id, [FromBody] TypeModelUpdateVM model)
         {
-            if (model == null)
-            {
-                _logger.LogWarning("Invalid data in Update.");
-                return BadRequest("Invalid data.");
-            }
-
-            if (!ModelState.IsValid)
-            {
-                _logger.LogWarning("Invalid model state in Update: {ModelState}", ModelState);
-                return BadRequest(ModelState);
-            }
-
             try
             {
-                _logger.LogInformation("Updating TypeModel with ID: {id}", model?.Id);
+                _logger.LogInformation("Updating TypeModel with ID: {id}", id);
+                var existingItem = await _typeModelService.GetByIdAsync(id);
+
+                if (existingItem == null)
+                {
+                    _logger.LogWarning("TypeModel not found with ID: {id}", id);
+                    return NotFound();
+                }
+
                 var item = _mapper.Map<TypeModelRequestDso>(model);
-                var updatedEntity = await _typemodelService.UpdateAsync(item);
+                item.Id = id;
+                var updatedEntity = await _typeModelService.UpdateAsync(item);
+
                 if (updatedEntity == null)
                 {
-                    _logger.LogWarning("TypeModel not found for update with ID: {id}", model?.Id);
+                    _logger.LogWarning("Failed to update TypeModel with ID: {id}", id);
                     return NotFound();
                 }
 
@@ -319,54 +313,54 @@ namespace LAHJAAPI.V1.Controllers.Api
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error while updating TypeModel with ID: {id}", model?.Id);
-                return StatusCode(500, "Internal Server Error");
+                _logger.LogError(ex, "Error while updating TypeModel with ID: {id}", id);
+                return StatusCode(500, HandelErrors.Problem(ex));
             }
         }
 
-        // Delete a TypeModel.
+        // Delete TypeModel
         [HttpDelete("{id}", Name = "DeleteTypeModel")]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> Delete(string? id)
+        public async Task<IActionResult> Delete(string id)
         {
-            if (string.IsNullOrWhiteSpace(id))
-            {
-                _logger.LogWarning("Invalid TypeModel ID received in Delete.");
-                return BadRequest("Invalid TypeModel ID.");
-            }
-
             try
             {
                 _logger.LogInformation("Deleting TypeModel with ID: {id}", id);
-                await _typemodelService.DeleteAsync(id);
-                return NoContent();
+
+                if (!await _typeModelService.ExistsAsync(id))
+                {
+                    _logger.LogWarning("TypeModel not found with ID: {id}", id);
+                    return NotFound();
+                }
+
+                await _typeModelService.DeleteAsync(id);
+                return Ok();
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error while deleting TypeModel with ID: {id}", id);
-                return StatusCode(500, "Internal Server Error");
+                return StatusCode(500, HandelErrors.Problem(ex));
             }
         }
 
-        // Get count of TypeModels.
-        [HttpGet("CountTypeModel")]
+        // Get TypeModels count
+        [HttpGet("Count", Name = "CountTypeModels")]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
         public async Task<ActionResult<int>> Count()
         {
             try
             {
                 _logger.LogInformation("Counting TypeModels...");
-                var count = await _typemodelService.CountAsync();
+                var count = await _typeModelService.CountAsync();
                 return Ok(count);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error while counting TypeModels");
-                return StatusCode(500, "Internal Server Error");
+                return StatusCode(500, HandelErrors.Problem(ex));
             }
         }
     }

@@ -1,6 +1,7 @@
 using AutoGenerator.Helper.Translation;
 using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
+using Quartz.Util;
 using V1.DyModels.Dso.Requests;
 using V1.DyModels.VMs;
 using V1.Services.Services;
@@ -12,29 +13,36 @@ namespace LAHJAAPI.V1.Controllers.Api
     [ApiController]
     public class FAQItemController : ControllerBase
     {
-        private readonly IUseFAQItemService _faqitemService;
+        private readonly IUseFAQItemService _faqItemService;
         private readonly IMapper _mapper;
         private readonly ILogger _logger;
-        public FAQItemController(IUseFAQItemService faqitemService, IMapper mapper, ILoggerFactory logger)
+
+        public FAQItemController(
+            IUseFAQItemService faqItemService,
+            IMapper mapper,
+            ILoggerFactory logger)
         {
-            _faqitemService = faqitemService;
+            _faqItemService = faqItemService;
             _mapper = mapper;
             _logger = logger.CreateLogger(typeof(FAQItemController).FullName);
         }
 
-        // Get all FAQItems.
+        // Get all FAQItems
         [HttpGet(Name = "GetFAQItems")]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-        public async Task<ActionResult<IEnumerable<FAQItemOutputVM>>> GetAll()
+        public async Task<ActionResult<IEnumerable<FAQItemOutputVM>>> GetAll(string? lg)
         {
             try
             {
                 _logger.LogInformation("Fetching all FAQItems...");
-                var result = await _faqitemService.GetAllAsync();
-                var items = _mapper.Map<List<FAQItemOutputVM>>(result);
-                return Ok(items);
+                var result = await _faqItemService.GetAllAsync();
+
+                if (lg.IsNullOrWhiteSpace())
+                    return Ok(_mapper.Map<List<FAQItemOutputVM>>(result));
+
+                return Ok(_mapper.Map<List<FAQItemOutputVM>>(result, opt => opt.Items[HelperTranslation.KEYLG] = lg));
             }
             catch (Exception ex)
             {
@@ -43,30 +51,30 @@ namespace LAHJAAPI.V1.Controllers.Api
             }
         }
 
-        // Get a FAQItem by ID.
+
+
+        // Get FAQItem by ID
         [HttpGet("{id}", Name = "GetFAQItem")]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-        public async Task<ActionResult<FAQItemInfoVM>> GetById(string? id)
+        public async Task<ActionResult<FAQItemOutputVM>> GetById(string id, string? lg)
         {
-            if (string.IsNullOrWhiteSpace(id))
-            {
-                _logger.LogWarning("Invalid FAQItem ID received.");
-                return BadRequest("Invalid FAQItem ID.");
-            }
-
             try
             {
                 _logger.LogInformation("Fetching FAQItem with ID: {id}", id);
-                var entity = await _faqitemService.GetByIdAsync(id);
+                var entity = await _faqItemService.GetByIdAsync(id);
+
                 if (entity == null)
                 {
                     _logger.LogWarning("FAQItem not found with ID: {id}", id);
                     return NotFound();
                 }
 
-                var item = _mapper.Map<FAQItemInfoVM>(entity);
+                if (lg.IsNullOrWhiteSpace())
+                    return Ok(_mapper.Map<FAQItemOutputVM>(entity));
+
+                var item = _mapper.Map<FAQItemOutputVM>(entity, opts => opts.Items.Add(HelperTranslation.KEYLG, lg));
                 return Ok(item);
             }
             catch (Exception ex)
@@ -76,27 +84,21 @@ namespace LAHJAAPI.V1.Controllers.Api
             }
         }
 
-        // // Get a FAQItem by Lg.
-        [HttpGet("GetFAQItemByLanguage", Name = "GetFAQItemByLg")]
+        // Get FAQItem by language filter
+        [HttpGet("ByLanguage", Name = "GetFAQItemByLg")]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-        public async Task<ActionResult<FAQItemOutputVM>> GetFAQItemByLg(FAQItemFilterVM model)
+        public async Task<ActionResult<FAQItemOutputVM>> GetByLanguage([FromQuery] FAQItemFilterVM model)
         {
-            var id = model.Id;
-            if (string.IsNullOrWhiteSpace(id))
-            {
-                _logger.LogWarning("Invalid FAQItem ID received.");
-                return BadRequest("Invalid FAQItem ID.");
-            }
-
             try
             {
-                _logger.LogInformation("Fetching FAQItem with ID: {id}", id);
-                var entity = await _faqitemService.GetByIdAsync(id);
+                _logger.LogInformation("Fetching FAQItem with ID: {id} and language: {lg}", model.Id, model.Lg);
+                var entity = await _faqItemService.GetByIdAsync(model.Id);
+
                 if (entity == null)
                 {
-                    _logger.LogWarning("FAQItem not found with ID: {id}", id);
+                    _logger.LogWarning("FAQItem not found with ID: {id}", model.Id);
                     return NotFound();
                 }
 
@@ -105,54 +107,50 @@ namespace LAHJAAPI.V1.Controllers.Api
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error while fetching FAQItem with ID: {id}", id);
+                _logger.LogError(ex, "Error while fetching FAQItem with ID: {id}", model.Id);
                 return StatusCode(500, "Internal Server Error");
             }
         }
 
-        // // Get a FAQItems by Lg.
-        [HttpGet("GetFAQItemsByLanguage", Name = "GetFAQItemsByLg")]
+        // Get FAQItems by language
+        [HttpGet("ByLanguage/All", Name = "GetFAQItemsByLg")]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-        public async Task<ActionResult<IEnumerable<FAQItemOutputVM>>> GetFAQItemsByLg(string? lg)
+        public async Task<ActionResult<IEnumerable<FAQItemOutputVM>>> GetByLanguage(string lg)
         {
-            if (string.IsNullOrWhiteSpace(lg))
-            {
-                _logger.LogWarning("Invalid FAQItem lg received.");
-                return BadRequest("Invalid FAQItem lg null ");
-            }
-
             try
             {
-                var faqitems = await _faqitemService.GetAllAsync();
-                if (faqitems == null)
+                _logger.LogInformation("Fetching FAQItems with language: {lg}", lg);
+                var result = await _faqItemService.GetAllAsync();
+
+                if (result == null || !result.Any())
                 {
-                    _logger.LogWarning("FAQItems not found  by  ");
+                    _logger.LogWarning("No FAQItems found");
                     return NotFound();
                 }
 
-                var items = _mapper.Map<IEnumerable<FAQItemOutputVM>>(faqitems, opt => opt.Items.Add(HelperTranslation.KEYLG, lg));
+                var items = _mapper.Map<List<FAQItemOutputVM>>(result, opt => opt.Items.Add(HelperTranslation.KEYLG, lg));
                 return Ok(items);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error while fetching FAQItems with Lg: {lg}", lg);
+                _logger.LogError(ex, "Error while fetching FAQItems with language: {lg}", lg);
                 return StatusCode(500, "Internal Server Error");
             }
         }
 
-        // Create a new FAQItem.
+        // Create new FAQItem
         [HttpPost(Name = "CreateFAQItem")]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
         public async Task<ActionResult<FAQItemOutputVM>> Create([FromBody] FAQItemCreateVM model)
         {
             if (model == null)
             {
-                _logger.LogWarning("FAQItem data is null in Create.");
-                return BadRequest("FAQItem data is required.");
+                _logger.LogWarning("FAQItem data is null in Create");
+                return BadRequest("FAQItem data is required");
             }
 
             if (!ModelState.IsValid)
@@ -165,28 +163,28 @@ namespace LAHJAAPI.V1.Controllers.Api
             {
                 _logger.LogInformation("Creating new FAQItem with data: {@model}", model);
                 var item = _mapper.Map<FAQItemRequestDso>(model);
-                var createdEntity = await _faqitemService.CreateAsync(item);
+                var createdEntity = await _faqItemService.CreateAsync(item);
                 var createdItem = _mapper.Map<FAQItemOutputVM>(createdEntity);
                 return Ok(createdItem);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error while creating a new FAQItem");
+                _logger.LogError(ex, "Error while creating new FAQItem");
                 return StatusCode(500, "Internal Server Error");
             }
         }
 
-        // Create multiple FAQItems.
+        // Create multiple FAQItems
         [HttpPost("createRange")]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
         public async Task<ActionResult<IEnumerable<FAQItemOutputVM>>> CreateRange([FromBody] IEnumerable<FAQItemCreateVM> models)
         {
-            if (models == null)
+            if (models == null || !models.Any())
             {
-                _logger.LogWarning("Data is null in CreateRange.");
-                return BadRequest("Data is required.");
+                _logger.LogWarning("Empty data in CreateRange");
+                return BadRequest("Data is required");
             }
 
             if (!ModelState.IsValid)
@@ -197,9 +195,9 @@ namespace LAHJAAPI.V1.Controllers.Api
 
             try
             {
-                _logger.LogInformation("Creating multiple FAQItems.");
+                _logger.LogInformation("Creating {count} FAQItems", models.Count());
                 var items = _mapper.Map<List<FAQItemRequestDso>>(models);
-                var createdEntities = await _faqitemService.CreateRangeAsync(items);
+                var createdEntities = await _faqItemService.CreateRangeAsync(items);
                 var createdItems = _mapper.Map<List<FAQItemOutputVM>>(createdEntities);
                 return Ok(createdItems);
             }
@@ -210,33 +208,31 @@ namespace LAHJAAPI.V1.Controllers.Api
             }
         }
 
-        // Update an existing FAQItem.
-        [HttpPut(Name = "UpdateFAQItem")]
+        // Update FAQItem
+        [HttpPut("{id}", Name = "UpdateFAQItem")]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-        public async Task<ActionResult<FAQItemOutputVM>> Update([FromBody] FAQItemUpdateVM model)
+        public async Task<ActionResult<FAQItemOutputVM>> Update(string id, [FromBody] FAQItemUpdateVM model)
         {
-            if (model == null)
-            {
-                _logger.LogWarning("Invalid data in Update.");
-                return BadRequest("Invalid data.");
-            }
-
-            if (!ModelState.IsValid)
-            {
-                _logger.LogWarning("Invalid model state in Update: {ModelState}", ModelState);
-                return BadRequest(ModelState);
-            }
-
             try
             {
-                _logger.LogInformation("Updating FAQItem with ID: {id}", model?.Id);
+                _logger.LogInformation("Updating FAQItem with ID: {id}", id);
+                var existingItem = await _faqItemService.GetByIdAsync(id);
+
+                if (existingItem == null)
+                {
+                    _logger.LogWarning("FAQItem not found with ID: {id}", id);
+                    return NotFound();
+                }
+
                 var item = _mapper.Map<FAQItemRequestDso>(model);
-                var updatedEntity = await _faqitemService.UpdateAsync(item);
+                item.Id = id;
+                var updatedEntity = await _faqItemService.UpdateAsync(item);
+
                 if (updatedEntity == null)
                 {
-                    _logger.LogWarning("FAQItem not found for update with ID: {id}", model?.Id);
+                    _logger.LogWarning("Failed to update FAQItem with ID: {id}", id);
                     return NotFound();
                 }
 
@@ -245,29 +241,30 @@ namespace LAHJAAPI.V1.Controllers.Api
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error while updating FAQItem with ID: {id}", model?.Id);
+                _logger.LogError(ex, "Error while updating FAQItem with ID: {id}", id);
                 return StatusCode(500, "Internal Server Error");
             }
         }
 
-        // Delete a FAQItem.
+        // Delete FAQItem
         [HttpDelete("{id}", Name = "DeleteFAQItem")]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> Delete(string? id)
+        public async Task<IActionResult> Delete(string id)
         {
-            if (string.IsNullOrWhiteSpace(id))
-            {
-                _logger.LogWarning("Invalid FAQItem ID received in Delete.");
-                return BadRequest("Invalid FAQItem ID.");
-            }
-
             try
             {
                 _logger.LogInformation("Deleting FAQItem with ID: {id}", id);
-                await _faqitemService.DeleteAsync(id);
-                return NoContent();
+
+                if (!await _faqItemService.ExistsAsync(id))
+                {
+                    _logger.LogWarning("FAQItem not found with ID: {id}", id);
+                    return NotFound();
+                }
+
+                await _faqItemService.DeleteAsync(id);
+                return Ok();
             }
             catch (Exception ex)
             {
@@ -276,17 +273,16 @@ namespace LAHJAAPI.V1.Controllers.Api
             }
         }
 
-        // Get count of FAQItems.
-        [HttpGet("CountFAQItem")]
+        // Get FAQItems count
+        [HttpGet("Count", Name = "CountFAQItems")]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
         public async Task<ActionResult<int>> Count()
         {
             try
             {
                 _logger.LogInformation("Counting FAQItems...");
-                var count = await _faqitemService.CountAsync();
+                var count = await _faqItemService.CountAsync();
                 return Ok(count);
             }
             catch (Exception ex)

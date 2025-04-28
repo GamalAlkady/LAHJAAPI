@@ -1,7 +1,6 @@
 using AutoGenerator;
 using AutoGenerator.Helper.Translation;
-using LAHJAAPI.Models;
-using System;
+using System.ComponentModel.DataAnnotations;
 
 namespace V1.DyModels.VMs
 {
@@ -10,9 +9,11 @@ namespace V1.DyModels.VMs
     /// </summary>
     public class AdvertisementTabUpdateVM : ITVM
     {
+        [Required]
+        public TranslationData Title { get; set; }
+
+        public TranslationData? Description { get; set; }
         ///
-        public string? Id { get; set; }
-        ///
-        public AdvertisementTabCreateVM? Body { get; set; }
+        public String? ImageAlt { get; set; }
     }
 }

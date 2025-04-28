@@ -1,4 +1,5 @@
-﻿using AutoMapper;
+﻿using AutoGenerator.Conditions;
+using AutoMapper;
 using LAHJAAPI.V1.DyModels.VM.Stripe.Checkout;
 using LAHJAAPI.V1.DyModels.VM.Stripe.Customer;
 using LAHJAAPI.V1.DyModels.VM.Stripe.Payment;
@@ -9,7 +10,6 @@ using Stripe;
 using Stripe.Checkout;
 using StripeGateway;
 using V1.DyModels.Dso.Requests;
-using V1.DyModels.Dso.ResponseFilters;
 using V1.DyModels.Dso.Responses;
 using V1.Services.Services;
 
@@ -39,7 +39,7 @@ namespace LAHJAAPI.V1.Controllers.Api
             try
             {
                 var user = await userService.GetUserWithSubscription();
-                if (checker.Check(SubscriptionValidatorStates.IsSubscribe, new SubscriptionResponseFilterDso()))
+                if (checker.Check(SubscriptionValidatorStates.IsSubscribe, new DataFilter("userId")))
                 {
                     return Conflict(new ProblemDetails { Detail = "You already have subscription" });
                 }

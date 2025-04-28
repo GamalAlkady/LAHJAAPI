@@ -50,7 +50,7 @@ namespace LAHJAAPI.V1.Controllers.Api
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-        public async Task<ActionResult<ModelGatewayInfoVM>> GetById(string? id)
+        public async Task<ActionResult<ModelGatewayOutputVM>> GetById(string? id)
         {
             if (string.IsNullOrWhiteSpace(id))
             {
@@ -68,7 +68,8 @@ namespace LAHJAAPI.V1.Controllers.Api
                     return NotFound();
                 }
 
-                var item = _mapper.Map<ModelGatewayInfoVM>(entity);
+
+                var item = _mapper.Map<ModelGatewayOutputVM>(entity);
                 return Ok(item);
             }
             catch (Exception ex)
@@ -208,29 +209,28 @@ namespace LAHJAAPI.V1.Controllers.Api
         }
 
         // Update an existing ModelGateway.
-        [HttpPut(Name = "UpdateModelGateway")]
+        [HttpPut("{id}", Name = "UpdateModelGateway")]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-        public async Task<ActionResult<ModelGatewayOutputVM>> Update([FromBody] ModelGatewayUpdateVM model)
+        public async Task<ActionResult<ModelGatewayOutputVM>> Update(string id, [FromBody] ModelGatewayUpdateVM model)
         {
             try
             {
-                _logger.LogInformation("Updating ModelGateway with ID: {id}", model?.Id);
-                var modelGateway = await _modelgatewayService.GetByIdAsync(model.Id);
+                _logger.LogInformation("Updating ModelGateway with ID: {id}", id);
+                var modelGateway = await _modelgatewayService.GetByIdAsync(id);
                 if (modelGateway == null)
                 {
                     return NotFound(HandelErrors.NotFound("Record not found make sure that id is correct."));
                 }
 
-                modelGateway.Url = model.Url;
-                modelGateway.Name = model.Name;
-                modelGateway.IsDefault = model.IsDefault;
                 var item = _mapper.Map<ModelGatewayRequestDso>(modelGateway);
+                item.Id = id;
+
                 var updatedEntity = await _modelgatewayService.UpdateAsync(item);
                 if (updatedEntity == null)
                 {
-                    _logger.LogWarning("ModelGateway not found for update with ID: {id}", model?.Id);
+                    _logger.LogWarning("ModelGateway not found for update with ID: {id}", id);
                     return NotFound();
                 }
 
@@ -239,7 +239,7 @@ namespace LAHJAAPI.V1.Controllers.Api
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error while updating ModelGateway with ID: {id}", model?.Id);
+                _logger.LogError(ex, "Error while updating ModelGateway with ID: {id}", id);
                 return StatusCode(500, "Internal Server Error");
             }
         }
@@ -282,7 +282,7 @@ namespace LAHJAAPI.V1.Controllers.Api
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> Delete(string? id)
+        public async Task<IActionResult> Delete(string id)
         {
             if (string.IsNullOrWhiteSpace(id))
             {
@@ -292,9 +292,14 @@ namespace LAHJAAPI.V1.Controllers.Api
 
             try
             {
+                if (!await _modelgatewayService.ExistsAsync(id))
+                {
+                    _logger.LogWarning("ModelGateway not found with ID: {id}", id);
+                    return NotFound();
+                }
                 _logger.LogInformation("Deleting ModelGateway with ID: {id}", id);
                 await _modelgatewayService.DeleteAsync(id);
-                return NoContent();
+                return Ok();
             }
             catch (Exception ex)
             {

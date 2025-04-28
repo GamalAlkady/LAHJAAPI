@@ -33,6 +33,7 @@ namespace V1.Services.Services
                 int numberRequests = 0;
                 var planFeature = await GetByNameAsync(planId, "Requests", "en");
                 var desc = planFeature.Description.Value["en"];
+                if (desc.Contains("Unlimited", StringComparison.OrdinalIgnoreCase)) return int.MaxValue;
                 if (desc.Contains("request")) desc = desc[..6];
                 numberRequests = Convert.ToInt32(Convert.ToDecimal(desc));
                 return numberRequests;
@@ -50,7 +51,9 @@ namespace V1.Services.Services
             {
                 _logger.LogInformation("Getting number of spaces for Plan ID: {PlanId}", planId);
                 var planFeature = await GetByNameAsync(planId, "Space", "en");
-                return Convert.ToInt32(Convert.ToDecimal(planFeature.Description.Value["en"]));
+                var feature = planFeature.Description.Value["en"];
+                if (feature.Equals("Unlimited", StringComparison.OrdinalIgnoreCase)) return int.MaxValue;
+                return Convert.ToInt32(Convert.ToDecimal(feature));
             }
             catch (Exception ex)
             {

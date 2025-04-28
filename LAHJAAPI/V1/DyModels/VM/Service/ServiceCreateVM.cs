@@ -1,7 +1,5 @@
 using AutoGenerator;
-using AutoGenerator.Helper.Translation;
-using LAHJAAPI.Models;
-using System;
+using System.ComponentModel.DataAnnotations;
 
 namespace V1.DyModels.VMs
 {
@@ -10,20 +8,24 @@ namespace V1.DyModels.VMs
     /// </summary>
     public class ServiceCreateVM : ITVM
     {
-        ///
-        public String? Name { get; set; }
-        ///
-        public String? AbsolutePath { get; set; }
-        ///
-        public String? Token { get; set; }
-        ///
-        public String? ModelAiId { get; set; }
-        public ModelAiCreateVM? ModelAi { get; set; }
+
+        [Required]
+        public String Name { get; set; }
+
+        [Required]
+        public String AbsolutePath { get; set; }
+
+        [Required]
+        public String Token { get; set; }
+
+        [Required]
+        public String ModelAiId { get; set; }
+        //public ModelAiCreateVM? ModelAi { get; set; }
         //
-        public List<ServiceMethodCreateVM>? ServiceMethods { get; set; }
+        //public List<ServiceMethodCreateVM>? ServiceMethods { get; set; }
         //
-        public List<UserServiceCreateVM>? UserServices { get; set; }
+        //public List<UserServiceCreateVM>? UserServices { get; set; }
         //
-        public List<RequestCreateVM>? Requests { get; set; }
+        //public List<RequestCreateVM>? Requests { get; set; }
     }
 }

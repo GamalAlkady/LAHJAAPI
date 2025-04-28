@@ -1,4 +1,5 @@
 using AutoGenerator;
+using System.ComponentModel.DataAnnotations;
 
 namespace V1.DyModels.VMs
 {
@@ -7,8 +8,8 @@ namespace V1.DyModels.VMs
     /// </summary>
     public class ModelGatewayCreateVM : ITVM
     {
-        ///
-        public String? Name { get; set; }
+        [Required]
+        public String Name { get; set; }
         ///
         public String? Url { get; set; }
         public Boolean IsDefault { get; set; }

@@ -1,7 +1,5 @@
 using AutoGenerator;
 using AutoGenerator.Helper.Translation;
-using LAHJAAPI.Models;
-using System;
 
 namespace V1.DyModels.VMs
 {
@@ -18,6 +16,5 @@ namespace V1.DyModels.VMs
         public TranslationData? Description { get; set; }
         ///
         public String? ImageAlt { get; set; }
-        public AdvertisementCreateVM? Advertisement { get; set; }
     }
 }

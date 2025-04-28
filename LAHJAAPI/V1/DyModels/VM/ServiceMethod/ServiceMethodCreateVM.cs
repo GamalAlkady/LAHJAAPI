@@ -1,7 +1,4 @@
 using AutoGenerator;
-using AutoGenerator.Helper.Translation;
-using LAHJAAPI.Models;
-using System;
 
 namespace V1.DyModels.VMs
 {
@@ -18,6 +15,6 @@ namespace V1.DyModels.VMs
         public String? OutputParameters { get; set; }
         ///
         public String? ServiceId { get; set; }
-        public ServiceCreateVM? Service { get; set; }
+        //public ServiceCreateVM? Service { get; set; }
     }
 }

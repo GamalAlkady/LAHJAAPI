@@ -2,8 +2,11 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 
 using AutoBuilderApiCore.Auth;
+using AutoGenerator.Notifications;
+using AutoNotificationService.Services.Email;
 using LAHJAAPI.Models;
 using LAHJAAPI.Utilities;
+using LAHJAAPI.V1.Helper;
 using Microsoft.AspNetCore.Authentication.BearerToken;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Http.Metadata;
@@ -42,8 +45,8 @@ public static class IdentityApiEndpointRouteBuilderExtensions
 
         var timeProvider = endpoints.ServiceProvider.GetRequiredService<TimeProvider>();
         var bearerTokenOptions = endpoints.ServiceProvider.GetRequiredService<IOptionsMonitor<BearerTokenOptions>>();
-        var emailSender = endpoints.ServiceProvider.GetRequiredService<IEmailSender<TUser>>();
-        //var checker = endpoints.ServiceProvider.GetRequiredService<IConditionChecker>();
+        //var emailSender = endpoints.ServiceProvider.GetRequiredService<IEmailSender<TUser>>();
+        var notifier = endpoints.ServiceProvider.GetRequiredService<IAutoNotifier>();
         var linkGenerator = endpoints.ServiceProvider.GetRequiredService<LinkGenerator>();
         var appSettings = endpoints.ServiceProvider.GetRequiredService<IOptions<AppSettings>>().Value;
         //var tokenListService = endpoints.ServiceProvider.GetRequiredService<TokenlistService>();
@@ -257,16 +260,11 @@ public static class IdentityApiEndpointRouteBuilderExtensions
             {
                 return CreateValidationProblem(IdentityResult.Failed(userManager.ErrorDescriber.InvalidEmail(resendRequest.Email)));
             }
-            if (await userManager.IsEmailConfirmedAsync(user))
-            {
-                return TypedResults.Ok<string>("Your email has already been confirmed.");
-            }
-            //await checker.Injector.Notifier.NotifyAsyn(new EmailModel()
+            //if (await userManager.IsEmailConfirmedAsync(user))
             //{
-            //    Body = TemplateTagEmail.GetConfirmationEmailHtml(resendRequest.ReturnUrl),
-            //    Subject = "Confirmation Email In LAHJA",
-            //    ToEmail = resendRequest.Email,
-            //});
+            //    return TypedResults.Ok<string>("Your email has already been confirmed.");
+            //}
+
             await SendConfirmationEmailAsync(user, userManager, context, resendRequest.ReturnUrl, resendRequest.Email);
             return TypedResults.Ok();
         }).WithTags("Auth");
@@ -283,7 +281,13 @@ public static class IdentityApiEndpointRouteBuilderExtensions
                 code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
                 string resetLink = $"{resetRequest.ReturnUrl}?code={code}";
 
-                await emailSender.SendPasswordResetLinkAsync(user, resetRequest.Email, HtmlEncoder.Default.Encode(resetLink));
+                //await emailSender.SendPasswordResetLinkAsync(user, resetRequest.Email, HtmlEncoder.Default.Encode(resetLink));
+                await notifier.NotifyAsyn(new EmailModel()
+                {
+                    Body = TemplateTagEmail.PasswordResetTemplate(HtmlEncoder.Default.Encode(resetLink)),
+                    Subject = "Reset Password In LAHJA",
+                    ToEmail = resetRequest.Email,
+                });
                 //tokenListService.AddTokenToList(code, DateTime.UtcNow.AddMinutes(1));
                 return TypedResults.Ok();
             }
@@ -487,16 +491,18 @@ public static class IdentityApiEndpointRouteBuilderExtensions
                 routeValues.Add("changedEmail", email);
             }
 
-            //var confirmEmailUrl = linkGenerator.GetUriByName(context,
-            //                                                 confirmEmailEndpointName,
-            //                                                 routeValues,
-            //                                                 host: new HostString(appSettings.Client),
-            //                                                 pathBase: new PathString("/confirm-email"))
-            //?? throw new NotSupportedException($"Could not find endpoint named '{confirmEmailEndpointName}'.");
             string queryString = string.Join("&", routeValues.Select(kvp => $"{kvp.Key}={Uri.EscapeDataString(kvp.Value.ToString())}"));
 
             string confirmEmailUrl = $"{returnUrl}?{queryString}";
-            await emailSender.SendConfirmationLinkAsync(user, email, HtmlEncoder.Default.Encode(confirmEmailUrl));
+
+            await notifier.NotifyAsyn(new EmailModel()
+            {
+                Body = TemplateTagEmail.GetConfirmationEmailHtml(HtmlEncoder.Default.Encode(confirmEmailUrl)),
+                Subject = "Confirmation Email In LAHJA",
+                ToEmail = email,
+            });
+
+            //await emailSender.SendConfirmationLinkAsync(user, email, HtmlEncoder.Default.Encode(confirmEmailUrl));
             //tokenListService.AddTokenToList(code, DateTime.UtcNow.AddMinutes(10));
         }
 

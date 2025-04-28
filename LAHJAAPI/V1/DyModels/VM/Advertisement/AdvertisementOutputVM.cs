@@ -1,7 +1,4 @@
 using AutoGenerator;
-using AutoGenerator.Helper.Translation;
-using LAHJAAPI.Models;
-using System;
 
 namespace V1.DyModels.VMs
 {
@@ -22,7 +19,6 @@ namespace V1.DyModels.VMs
         public Boolean Active { get; set; }
         ///
         public String? Url { get; set; }
-        //
-        public List<AdvertisementTabOutputVM>? AdvertisementTabs { get; set; }
+
     }
 }

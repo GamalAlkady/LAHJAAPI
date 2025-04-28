@@ -1,6 +1,8 @@
+using AutoGenerator.Helper;
 using AutoGenerator.Helper.Translation;
 using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
+using Quartz.Util;
 using V1.DyModels.Dso.Requests;
 using V1.DyModels.VMs;
 using V1.Services.Services;
@@ -12,92 +14,114 @@ namespace LAHJAAPI.V1.Controllers.Api
     [ApiController]
     public class ModelAiController : ControllerBase
     {
-        private readonly IUseModelAiService _modelaiService;
+        private readonly IUseModelAiService _modelAiService;
         private readonly IMapper _mapper;
         private readonly ILogger _logger;
-        public ModelAiController(IUseModelAiService modelaiService, IMapper mapper, ILoggerFactory logger)
+
+        public ModelAiController(
+            IUseModelAiService modelAiService,
+            IMapper mapper,
+            ILoggerFactory logger)
         {
-            _modelaiService = modelaiService;
+            _modelAiService = modelAiService;
             _mapper = mapper;
             _logger = logger.CreateLogger(typeof(ModelAiController).FullName);
         }
 
-        // Get all ModelAis.
+        // Get all ModelAis
         [HttpGet(Name = "GetModelAis")]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-        public async Task<ActionResult<IEnumerable<ModelAiOutputVM>>> GetAll()
+        public async Task<ActionResult<IEnumerable<ModelAiOutputVM>>> GetAll(string? lg)
         {
             try
             {
                 _logger.LogInformation("Fetching all ModelAis...");
-                var result = await _modelaiService.GetAllAsync();
-                var items = _mapper.Map<List<ModelAiOutputVM>>(result);
-                return Ok(items);
+                var result = await _modelAiService.GetAllAsync();
+
+                if (lg.IsNullOrWhiteSpace())
+                    return Ok(_mapper.Map<List<ModelAiOutputVM>>(result));
+
+                return Ok(_mapper.Map<List<ModelAiOutputVM>>(result, opt => opt.Items[HelperTranslation.KEYLG] = lg));
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error while fetching all ModelAis");
                 return StatusCode(500, HandelErrors.Problem(ex));
-                //return StatusCode(500, "Internal Server Error");
             }
         }
 
-        // Get a ModelAi by ID.
+        // Get active ModelAis
+        [HttpGet("Active", Name = "GetActiveModelAis")]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+        public async Task<ActionResult<IEnumerable<ModelAiOutputVM>>> GetActive(string? lg)
+        {
+            try
+            {
+                _logger.LogInformation("Fetching active ModelAis...");
+                var result = await _modelAiService.GetAllByAsync([new FilterCondition("active", true)]);
+
+                if (lg.IsNullOrWhiteSpace())
+                    return Ok(_mapper.Map<List<ModelAiOutputVM>>(result.Data));
+
+                return Ok(_mapper.Map<List<ModelAiOutputVM>>(result.Data, opt => opt.Items[HelperTranslation.KEYLG] = lg));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error while fetching active ModelAis");
+                return StatusCode(500, HandelErrors.Problem(ex));
+            }
+        }
+
+        // Get ModelAi by ID
         [HttpGet("{id}", Name = "GetModelAi")]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-        public async Task<ActionResult<ModelAiInfoVM>> GetById(string? id)
+        public async Task<ActionResult<ModelAiOutputVM>> GetById(string id, string? lg)
         {
-            if (string.IsNullOrWhiteSpace(id))
-            {
-                _logger.LogWarning("Invalid ModelAi ID received.");
-                return BadRequest("Invalid ModelAi ID.");
-            }
-
             try
             {
                 _logger.LogInformation("Fetching ModelAi with ID: {id}", id);
-                var entity = await _modelaiService.GetByIdAsync(id);
+                var entity = await _modelAiService.GetByIdAsync(id);
+
                 if (entity == null)
                 {
                     _logger.LogWarning("ModelAi not found with ID: {id}", id);
                     return NotFound();
                 }
 
-                var item = _mapper.Map<ModelAiInfoVM>(entity);
+                if (lg.IsNullOrWhiteSpace())
+                    return Ok(_mapper.Map<ModelAiOutputVM>(entity));
+
+                var item = _mapper.Map<ModelAiOutputVM>(entity, opts => opts.Items.Add(HelperTranslation.KEYLG, lg));
                 return Ok(item);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error while fetching ModelAi with ID: {id}", id);
-                return StatusCode(500, "Internal Server Error");
+                return StatusCode(500, HandelErrors.Problem(ex));
             }
         }
 
-        // // Get a ModelAi by Lg.
-        [HttpGet("GetModelAiByLanguage", Name = "GetModelAiByLg")]
+        // Get ModelAi by language filter
+        [HttpGet("ByLanguage", Name = "GetModelAiByLanguage")]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-        public async Task<ActionResult<ModelAiOutputVM>> GetModelAiByLg(ModelAiFilterVM model)
+        public async Task<ActionResult<ModelAiOutputVM>> GetByLanguage([FromQuery] ModelAiFilterVM model)
         {
-            var id = model.Id;
-            if (string.IsNullOrWhiteSpace(id))
-            {
-                _logger.LogWarning("Invalid ModelAi ID received.");
-                return BadRequest("Invalid ModelAi ID.");
-            }
-
             try
             {
-                _logger.LogInformation("Fetching ModelAi with ID: {id}", id);
-                var entity = await _modelaiService.GetByIdAsync(id);
+                _logger.LogInformation("Fetching ModelAi with ID: {id} and language: {lg}", model.Id, model.Lg);
+                var entity = await _modelAiService.GetByIdAsync(model.Id);
+
                 if (entity == null)
                 {
-                    _logger.LogWarning("ModelAi not found with ID: {id}", id);
+                    _logger.LogWarning("ModelAi not found with ID: {id}", model.Id);
                     return NotFound();
                 }
 
@@ -106,78 +130,78 @@ namespace LAHJAAPI.V1.Controllers.Api
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error while fetching ModelAi with ID: {id}", id);
-                return StatusCode(500, "Internal Server Error");
+                _logger.LogError(ex, "Error while fetching ModelAi with ID: {id}", model.Id);
+                return StatusCode(500, HandelErrors.Problem(ex));
             }
         }
 
-        // // Get a ModelAis by Lg.
-        [HttpGet("GetModelAisByLanguage", Name = "GetModelAisByLg")]
+        // Get ModelAis by language
+        [HttpGet("ByLanguage/All", Name = "GetModelAisByLanguage")]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-        public async Task<ActionResult<IEnumerable<ModelAiOutputVM>>> GetModelAisByLg(string? lg)
+        public async Task<ActionResult<IEnumerable<ModelAiOutputVM>>> GetByLanguage(string lg)
         {
-            if (string.IsNullOrWhiteSpace(lg))
-            {
-                _logger.LogWarning("Invalid ModelAi lg received.");
-                return BadRequest("Invalid ModelAi lg null ");
-            }
-
             try
             {
-                var modelais = await _modelaiService.GetAllAsync();
-                if (modelais == null)
+                _logger.LogInformation("Fetching ModelAis with language: {lg}", lg);
+                var result = await _modelAiService.GetAllAsync();
+
+                if (result == null || !result.Any())
                 {
-                    _logger.LogWarning("ModelAis not found  by  ");
+                    _logger.LogWarning("No ModelAis found");
                     return NotFound();
                 }
 
-                var items = _mapper.Map<IEnumerable<ModelAiOutputVM>>(modelais, opt => opt.Items.Add(HelperTranslation.KEYLG, lg));
+                var items = _mapper.Map<List<ModelAiOutputVM>>(result, opt => opt.Items.Add(HelperTranslation.KEYLG, lg));
                 return Ok(items);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error while fetching ModelAis with Lg: {lg}", lg);
-                return StatusCode(500, "Internal Server Error");
+                _logger.LogError(ex, "Error while fetching ModelAis with language: {lg}", lg);
+                return StatusCode(500, HandelErrors.Problem(ex));
             }
         }
 
-        // Create a new ModelAi.
+        // Create new ModelAi
         [HttpPost(Name = "CreateModelAi")]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
         public async Task<ActionResult<ModelAiOutputVM>> Create([FromBody] ModelAiCreateVM model)
         {
+            if (!ModelState.IsValid)
+            {
+                _logger.LogWarning("Invalid model state in Create: {ModelState}", ModelState);
+                return BadRequest(ModelState);
+            }
 
             try
             {
                 _logger.LogInformation("Creating new ModelAi with data: {@model}", model);
                 var item = _mapper.Map<ModelAiRequestDso>(model);
-
-                var createdEntity = await _modelaiService.CreateAsync(item);
+                var createdEntity = await _modelAiService.CreateAsync(item);
                 var createdItem = _mapper.Map<ModelAiOutputVM>(createdEntity);
                 return Ok(createdItem);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error while creating a new ModelAi");
-                return StatusCode(500, "Internal Server Error");
+                _logger.LogError(ex, "Error while creating new ModelAi");
+                return StatusCode(500, HandelErrors.Problem(ex));
             }
         }
 
-        // Create multiple ModelAis.
+        // Create multiple ModelAis
         [HttpPost("createRange")]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
         public async Task<ActionResult<IEnumerable<ModelAiOutputVM>>> CreateRange([FromBody] IEnumerable<ModelAiCreateVM> models)
         {
-            if (models == null)
+            if (models == null || !models.Any())
             {
-                _logger.LogWarning("Data is null in CreateRange.");
-                return BadRequest("Data is required.");
+                _logger.LogWarning("Empty data in CreateRange");
+                return BadRequest("Data is required");
             }
 
             if (!ModelState.IsValid)
@@ -188,46 +212,45 @@ namespace LAHJAAPI.V1.Controllers.Api
 
             try
             {
-                _logger.LogInformation("Creating multiple ModelAis.");
+                _logger.LogInformation("Creating {count} ModelAis", models.Count());
                 var items = _mapper.Map<List<ModelAiRequestDso>>(models);
-                var createdEntities = await _modelaiService.CreateRangeAsync(items);
+                var createdEntities = await _modelAiService.CreateRangeAsync(items);
                 var createdItems = _mapper.Map<List<ModelAiOutputVM>>(createdEntities);
                 return Ok(createdItems);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error while creating multiple ModelAis");
-                return StatusCode(500, "Internal Server Error");
+                return StatusCode(500, HandelErrors.Problem(ex));
             }
         }
 
-        // Update an existing ModelAi.
-        [HttpPut(Name = "UpdateModelAi")]
+        // Update ModelAi
+        [HttpPut("{id}", Name = "UpdateModelAi")]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-        public async Task<ActionResult<ModelAiOutputVM>> Update([FromBody] ModelAiUpdateVM model)
+        public async Task<ActionResult<ModelAiOutputVM>> Update(string id, [FromBody] ModelAiUpdateVM model)
         {
-            if (model == null)
-            {
-                _logger.LogWarning("Invalid data in Update.");
-                return BadRequest("Invalid data.");
-            }
-
-            if (!ModelState.IsValid)
-            {
-                _logger.LogWarning("Invalid model state in Update: {ModelState}", ModelState);
-                return BadRequest(ModelState);
-            }
-
             try
             {
-                _logger.LogInformation("Updating ModelAi with ID: {id}", model?.Id);
+                _logger.LogInformation("Updating ModelAi with ID: {id}", id);
+                var existingItem = await _modelAiService.GetByIdAsync(id);
+
+                if (existingItem == null)
+                {
+                    _logger.LogWarning("ModelAi not found with ID: {id}", id);
+                    return NotFound();
+                }
+
                 var item = _mapper.Map<ModelAiRequestDso>(model);
-                var updatedEntity = await _modelaiService.UpdateAsync(item);
+                item.Id = id;
+                item.ModelGatewayId = existingItem.ModelGatewayId;
+                var updatedEntity = await _modelAiService.UpdateAsync(item);
+
                 if (updatedEntity == null)
                 {
-                    _logger.LogWarning("ModelAi not found for update with ID: {id}", model?.Id);
+                    _logger.LogWarning("Failed to update ModelAi with ID: {id}", id);
                     return NotFound();
                 }
 
@@ -236,54 +259,54 @@ namespace LAHJAAPI.V1.Controllers.Api
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error while updating ModelAi with ID: {id}", model?.Id);
-                return StatusCode(500, "Internal Server Error");
+                _logger.LogError(ex, "Error while updating ModelAi with ID: {id}", id);
+                return StatusCode(500, HandelErrors.Problem(ex));
             }
         }
 
-        // Delete a ModelAi.
+        // Delete ModelAi
         [HttpDelete("{id}", Name = "DeleteModelAi")]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> Delete(string? id)
+        public async Task<IActionResult> Delete(string id)
         {
-            if (string.IsNullOrWhiteSpace(id))
-            {
-                _logger.LogWarning("Invalid ModelAi ID received in Delete.");
-                return BadRequest("Invalid ModelAi ID.");
-            }
-
             try
             {
                 _logger.LogInformation("Deleting ModelAi with ID: {id}", id);
-                await _modelaiService.DeleteAsync(id);
-                return NoContent();
+
+                if (!await _modelAiService.ExistsAsync(id))
+                {
+                    _logger.LogWarning("ModelAi not found with ID: {id}", id);
+                    return NotFound();
+                }
+
+                await _modelAiService.DeleteAsync(id);
+                return Ok();
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error while deleting ModelAi with ID: {id}", id);
-                return StatusCode(500, "Internal Server Error");
+                return StatusCode(500, HandelErrors.Problem(ex));
             }
         }
 
-        // Get count of ModelAis.
-        [HttpGet("CountModelAi")]
+        // Get ModelAis count
+        [HttpGet("Count", Name = "CountModelAis")]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
         public async Task<ActionResult<int>> Count()
         {
             try
             {
                 _logger.LogInformation("Counting ModelAis...");
-                var count = await _modelaiService.CountAsync();
+                var count = await _modelAiService.CountAsync();
                 return Ok(count);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error while counting ModelAis");
-                return StatusCode(500, "Internal Server Error");
+                return StatusCode(500, HandelErrors.Problem(ex));
             }
         }
     }

@@ -28,6 +28,7 @@ public class DataContext : AutoIdentityDataContext<ApplicationUser, IdentityRole
     public DbSet<PlanServices> PlanServices { get; set; }
     public DbSet<Language> Languages { get; set; }
     public DbSet<CategoryModel> Categories { get; set; }
+    public DbSet<CategoryTab> CategoryTabs { get; set; }
     public DbSet<TypeModel> Types { get; set; }
     public DbSet<Dialect> Dialects { get; set; }
     public DbSet<Advertisement> Advertisements { get; set; }

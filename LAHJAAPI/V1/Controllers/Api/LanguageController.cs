@@ -1,6 +1,8 @@
 using AutoGenerator.Helper.Translation;
 using AutoMapper;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Quartz.Util;
 using V1.DyModels.Dso.Requests;
 using V1.DyModels.VMs;
 using V1.Services.Services;
@@ -23,23 +25,26 @@ namespace LAHJAAPI.V1.Controllers.Api
         }
 
         // Get all Languages.
+        [AllowAnonymous]
         [HttpGet(Name = "GetLanguages")]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-        public async Task<ActionResult<IEnumerable<LanguageOutputVM>>> GetAll()
+        public async Task<ActionResult<IEnumerable<LanguageOutputVM>>> GetAll(string? lg = null)
         {
             try
             {
                 _logger.LogInformation("Fetching all Languages...");
                 var result = await _languageService.GetAllAsync();
-                var items = _mapper.Map<IEnumerable<LanguageOutputVM>>(result);
+                if (lg.IsNullOrWhiteSpace())
+                    return Ok(_mapper.Map<IEnumerable<LanguageOutputVM>>(result));
+                var items = _mapper.Map<IEnumerable<LanguageOutputVM>>(result, opts => opts.Items[HelperTranslation.KEYLG] = lg);
                 return Ok(items);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error while fetching all Languages");
-                return BadRequest(ex);
+                return BadRequest(ex.Message);
                 return StatusCode(500, "Internal Server Error");
             }
         }
@@ -49,7 +54,7 @@ namespace LAHJAAPI.V1.Controllers.Api
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-        public async Task<ActionResult<LanguageInfoVM>> GetById(string? id)
+        public async Task<ActionResult<LanguageOutputVM>> GetById(string? id)
         {
             if (string.IsNullOrWhiteSpace(id))
             {
@@ -67,7 +72,7 @@ namespace LAHJAAPI.V1.Controllers.Api
                     return NotFound();
                 }
 
-                var item = _mapper.Map<LanguageInfoVM>(entity);
+                var item = _mapper.Map<LanguageOutputVM>(entity);
                 return Ok(item);
             }
             catch (Exception ex)
@@ -118,11 +123,12 @@ namespace LAHJAAPI.V1.Controllers.Api
 
 
         // // Get a Language by code.
+        [AllowAnonymous]
         [HttpGet("GetLanguageByCode", Name = "GetLanguageByCode")]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-        public async Task<ActionResult<LanguageOutputVM>> GetLanguageByCode(string code, string lg)
+        public async Task<ActionResult<LanguageOutputVM>> GetLanguageByCode(string code, string? lg)
         {
             if (string.IsNullOrWhiteSpace(code))
             {
@@ -130,11 +136,7 @@ namespace LAHJAAPI.V1.Controllers.Api
                 return BadRequest("Invalid Language code.");
             }
 
-            if (string.IsNullOrWhiteSpace(lg))
-            {
-                _logger.LogWarning("Invalid Language lg received.");
-                return BadRequest("Invalid Language lg null ");
-            }
+
 
             try
             {
@@ -153,6 +155,8 @@ namespace LAHJAAPI.V1.Controllers.Api
                     return NotFound();
                 }
 
+                if (lg.IsNullOrWhiteSpace())
+                    return Ok(_mapper.Map<LanguageOutputVM>(entity));
                 var item = _mapper.Map<LanguageOutputVM>(entity, opt => opt.Items.Add(HelperTranslation.KEYLG, lg));
                 return Ok(item);
             }
@@ -168,7 +172,7 @@ namespace LAHJAAPI.V1.Controllers.Api
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-        public async Task<ActionResult<IEnumerable<LanguageOutputVM>>> GetLanguagesByLg(string? lg)
+        public async Task<ActionResult<IEnumerable<LanguageOutputVM>>> GetLanguagesByLg(string lg)
         {
             if (string.IsNullOrWhiteSpace(lg))
             {
@@ -258,11 +262,11 @@ namespace LAHJAAPI.V1.Controllers.Api
         }
 
         // Update an existing Language.
-        [HttpPut(Name = "UpdateLanguage")]
+        [HttpPut("{id}", Name = "UpdateLanguage")]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-        public async Task<ActionResult<LanguageOutputVM>> Update([FromBody] LanguageUpdateVM model)
+        public async Task<ActionResult<LanguageOutputVM>> Update(string id, [FromBody] LanguageUpdateVM model)
         {
             if (model == null)
             {
@@ -278,12 +282,12 @@ namespace LAHJAAPI.V1.Controllers.Api
 
             try
             {
-                _logger.LogInformation("Updating Language with ID: {id}", model?.Id);
+                _logger.LogInformation("Updating Language with ID: {id}", id);
                 var item = _mapper.Map<LanguageRequestDso>(model);
                 var updatedEntity = await _languageService.UpdateAsync(item);
                 if (updatedEntity == null)
                 {
-                    _logger.LogWarning("Language not found for update with ID: {id}", model?.Id);
+                    _logger.LogWarning("Language not found for update with ID: {id}", id);
                     return NotFound();
                 }
 
@@ -292,7 +296,7 @@ namespace LAHJAAPI.V1.Controllers.Api
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error while updating Language with ID: {id}", model?.Id);
+                _logger.LogError(ex, "Error while updating Language with ID: {id}", id);
                 return StatusCode(500, "Internal Server Error");
             }
         }
@@ -312,9 +316,14 @@ namespace LAHJAAPI.V1.Controllers.Api
 
             try
             {
+                if (!await _languageService.ExistsAsync(id))
+                {
+                    _logger.LogWarning("Language not found with ID: {id}", id);
+                    return NotFound();
+                }
                 _logger.LogInformation("Deleting Language with ID: {id}", id);
                 await _languageService.DeleteAsync(id);
-                return NoContent();
+                return Ok();
             }
             catch (Exception ex)
             {

@@ -211,11 +211,11 @@ namespace LAHJAAPI.V1.Controllers.Api
         }
 
         // Update an existing ServiceMethod.
-        [HttpPut(Name = "UpdateServiceMethod")]
+        [HttpPut("{id}", Name = "UpdateServiceMethod")]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-        public async Task<ActionResult<ServiceMethodOutputVM>> Update([FromBody] ServiceMethodUpdateVM model)
+        public async Task<ActionResult<ServiceMethodOutputVM>> Update(string id, [FromBody] ServiceMethodUpdateVM model)
         {
             if (model == null)
             {
@@ -231,12 +231,12 @@ namespace LAHJAAPI.V1.Controllers.Api
 
             try
             {
-                _logger.LogInformation("Updating ServiceMethod with ID: {id}", model?.Id);
+                _logger.LogInformation("Updating ServiceMethod with ID: {id}", id);
                 var item = _mapper.Map<ServiceMethodRequestDso>(model);
                 var updatedEntity = await _servicemethodService.UpdateAsync(item);
                 if (updatedEntity == null)
                 {
-                    _logger.LogWarning("ServiceMethod not found for update with ID: {id}", model?.Id);
+                    _logger.LogWarning("ServiceMethod not found for update with ID: {id}", id);
                     return NotFound();
                 }
 
@@ -245,7 +245,7 @@ namespace LAHJAAPI.V1.Controllers.Api
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error while updating ServiceMethod with ID: {id}", model?.Id);
+                _logger.LogError(ex, "Error while updating ServiceMethod with ID: {id}", id);
                 return StatusCode(500, "Internal Server Error");
             }
         }
@@ -255,7 +255,7 @@ namespace LAHJAAPI.V1.Controllers.Api
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> Delete(string? id)
+        public async Task<IActionResult> Delete(string id)
         {
             if (string.IsNullOrWhiteSpace(id))
             {
@@ -267,7 +267,7 @@ namespace LAHJAAPI.V1.Controllers.Api
             {
                 _logger.LogInformation("Deleting ServiceMethod with ID: {id}", id);
                 await _servicemethodService.DeleteAsync(id);
-                return NoContent();
+                return Ok();
             }
             catch (Exception ex)
             {
