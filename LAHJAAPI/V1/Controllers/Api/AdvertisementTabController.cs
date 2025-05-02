@@ -3,7 +3,6 @@ using AutoGenerator.Helper.Translation;
 using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Quartz.Util;
 using V1.DyModels.Dso.Requests;
 using V1.DyModels.VMs;
 using V1.Services.Services;
@@ -37,7 +36,7 @@ namespace LAHJAAPI.V1.Controllers.Api
             {
                 _logger.LogInformation("Fetching all AdvertisementTabs...");
                 var result = await _advertisementtabService.GetAllAsync();
-                if (lg.IsNullOrWhiteSpace())
+                if (string.IsNullOrWhiteSpace(lg))
                     return Ok(_mapper.Map<List<AdvertisementTabOutputVM>>(result));
                 return Ok(_mapper.Map<List<AdvertisementTabOutputVM>>(result, opts => opts.Items[HelperTranslation.KEYLG] = lg));
             }
@@ -66,7 +65,7 @@ namespace LAHJAAPI.V1.Controllers.Api
                     return NotFound();
                 }
 
-                if (lg.IsNullOrWhiteSpace())
+                if (string.IsNullOrWhiteSpace(lg))
                     return Ok(_mapper.Map<AdvertisementTabOutputVM>(entity));
                 return Ok(_mapper.Map<AdvertisementTabOutputVM>(entity, opts => opts.Items[HelperTranslation.KEYLG] = lg));
             }
@@ -93,7 +92,7 @@ namespace LAHJAAPI.V1.Controllers.Api
                     return NotFound();
                 }
 
-                if (lg.IsNullOrWhiteSpace())
+                if (string.IsNullOrWhiteSpace(lg))
                     return Ok(_mapper.Map<AdvertisementTabOutputVM>(entity));
                 return Ok(_mapper.Map<AdvertisementTabOutputVM>(entity, opts => opts.Items[HelperTranslation.KEYLG] = lg));
 

@@ -23,7 +23,7 @@ namespace V1.DyModels.Dto.Build.Requests
         /// <summary>
         /// StartTime property for DTO.
         /// </summary>
-        public DateTime StartTime { get; set; }
+        public DateTime StartTime { get; set; } = DateTime.UtcNow;
         /// <summary>
         /// EndTime property for DTO.
         /// </summary>
@@ -31,7 +31,7 @@ namespace V1.DyModels.Dto.Build.Requests
         /// <summary>
         /// IsActive property for DTO.
         /// </summary>
-        public Boolean IsActive { get; set; }
+        public Boolean IsActive { get; set; } = true;
         /// <summary>
         /// UserId property for DTO.
         /// </summary>

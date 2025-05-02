@@ -1,3 +1,4 @@
+using AutoGenerator;
 using AutoGenerator.Helper;
 using AutoGenerator.Helper.Translation;
 using AutoMapper;
@@ -52,29 +53,6 @@ namespace LAHJAAPI.V1.Controllers.Api
             }
         }
 
-        // Get active ModelAis
-        [HttpGet("Active", Name = "GetActiveModelAis")]
-        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-        public async Task<ActionResult<IEnumerable<ModelAiOutputVM>>> GetActive(string? lg)
-        {
-            try
-            {
-                _logger.LogInformation("Fetching active ModelAis...");
-                var result = await _modelAiService.GetAllByAsync([new FilterCondition("active", true)]);
-
-                if (lg.IsNullOrWhiteSpace())
-                    return Ok(_mapper.Map<List<ModelAiOutputVM>>(result.Data));
-
-                return Ok(_mapper.Map<List<ModelAiOutputVM>>(result.Data, opt => opt.Items[HelperTranslation.KEYLG] = lg));
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error while fetching active ModelAis");
-                return StatusCode(500, HandelErrors.Problem(ex));
-            }
-        }
 
         // Get ModelAi by ID
         [HttpGet("{id}", Name = "GetModelAi")]
@@ -107,32 +85,69 @@ namespace LAHJAAPI.V1.Controllers.Api
             }
         }
 
-        // Get ModelAi by language filter
-        [HttpGet("ByLanguage", Name = "GetModelAiByLanguage")]
+        [EndpointSummary("Get Models By Type")]
+        [HttpGet("ByType/{type}", Name = "GetModelsByType")]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-        public async Task<ActionResult<ModelAiOutputVM>> GetByLanguage([FromQuery] ModelAiFilterVM model)
+        public async Task<ActionResult<IEnumerable<ModelAiOutputVM>>> GetModelsByType(string type)
         {
-            try
-            {
-                _logger.LogInformation("Fetching ModelAi with ID: {id} and language: {lg}", model.Id, model.Lg);
-                var entity = await _modelAiService.GetByIdAsync(model.Id);
+            var items = await _modelAiService.GetAllByAsync([new FilterCondition("Type", type)]);
+            var result = _mapper.Map<IEnumerable<ModelAiOutputVM>>(items);
+            return Ok(result);
+        }
 
-                if (entity == null)
-                {
-                    _logger.LogWarning("ModelAi not found with ID: {id}", model.Id);
-                    return NotFound();
-                }
+        [EndpointSummary("Get Categories By Type")]
+        [HttpGet("CategoriesByType/{type}", Name = "GetCategoriesByType")]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        public async Task<ActionResult<IEnumerable<string>>> GetCategoriesByType(string type)
+        {
+            var items = await _modelAiService.GetAllByAsync([new FilterCondition("Type", type)]);
+            if (items.TotalRecords == 0) return NoContent();
+            var result = items.Data.Select(s => s.Category);
+            return Ok(result);
+        }
+        [EndpointSummary("Get Languages By Type And Category")]
+        [HttpGet("LanguagesBy", Name = "GetLanguagesBy")]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        public async Task<ActionResult<IEnumerable<string>>> GetLanguagesBy(string type, string category)
+        {
+            var items = await _modelAiService.GetAllByAsync([
+                new FilterCondition("Type", type),
+                new FilterCondition("Category", type),
+            ]);
 
-                var item = _mapper.Map<ModelAiOutputVM>(entity, opt => opt.Items.Add(HelperTranslation.KEYLG, model.Lg));
-                return Ok(item);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error while fetching ModelAi with ID: {id}", model.Id);
-                return StatusCode(500, HandelErrors.Problem(ex));
-            }
+            if (items.TotalRecords == 0) return NoContent();
+            var result = items.Data.Select(s => s.Language).Distinct();
+            return Ok(result);
+        }
+
+        [EndpointSummary("Get Models By Category")]
+        [HttpGet("category/{category}", Name = "GetModelsByCategory")]
+
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        public async Task<ActionResult<IEnumerable<ModelAiOutputVM>>> GetByCategoryAsync(string category)
+        {
+            var items = await _modelAiService.GetAllByAsync([new FilterCondition("Category", category)]);
+            if (items.TotalRecords == 0) return NoContent();
+            var result = _mapper.Map<IEnumerable<ModelAiOutputVM>>(items);
+            return Ok(result);
+        }
+
+
+        [EndpointSummary("Filter models")]
+        [HttpPost("GetFilterModel", Name = "FilterMaodelAi")]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        public async Task<ActionResult<PagedResponse<ModelAiOutputVM>>> GetFilterModel([FromBody] ModelAiFilterVM serchModelAI)
+        {
+
+            var response = await _modelAiService.FilterMaodelAi(serchModelAI);
+            var result = response.ToResponse(_mapper.Map<IEnumerable<ModelAiOutputVM>>(response.Data));
+
+            return Ok(result);
         }
 
         // Get ModelAis by language

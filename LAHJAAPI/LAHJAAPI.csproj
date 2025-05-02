@@ -6,6 +6,8 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <UserSecretsId>dd5ea933-b808-4741-8771-e9c9195e6262</UserSecretsId>
     <DockerDefaultTargetOS>Windows</DockerDefaultTargetOS>
+	  <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+
   </PropertyGroup>
 
   <ItemGroup>
@@ -18,22 +20,25 @@
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.15" />
     <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="8.0.15" />
     <PackageReference Include="Microsoft.Data.SqlClient" Version="6.0.1" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.4">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
+	  <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.4">
+		  <PrivateAssets>all</PrivateAssets>
+		  <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+	  </PackageReference>
     <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.21.2" />
 	  <PackageReference Include="AutoMapper" Version="14.0.0" />
 	  <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="9.0.4" />
 	  <PackageReference Include="MimeKit" Version="4.11.0" />
+	  <PackageReference Include="Quartz" Version="3.14.0" />
+	  <PackageReference Include="Quartz.Extensions.DependencyInjection" Version="3.14.0" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
 	  <PackageReference Include="FluentResults" Version="3.16.0" />
-	  <PackageReference Include="WasmAI.AutoGenerator" Version="1.0.1-e" />
+	  <PackageReference Include="WasmAI.AutoGenerator" Version="1.0.2" />
   </ItemGroup>
-
+	
   <ItemGroup>
     <Folder Include="Base\" />
     <Folder Include="Controllers\" />
+    <Folder Include="Keys\" />
   </ItemGroup>
 
   <ItemGroup>

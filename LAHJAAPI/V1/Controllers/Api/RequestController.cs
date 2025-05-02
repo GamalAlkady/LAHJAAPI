@@ -1,4 +1,5 @@
 using APILAHJA.Utilities;
+using AutoGenerator.Conditions;
 using AutoGenerator.Helper;
 using AutoGenerator.Helper.Translation;
 using AutoMapper;
@@ -161,18 +162,23 @@ namespace LAHJAAPI.V1.Controllers.Api
 
                 //if (!_checker.Check(SpaceValidatorStates.IsFound, new SpaceFilterVM(model.SpaceId, null)))
                 //    return BadRequest(HandelErrors.Problem("Create request", $"This space is not included in your subscription."));
-                var requestFilter = new RequestFilterVM
+                var requestFilter = new DataFilter
                 {
-                    Subscription = subscription,
-                    ServiceId = model.ServiceId, // Check if service id in token
-                    AuthorizationSession = new AuthorizationSessionFilterVM(null, null), // Check if session is found and active
-                    Space = new SpaceFilterVM(model.SpaceId, null),// Check if space is found
+                    Value = subscription,
+                    Items = new Dictionary<string, object> {
+                        {"serviceId", model.ServiceId }, // Check if service id in token
+                        {"spaceId", model.SpaceId }, // Check if space is found
+                        {"sessionId", _userClaims.SessionId }, // Check if space is found
+                    },
                 };
-
-                if (_checker.CheckAndResult(RequestValidatorStates.IsValid, requestFilter).Result is ProblemDetails problem)
+                var result = await _checker.CheckAndResultAsync(RequestValidatorStates.IsValid, requestFilter);
+                if (result.Success == false)
                 {
-                    return StatusCode(problem.Status ?? StatusCodes.Status402PaymentRequired, problem);
+                    if (result.Result is ProblemDetails problem)
+                        return StatusCode(problem.Status ?? StatusCodes.Status402PaymentRequired, problem);
+                    return StatusCode(StatusCodes.Status402PaymentRequired, result.Result ?? result.Message);
                 }
+                var requestInfo = (RequestInfoVM)result.Result!;
 
                 var service = await _serviceService.GetOneByAsync(
                 [new FilterCondition("Id", model.ServiceId)],
@@ -215,8 +221,8 @@ namespace LAHJAAPI.V1.Controllers.Api
                     Service = service.AbsolutePath,
                     Token = service.Token,
                     EventId = eventRequest.Id ?? request.Id,
-                    AllowedRequests = subscription.AllowedRequests,
-                    NumberRequests = await _subscriptionService.GetNumberRequests(),
+                    AllowedRequests = requestInfo.AllowedRequests,
+                    NumberRequests = requestInfo.NumberRequests,
                 });
             }
             catch (Exception ex)

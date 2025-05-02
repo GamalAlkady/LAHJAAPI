@@ -3,7 +3,6 @@ using AutoGenerator.Helper.Translation;
 using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Quartz.Util;
 using V1.DyModels.Dso.Requests;
 using V1.DyModels.VMs;
 using V1.Services.Services;
@@ -38,7 +37,7 @@ namespace LAHJAAPI.V1.Controllers.Api
                 _logger.LogInformation("Fetching all Advertisements...");
                 var result = await _advertisementService.GetAllAsync();
                 //TODO: error when mapping multi entities while key lg = ar 
-                if (lg.IsNullOrWhiteSpace())
+                if (string.IsNullOrWhiteSpace(lg))
                     return Ok(_mapper.Map<List<AdvertisementOutputVM>>(result));
                 return Ok(_mapper.Map<List<AdvertisementOutputVM>>(result, opt => opt.Items[HelperTranslation.KEYLG] = lg));
             }
@@ -60,7 +59,7 @@ namespace LAHJAAPI.V1.Controllers.Api
             {
                 _logger.LogInformation("Fetching all active Advertisements...");
                 var result = await _advertisementService.GetAllByAsync([new FilterCondition("active", true)]);
-                if (lg.IsNullOrWhiteSpace())
+                if (string.IsNullOrWhiteSpace(lg))
                     return Ok(_mapper.Map<List<AdvertisementOutputVM>>(result.Data));
                 return Ok(_mapper.Map<List<AdvertisementOutputVM>>(result.Data, opt => opt.Items[HelperTranslation.KEYLG] = lg));
             }
@@ -87,7 +86,7 @@ namespace LAHJAAPI.V1.Controllers.Api
                     _logger.LogWarning("Advertisement not found with ID: {id}", id);
                     return NotFound();
                 }
-                if (lg.IsNullOrWhiteSpace())
+                if (string.IsNullOrWhiteSpace(lg))
                     return Ok(_mapper.Map<AdvertisementOutputVM>(entity));
                 var item = _mapper.Map<AdvertisementOutputVM>(entity, opts => opts.Items.Add(HelperTranslation.KEYLG, lg));
                 return Ok(item);
@@ -171,7 +170,7 @@ namespace LAHJAAPI.V1.Controllers.Api
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error while creating a new Advertisement");
-                return StatusCode(500, "Internal Server Error");
+                return StatusCode(500, ex.Message);
             }
         }
 

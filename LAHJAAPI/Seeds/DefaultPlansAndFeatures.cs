@@ -1,5 +1,6 @@
 ﻿using AutoGenerator.Helper;
 using AutoGenerator.Helper.Translation;
+using AutoMapper;
 using V1.DyModels.Dso.Requests;
 using V1.DyModels.Dto.Build.Requests;
 using V1.Services.Services;
@@ -13,8 +14,8 @@ public static class DefaultPlansAndFeatures
     {
         var planService = scope.ServiceProvider.GetService<IUsePlanService>();
         var planFeatureService = scope.ServiceProvider.GetService<IUsePlanFeatureService>();
+        var mapper = scope.ServiceProvider.GetService<IMapper>();
 
-        //await context.PlanFeatures.ExecuteDeleteAsync();
         //await context.Plans.ExecuteDeleteAsync();
         //await context.SaveChangesAsync();
         var plan = await planService.GetOneByAsync([new FilterCondition("Id", "price_1Qn3ypKMQ7LabgRTSuyGIBVH")], new ParamOptions(["PlanFeatures"]));
@@ -31,13 +32,15 @@ public static class DefaultPlansAndFeatures
         }
         else if (plan?.PlanFeatures?.Count == 0 || plan?.PlanFeatures?.Count(p => p.Key == "allowed_requests") == 0)
         {
-            //var cplans = GetPlanBuilderRepositoryList();
-            ////List<PlanBuilderRequestDto> plans = new List<PlanBuilderRequestDto>();
-            //foreach (var item in cplans)
-            //{
-            //    await planService.UpdateAsync(item);
+            var cplans = GetPlanBuilderRepositoryList();
+            //List<PlanBuilderRequestDto> plans = new List<PlanBuilderRequestDto>();
+            foreach (var item in cplans)
+            {
+                //await context.PlanFeatures.AddRangeAsync(item.PlanFeatures);
+                foreach (var feature in item.PlanFeatures)
+                    await planFeatureService.CreateAsync(mapper.Map<PlanFeatureRequestDso>(feature));
 
-            //}
+            }
         }
         //await context.Plans.AddRangeAsync(pl);
         //foreach (var plan in plans)
@@ -325,7 +328,7 @@ public static class DefaultPlansAndFeatures
     //    }
 
 
-    static List<PlanFeatureRequestBuildDto> GetPlanFeatureCreateFree()
+    static List<PlanFeatureRequestBuildDto> GetPlanFeatureCreateFree(string planId)
     {
         var planFeatures = new List<PlanFeatureRequestBuildDto>
                   {
@@ -333,6 +336,7 @@ public static class DefaultPlansAndFeatures
                         {
                             Key = "number_models",
                             Value = "3",
+                            PlanId=planId,
                             Name = new TranslationData
                             {
                                 Value = new Dictionary<string, string>
@@ -353,6 +357,7 @@ public static class DefaultPlansAndFeatures
                         {
                             Key = "allowed_requests",
                             Value = "1000",
+                            PlanId=planId,
                             Name = new TranslationData
                             {
                                 Value = new Dictionary<string, string>
@@ -374,6 +379,7 @@ public static class DefaultPlansAndFeatures
                             {
                                 Key = "processor",
                                 Value = "shared",
+                                PlanId=planId,
                                 Name = new TranslationData
                                 {
                                     Value = new Dictionary<string, string>
@@ -395,6 +401,7 @@ public static class DefaultPlansAndFeatures
 {
     Key = "ram",  // Changed from Id to Key
     Value = "2",
+    PlanId=planId,
     Name = new TranslationData
     {
         Value = new Dictionary<string, string>
@@ -417,6 +424,7 @@ public static class DefaultPlansAndFeatures
     {
         Key = "speed",
         Value = "2",
+        PlanId=planId,
         Name = new TranslationData
         {
             Value = new Dictionary<string, string>
@@ -438,6 +446,7 @@ public static class DefaultPlansAndFeatures
     {
         Key = "support",
         Value = "no",
+        PlanId=planId,
         Name = new TranslationData
         {
             Value = new Dictionary<string, string>
@@ -459,6 +468,7 @@ public static class DefaultPlansAndFeatures
     {
         Key = "customization",
         Value = "no",
+        PlanId=planId,
         Name = new TranslationData
         {
             Value = new Dictionary<string, string>
@@ -480,6 +490,7 @@ public static class DefaultPlansAndFeatures
     {
         Key = "api",
         Value = "no",
+        PlanId=planId,
         Name = new TranslationData
         {
             Value = new Dictionary<string, string>
@@ -501,6 +512,7 @@ public static class DefaultPlansAndFeatures
     {
         Key = "allowed_spaces",
         Value = "1",
+        PlanId=planId,
         Name = new TranslationData
         {
             Value = new Dictionary<string, string>
@@ -527,7 +539,7 @@ public static class DefaultPlansAndFeatures
 
 
 
-    static List<PlanFeatureRequestBuildDto> GetPlanFeatureCreateStandard()
+    static List<PlanFeatureRequestBuildDto> GetPlanFeatureCreateStandard(string planId)
     {
         var planFeatures = new List<PlanFeatureRequestBuildDto>
 {
@@ -535,6 +547,7 @@ public static class DefaultPlansAndFeatures
     {
         Key = "number_models",
         Value = "3",
+        PlanId=planId,
         Name = new TranslationData
         {
             Value = new Dictionary<string, string>
@@ -556,6 +569,7 @@ public static class DefaultPlansAndFeatures
     {
         Key = "allowed_requests",
         Value = "10000",
+        PlanId=planId,
         Name = new TranslationData
         {
             Value = new Dictionary<string, string>
@@ -577,6 +591,7 @@ public static class DefaultPlansAndFeatures
     {
         Key = "processor",
         Value = "2",
+        PlanId=planId,
         Name = new TranslationData
         {
             Value = new Dictionary<string, string>
@@ -598,6 +613,7 @@ public static class DefaultPlansAndFeatures
     {
         Key = "ram",
         Value = "2",
+        PlanId=planId,
         Name = new TranslationData
         {
             Value = new Dictionary<string, string>
@@ -619,6 +635,7 @@ public static class DefaultPlansAndFeatures
     {
         Key = "speed",
         Value = "1",
+        PlanId=planId,
         Name = new TranslationData
         {
             Value = new Dictionary<string, string>
@@ -640,6 +657,7 @@ public static class DefaultPlansAndFeatures
     {
         Key = "support",
         Value = "no",
+        PlanId=planId,
         Name = new TranslationData
         {
             Value = new Dictionary<string, string>
@@ -661,6 +679,7 @@ public static class DefaultPlansAndFeatures
     {
         Key = "customization",
         Value = "no",
+        PlanId=planId,
         Name = new TranslationData
         {
             Value = new Dictionary<string, string>
@@ -682,6 +701,7 @@ public static class DefaultPlansAndFeatures
     {
         Key = "api",
         Value = "yes",
+        PlanId=planId,
         Name = new TranslationData
         {
             Value = new Dictionary<string, string>
@@ -703,6 +723,7 @@ public static class DefaultPlansAndFeatures
     {
         Key = "allowed_spaces",
         Value = "3",
+        PlanId = planId,
         Name = new TranslationData
         {
             Value = new Dictionary<string, string>
@@ -724,6 +745,7 @@ public static class DefaultPlansAndFeatures
     {
         Key = "scalability",
         Value = "Twice amonth",
+        PlanId = planId,
         Name = new TranslationData
         {
             Value = new Dictionary<string, string>
@@ -748,7 +770,7 @@ public static class DefaultPlansAndFeatures
 
 
 
-    static List<PlanFeatureRequestBuildDto> GetPlanFeatureCreateProfessional()
+    static List<PlanFeatureRequestBuildDto> GetPlanFeatureCreateProfessional(string planId)
     {
         var planFeatures = new List<PlanFeatureRequestBuildDto>
 {
@@ -756,6 +778,7 @@ public static class DefaultPlansAndFeatures
     {
         Key = "number_models",
         Value = "12",
+        PlanId = planId,
         Name = new TranslationData
         {
             Value = new Dictionary<string, string>
@@ -777,6 +800,7 @@ public static class DefaultPlansAndFeatures
     {
         Key = "allowed_requests",
         Value = "100000",
+        PlanId = planId,
         Name = new TranslationData
         {
             Value = new Dictionary<string, string>
@@ -798,7 +822,8 @@ public static class DefaultPlansAndFeatures
     {
         Key = "processor",
         Value = "4",
-        Name = new TranslationData
+         PlanId = planId,
+         Name = new TranslationData
         {
             Value = new Dictionary<string, string>
             {
@@ -819,6 +844,7 @@ public static class DefaultPlansAndFeatures
     {
         Key = "ram",
         Value = "8",
+        PlanId = planId,
         Name = new TranslationData
         {
             Value = new Dictionary<string, string>
@@ -840,6 +866,7 @@ public static class DefaultPlansAndFeatures
     {
         Key = "speed",
         Value = "0.5",
+        PlanId = planId,
         Name = new TranslationData
         {
             Value = new Dictionary<string, string>
@@ -861,6 +888,7 @@ public static class DefaultPlansAndFeatures
     {
         Key = "support",
         Value = "yes",
+        PlanId = planId,
         Name = new TranslationData
         {
             Value = new Dictionary<string, string>
@@ -882,6 +910,7 @@ public static class DefaultPlansAndFeatures
     {
         Key = "customization",
         Value = "yes",
+        PlanId = planId,
         Name = new TranslationData
         {
             Value = new Dictionary<string, string>
@@ -903,6 +932,7 @@ public static class DefaultPlansAndFeatures
     {
         Key = "api",
         Value = "yes",
+        PlanId = planId,
         Name = new TranslationData
         {
             Value = new Dictionary<string, string>
@@ -924,6 +954,7 @@ public static class DefaultPlansAndFeatures
     {
         Key = "allowed_spaces",
         Value = "10",
+        PlanId = planId,
         Name = new TranslationData
         {
             Value = new Dictionary<string, string>
@@ -945,6 +976,7 @@ public static class DefaultPlansAndFeatures
     {
         Key = "scalability",
         Value = "Unlimited",
+        PlanId = planId,
         Name = new TranslationData
         {
             Value = new Dictionary<string, string>
@@ -970,7 +1002,7 @@ public static class DefaultPlansAndFeatures
 
     }
 
-    static List<PlanFeatureRequestBuildDto> GetPlanFeatureCreateEnterprise()
+    static List<PlanFeatureRequestBuildDto> GetPlanFeatureCreateEnterprise(string planId)
     {
 
 
@@ -981,6 +1013,7 @@ public static class DefaultPlansAndFeatures
     {
         Key = "number_models",
         Value = "12",
+        PlanId = planId,
         Name = new TranslationData
         {
             Value = new Dictionary<string, string>
@@ -1002,6 +1035,7 @@ public static class DefaultPlansAndFeatures
     {
         Key = "allowed_requests",
         Value = "Unlimited",
+        PlanId = planId,
         Name = new TranslationData
         {
             Value = new Dictionary<string, string>
@@ -1023,6 +1057,7 @@ public static class DefaultPlansAndFeatures
     {
         Key = "processor",
         Value = "Unlimited",
+        PlanId = planId,
         Name = new TranslationData
         {
             Value = new Dictionary<string, string>
@@ -1044,6 +1079,7 @@ public static class DefaultPlansAndFeatures
     {
         Key = "ram",
         Value = "Unlimited",
+        PlanId = planId,
         Name = new TranslationData
         {
             Value = new Dictionary<string, string>
@@ -1065,6 +1101,7 @@ public static class DefaultPlansAndFeatures
     {
         Key = "speed",
         Value = "0.5",
+        PlanId = planId,
         Name = new TranslationData
         {
             Value = new Dictionary<string, string>
@@ -1086,6 +1123,7 @@ public static class DefaultPlansAndFeatures
     {
         Key = "support",
         Value = "yes",
+        PlanId = planId,
         Name = new TranslationData
         {
             Value = new Dictionary<string, string>
@@ -1107,6 +1145,7 @@ public static class DefaultPlansAndFeatures
     {
         Key = "customization",
         Value = "yes",
+        PlanId = planId,
         Name = new TranslationData
         {
             Value = new Dictionary<string, string>
@@ -1128,6 +1167,7 @@ public static class DefaultPlansAndFeatures
     {
         Key = "api",
         Value = "yes",
+        PlanId = planId,
         Name = new TranslationData
         {
             Value = new Dictionary<string, string>
@@ -1149,6 +1189,7 @@ public static class DefaultPlansAndFeatures
     {
         Key = "allowed_spaces",
         Value = "unlimited",
+        PlanId = planId,
         Name = new TranslationData
         {
             Value = new Dictionary<string, string>
@@ -1205,7 +1246,7 @@ public static class DefaultPlansAndFeatures
                },
                Amount=0,
                BillingPeriod="month",
-               PlanFeatures=GetPlanFeatureCreateFree()
+               PlanFeatures=GetPlanFeatureCreateFree("price_1Qn3ypKMQ7LabgRTSuyGIBVH")
            }
            ,
         new PlanRequestDso()
@@ -1230,7 +1271,7 @@ public static class DefaultPlansAndFeatures
     },
     BillingPeriod = "month",
     Amount = 150,
-    PlanFeatures = GetPlanFeatureCreateStandard()
+    PlanFeatures = GetPlanFeatureCreateStandard("price_1Qn3yrKMQ7LabgRT4wwrFO8N")
 },
      new PlanRequestDso()
 {
@@ -1254,7 +1295,7 @@ public static class DefaultPlansAndFeatures
     },
     BillingPeriod = "month",
     Amount = 250.0,
-    PlanFeatures = GetPlanFeatureCreateProfessional()
+    PlanFeatures = GetPlanFeatureCreateProfessional("price_1Qn3ysKMQ7LabgRTxBd8TqEQ")
 },
 
 new PlanRequestDso()
@@ -1279,7 +1320,7 @@ new PlanRequestDso()
     },
     BillingPeriod = "month",
     Amount = 1000,
-    PlanFeatures = GetPlanFeatureCreateEnterprise()
+    PlanFeatures = GetPlanFeatureCreateEnterprise("price_1Qn3ysKMQ7LabgRT1KU7AcSL")
 }
 
 

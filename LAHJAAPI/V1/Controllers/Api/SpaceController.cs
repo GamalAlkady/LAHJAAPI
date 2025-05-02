@@ -62,7 +62,7 @@ namespace LAHJAAPI.V1.Controllers.Api
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-        public async Task<ActionResult<SpaceInfoVM>> GetById(string? id)
+        public async Task<ActionResult<SpaceOutputVM>> GetById(string? id)
         {
             if (string.IsNullOrWhiteSpace(id))
             {
@@ -80,13 +80,13 @@ namespace LAHJAAPI.V1.Controllers.Api
                     return NotFound();
                 }
 
-                var item = _mapper.Map<SpaceInfoVM>(entity);
+                var item = _mapper.Map<SpaceOutputVM>(entity);
                 return Ok(item);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error while fetching Space with ID: {id}", id);
-                return StatusCode(500, "Internal Server Error");
+                return StatusCode(500, ex.Message);
             }
         }
 
@@ -229,32 +229,36 @@ namespace LAHJAAPI.V1.Controllers.Api
         }
 
         // Update an existing Space.
-        [HttpPut(Name = "UpdateSpace")]
+        [HttpPut("{id}", Name = "UpdateSpace")]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-        public async Task<ActionResult<SpaceOutputVM>> Update([FromBody] SpaceUpdateVM model)
+        public async Task<ActionResult<SpaceOutputVM>> Update(string id, [FromBody] SpaceUpdateVM model)
         {
-            if (model == null)
+            if (string.IsNullOrWhiteSpace(id))
             {
-                _logger.LogWarning("Invalid data in Update.");
-                return BadRequest("Invalid data.");
-            }
-
-            if (!ModelState.IsValid)
-            {
-                _logger.LogWarning("Invalid model state in Update: {ModelState}", ModelState);
-                return BadRequest(ModelState);
+                _logger.LogWarning("Invalid Space ID received in Update.");
+                return BadRequest("Invalid Space ID.");
             }
 
             try
             {
-                _logger.LogInformation("Updating Space with ID: {id}", model?.Id);
+                _logger.LogInformation("Updating Space with ID: {id}", id);
+                var existingSpace = await _spaceService.GetByIdAsync(id);
+                if (existingSpace == null)
+                {
+                    _logger.LogWarning("Space not found for update with ID: {id}", id);
+                    return NotFound(string.Format("Space not found for update with ID: {id}", id));
+                }
+
                 var item = _mapper.Map<SpaceRequestDso>(model);
+                item.Id = id;
+                item.SubscriptionId = existingSpace.SubscriptionId;
+
                 var updatedEntity = await _spaceService.UpdateAsync(item);
                 if (updatedEntity == null)
                 {
-                    _logger.LogWarning("Space not found for update with ID: {id}", model?.Id);
+                    _logger.LogWarning("Space not found for update with ID: {id}", id);
                     return NotFound();
                 }
 
@@ -263,7 +267,7 @@ namespace LAHJAAPI.V1.Controllers.Api
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error while updating Space with ID: {id}", model?.Id);
+                _logger.LogError(ex, "Error while updating Space with ID: {id}", id);
                 return StatusCode(500, "Internal Server Error");
             }
         }

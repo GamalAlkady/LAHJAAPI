@@ -1,6 +1,8 @@
 ﻿using LAHJAAPI.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
+
+
 namespace Microsoft.Extensions.DependencyInjection;
 
 public static class DependencyInjectionData

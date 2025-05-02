@@ -1,12 +1,8 @@
 using AutoGenerator.Conditions;
-using FluentResults;
 using LAHJAAPI.Data;
 using LAHJAAPI.Models;
 using LAHJAAPI.V1.Validators.Conditions;
-using System.Security.Claims;
-using System.Text.Json;
 using V1.DyModels.Dso.Requests;
-using V1.DyModels.Dso.ResponseFilters;
 using V1.DyModels.VMs;
 
 namespace LAHJAAPI.V1.Validators
@@ -20,13 +16,10 @@ namespace LAHJAAPI.V1.Validators
         HasStartTime,
         HasUserId,
         HasEndTime,
-        IsFull,
-        ValidateCoreToken,
-        ValidatePlatformToken,
-        CheckSessionToken
+        IsFull
     }
 
-    public class AuthorizationSessionValidator : BaseValidator<AuthorizationSessionResponseFilterDso, SessionValidatorStates>, ITValidator
+    public class AuthorizationSessionValidator : ValidatorContext<AuthorizationSession, SessionValidatorStates>
     {
         DataContext _context;
         private readonly IConditionChecker _checker;
@@ -39,32 +32,7 @@ namespace LAHJAAPI.V1.Validators
 
         protected override void InitializeConditions()
         {
-            _provider.Register(
-                SessionValidatorStates.ValidateCoreToken,
-                new LambdaCondition<string>(
-                    nameof(SessionValidatorStates.ValidateCoreToken),
-                    context => ValidateCoreToken(context),
-                    "Core token is not valid"
-                )
-            );
 
-            _provider.Register(
-                SessionValidatorStates.ValidatePlatformToken,
-                new LambdaCondition<string>(
-                    nameof(SessionValidatorStates.ValidatePlatformToken),
-                    context => ValidatePlatformToken(context),
-                    "Platform token is not valid"
-                )
-            );
-
-            _provider.Register(
-                SessionValidatorStates.CheckSessionToken,
-                new LambdaCondition<string>(
-                    nameof(SessionValidatorStates.CheckSessionToken),
-                    context => CheckSessionToken(context),
-                    "Platform token is not valid"
-                )
-            );
 
 
             _provider.Register(
@@ -76,14 +44,12 @@ namespace LAHJAAPI.V1.Validators
                 )
             );
 
-            _provider.Register(
-                SessionValidatorStates.IsActive,
-                new LambdaCondition<AuthorizationSessionFilterVM>(
-                    nameof(SessionValidatorStates.IsActive),
-                    context => IsActive(context.Id),
-                    "This session has been suspended."
-                )
-            );
+            //RegisterCondition<string>(
+            //    SessionValidatorStates.IsActive,
+            //    IsActive,
+            //        "This session has been suspended."
+
+            //);
 
             _provider.Register(
                 SessionValidatorStates.HasSessionToken,
@@ -163,12 +129,11 @@ namespace LAHJAAPI.V1.Validators
             return GetSession(id) is not null;
         }
 
-
-        private bool IsActive(string? id)
+        [RegisterConditionValidator(typeof(SessionValidatorStates), SessionValidatorStates.IsActive, "Session not active.")]
+        private async Task<ConditionResult> IsActive(DataFilter<string, AuthorizationSession> data)
         {
-            if (!IsFound(id)) return false;
-            var session = GetSession(id);
-            return session!.IsActive;
+            if (data.Share == null) return ConditionResult.ToError("Session not found.");
+            return new ConditionResult(data.Share!.IsActive, data.Share, "Session is not active.");
         }
 
         private bool CheckCustomerId(string userId)
@@ -176,44 +141,7 @@ namespace LAHJAAPI.V1.Validators
             return _checker.Check(ApplicationUserValidatorStates.HasCustomerId, userId);
         }
 
-        private DataTokenRequest ValidatePlatformToken(string token)
-        {
-            if (string.IsNullOrWhiteSpace(token)) throw new Exception("Token can not be null.");
-            string secret = _checker.Injector.AppSettings.Jwt.WebSecret;
-            var result = _checker.Injector.TokenService.ValidateToken(token, secret);
-            if (result.IsFailed) throw new Exception(result.Errors?.FirstOrDefault()?.Message);
-            var claims = result.Value;
-            var data = claims.FindFirstValue("Data");
-            if (string.IsNullOrWhiteSpace(data)) throw new Exception("Data can not be null.");
-            var dataTokenRequest = JsonSerializer.Deserialize<DataTokenRequest>(data);
-            dataTokenRequest!.Token = secret;
-            return dataTokenRequest;
-        }
 
-        private bool CheckSessionToken(string sessionToken)
-        {
-            if (string.IsNullOrWhiteSpace(sessionToken)) return false;
-            var result = _checker.Injector.TokenService.ValidateToken(sessionToken);
-            return result.IsSuccess;
-        }
-
-        private Result<string> ValidateCoreToken(string token)
-        {
-            if (string.IsNullOrWhiteSpace(token)) Result.Fail("Token can not be null.");
-            string secret = _checker.Injector.AppSettings.Jwt.WebSecret;
-            var result = _checker.Injector.TokenService.ValidateToken(token, secret);
-            if (result.IsFailed) return result.ToResult<string>();
-            var claims = result.Value;
-            var sessionToken = claims.FindFirstValue("SessionToken");
-            if (string.IsNullOrWhiteSpace(sessionToken))
-            {
-                return Result.Fail("Session token is not found in core token.");
-            }
-            if (CheckSessionToken(sessionToken)) return sessionToken;
-            if (result.IsFailed) return result.ToResult<string>();
-
-            return Result.Ok(sessionToken);
-        }
 
         private bool CheckAuthorizationType(string authorizationType)
         {

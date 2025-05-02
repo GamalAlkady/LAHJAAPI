@@ -6,9 +6,11 @@ using AutoGenerator.Schedulers;
 using LAHJAAPI.CustomPolicy;
 using LAHJAAPI.Data;
 using LAHJAAPI.Models;
+using LAHJAAPI.Seeds;
 using LAHJAAPI.Utilities;
 using LAHJAAPI.V1.Validators.Conditions;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Logging;
@@ -81,7 +83,10 @@ builder.Services.AddControllers()
         options.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
         options.JsonSerializerOptions.RespectRequiredConstructorParameters = true;
     });
+
+builder.Services.AddLogging();
 builder.Logging.AddConsole().SetMinimumLevel(LogLevel.Debug);
+builder.Logging.AddDebug();
 
 // Scoped Services
 builder.Services.AddApiServices(builder.Configuration);
@@ -94,6 +99,12 @@ var appSettings = builder.Configuration.GetSection(nameof(AppSettings)).Get<AppS
 
 // تمكين عرض الأخطاء المتعلقة بـ JWT
 IdentityModelEventSource.ShowPII = true;
+
+builder.Services.AddDataProtection()
+    .PersistKeysToFileSystem(new DirectoryInfo(Path.Combine(builder.Environment.ContentRootPath, "Keys")))
+    .SetApplicationName("LahjaApi");
+
+
 
 builder.Services.AddDynamicAuthentication(builder.Configuration, appSettings);
 
@@ -121,25 +132,26 @@ builder.Services.Configure<IdentityOptions>(options =>
 });
 builder.Services.AddScoped<IAuthorizationHandler, PermissionHandler>();
 
-builder.Services.AddAuthorization(options =>
-{
-    options.AddPolicy("CanViewPlan", policy =>
-        policy.Requirements.Add(new PermissionRequirement("Permission", Permissions.ViewPlan))
-        ); // Example: Requires a claim
-});
+//builder.Services.AddAuthorization(options =>
+//{
+//    options.AddPolicy("CanViewPlan", policy =>
+//        policy.Requirements.Add(new PermissionRequirement("Permission", Permissions.ViewPlan))
+//        ); // Example: Requires a claim
+//});
 
 // Add a CORS policy for the client
-builder.Services.AddCors(
-    options => options.AddPolicy(
-        "wasm",
-        policy => policy.WithOrigins(["https://localhost:7001", "https://localhost:5002"])
-            .AllowAnyMethod()
-            .AllowAnyHeader()
-            .AllowCredentials()));
+//builder.Services.AddCors(
+//    options => options.AddPolicy(
+//        "wasm",
+//        policy => policy.WithOrigins(["https://lahja-api.runasp.net", "https://localhost:7001", "https://localhost:5002"])
+//            .AllowAnyMethod()
+//            .AllowAnyHeader()
+//            .AllowCredentials()));
 
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
+
 builder.Services.AddSwaggerGen(c =>
 {
     //c.EnableAnnotations();
@@ -150,7 +162,8 @@ builder.Services.AddSwaggerGen(c =>
         In = ParameterLocation.Header,
         Description = "Please insert token with Bearer into field",
         Name = "Authorization",
-        Type = SecuritySchemeType.ApiKey
+        Type = SecuritySchemeType.ApiKey,
+
     });
     c.AddSecurityRequirement(new OpenApiSecurityRequirement
     {
@@ -160,7 +173,8 @@ builder.Services.AddSwaggerGen(c =>
             Reference = new OpenApiReference
             {
                 Type = ReferenceType.SecurityScheme,
-                Id = "Bearer"
+                Id = "Bearer",
+
             }
             },
             Array.Empty<string>()
@@ -170,18 +184,23 @@ builder.Services.AddSwaggerGen(c =>
     //c.OperationFilter<CustomProductParameterFilter>();
 });
 
-//builder.Services.AddAutoMapper(typeof(MappingConfig));
-builder.Services.AddLogging(); // ÅÖÇÝÉ ÎÏãÇÊ ÇáÜ Logging
-
-//builder.Services.AddScoped<IInvoiceShareRepository, InvoiceShareRepository>();
-//builder.Services.AddScoped<InvoiceService>();
 
 var app = builder.Build();
 app.UseSchedulerDashboard();
-app.UseCors("wasm");
-//SeedData.EnsureSeedData(app);
+//app.UseCors("wasm");
+SeedData.EnsureSeedData(app);
 
 // Configure the HTTP request pipeline.
+
+//app.Use(async (context, next) =>
+//{
+//    await next();
+
+//    if (context.Response.StatusCode == 401)
+//    {
+//        Console.WriteLine($"Unauthorized request. Token: {context.Request.Headers["Authorization"]}");
+//    }
+//});
 
 app.UseSwagger();
 app.UseSwaggerUI(o =>

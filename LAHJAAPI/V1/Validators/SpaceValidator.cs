@@ -3,10 +3,9 @@ using LAHJAAPI.Models;
 using LAHJAAPI.V1.Enums;
 using LAHJAAPI.V1.Validators.Conditions;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using V1.DyModels.Dso.Requests;
-using V1.DyModels.Dso.ResponseFilters;
 using V1.DyModels.Dso.Responses;
-using V1.DyModels.VMs;
 
 namespace LAHJAAPI.V1.Validators
 {
@@ -16,10 +15,10 @@ namespace LAHJAAPI.V1.Validators
     public enum SpaceValidatorStates
     {
         IsFound = 6100,
+        IsValid,
+        IsValidForSession,
         IsActive,
         IsFull,
-        IsValid,
-        NotValid,
         HasName,
         HasRam,
         HasCpu,
@@ -30,10 +29,11 @@ namespace LAHJAAPI.V1.Validators
         IsGpuEnabled,
         IsGlobalEnabled,
         IsCountSpces,
+        IsAvailable,
     }
 
 
-    public class SpaceValidator : BaseValidator<SpaceResponseFilterDso, SpaceValidatorStates>, ITValidator
+    public class SpaceValidator : ValidatorContext<Space, SpaceValidatorStates>
     {
 
         private readonly IConditionChecker _checker;
@@ -85,14 +85,17 @@ namespace LAHJAAPI.V1.Validators
             );
 
 
+            //RegisterCondition<string>(
+            //    SpaceValidatorStates.IsFound,
+            //    IsFound, "Space is not found");
 
-            _provider.Register(SpaceValidatorStates.IsFound,
-                new LambdaCondition<SpaceFilterVM>(
-                    nameof(SpaceValidatorStates.IsFound),
-                    context => IsFound(context.Id),
-                    "Space is not found"
-                )
-            );
+            //_provider.Register(SpaceValidatorStates.IsFound,
+            //    new LambdaCondition<SpaceFilterVM>(
+            //        nameof(SpaceValidatorStates.IsFound),
+            //        context => IsFound(context.Id),
+            //        "Space is not found"
+            //    )
+            //);
 
             //_provider.Register(SpaceValidatorStates.IsAvailable,
             //    new LambdaCondition<SpaceFilterVM>(
@@ -112,13 +115,22 @@ namespace LAHJAAPI.V1.Validators
             //);
         }
 
-
-        private bool IsFound(string spaceId)
+        [RegisterConditionValidator(typeof(SpaceValidatorStates), SpaceValidatorStates.IsFound)]
+        private async Task<ConditionResult> IsFound(DataFilter<string, Space> data)
         {
-            if (string.IsNullOrWhiteSpace(spaceId)) return false;
-            var result = _checker.Injector.Context.Set<Space>()
-                    .Any(x => x.Id == spaceId);
-            return result;
+            if (data.Share == null) return ConditionResult.ToError("Space is not found.");
+            return ConditionResult.ToSuccess(data.Share);
+        }
+
+
+
+        [RegisterConditionValidator(typeof(SpaceValidatorStates), SpaceValidatorStates.HasSubscriptionId)]
+        private async Task<ConditionResult> HasSubscriptionId(DataFilter<string, Space> data)
+        {
+            if (data.Share == null) return ConditionResult.ToError("Space is not found.");
+            if (data.Value == null) return ConditionResult.ToError("SubscriptionId is not found.");
+            if (data.Value == data.Share.SubscriptionId) return ConditionResult.ToSuccess(data.Share);
+            return ConditionResult.ToError("This space is not included in your subscription.");
         }
 
 
@@ -216,21 +228,37 @@ namespace LAHJAAPI.V1.Validators
         }
 
 
-        bool IsSpacesAvailable2(DataFilter<string, Space> dataFilter)
-        {
-            var subscription = _checker.Injector.Context.Subscriptions
-                .FirstOrDefault(x => x.UserId == _checker.Injector.UserClaims.UserId);
-            if (subscription == null) return false;
 
-            var spaces = _checker.Injector.Context.Spaces
-                .Where(x => x.SubscriptionId == subscription.Id)
-                .ToList();
-            return subscription.AllowedSpaces > spaces.Count();
+        [RegisterConditionValidator(typeof(SpaceValidatorStates), SpaceValidatorStates.IsAvailable, "Spaces are not avaliable")]
+        async Task<ConditionResult> IsSpacesAvailableAsync(DataFilter<int, Space> data)
+        {
+            if (data?.Items?.ContainsKey("subscriptionId") != true)
+                return ConditionResult.ToError("Item must contains subscriptionId");
+
+
+            if (data?.Items?.ContainsKey("planId") != true)
+                return ConditionResult.ToError("Item must contains planId");
+
+            var countSpaces = await _injector.Context.Spaces.CountAsync(x => x.SubscriptionId == data.Items["subscriptionId"].ToString());
+
+            if (await _checker.CheckAsync(PlanValidatorStates.HasAllowedSpaces, new DataFilter
+            {
+                Id = data.Items["planId"].ToString(),
+                Value = countSpaces
+            }))
+            {
+                return ConditionResult.ToSuccess(data.Share);
+            }
+            return ConditionResult.ToFailure(new ProblemDetails
+            {
+                Title = "Coudn't create space",
+                Detail = "You have exhausted all allowed subscription spaces.",
+                Status = SubscriptionValidatorStates.IsAvailableSpaces.ToInt()
+            });
         }
 
-
         [RegisterConditionValidator(typeof(SpaceValidatorStates), SpaceValidatorStates.IsValid, "Space is not valid")]
-        async Task<ConditionResult> IsValidAsync(DataFilter<string, SubscriptionResponseDso> data)
+        async Task<ConditionResult> IsValidAsync(DataFilter<string, Space> data)
         {
             if (_checker.Check(TokenValidatorStates.IsServiceIdsEmpty, true))
             {
@@ -249,7 +277,7 @@ namespace LAHJAAPI.V1.Validators
 
             //var service = _checker.Injector.Context.Services.FirstOrDefault(s => s.AbsolutePath == GeneralServices.CreateSpace.ToString());
             var serviceId = _checker.Injector.UserClaims.ServicesIds?.FirstOrDefault();
-            if (serviceId is null || !_checker.Check(ServiceValidatorStates.IsFound, serviceId))
+            if (serviceId is null || !await _checker.CheckAsync(ServiceValidatorStates.IsFound, serviceId))
             {
                 return ConditionResult.ToFailure(new ProblemDetails
                 {
@@ -260,5 +288,33 @@ namespace LAHJAAPI.V1.Validators
             }
             return ConditionResult.ToSuccess("");
         }
+
+
+        [RegisterConditionValidator(typeof(SpaceValidatorStates), SpaceValidatorStates.IsValidForSession, "Space is not valid")]
+        async Task<ConditionResult> IsValidForSessionAsync(DataFilter<string, Space> data)
+        {
+            if (string.IsNullOrEmpty(data.Id)) return ConditionResult.ToError("You must encrypt space id with token.");
+
+            if ((await _checker.CheckAndResultAsync(SubscriptionValidatorStates.IsAvailableSpaces, new DataFilter("userId"))) is { Success: !true } result2)
+            {
+                return result2;
+            }
+
+            //var service = _checker.Injector.Context.Services.FirstOrDefault(s => s.AbsolutePath == GeneralServices.CreateSpace.ToString());
+
+            if (data.Share == null)
+            {
+                return ConditionResult.ToFailure(new ProblemDetails
+                {
+                    Title = "Coudn't create session for service 'createspace'",
+                    Detail = "This space is not included in your subscription.",
+                    Status = SpaceValidatorStates.IsValid.ToInt()
+                });
+            }
+
+            return ConditionResult.ToSuccess(_injector.Mapper.Map<SpaceResponseDso>(data.Share));
+        }
+
+
     }
 }

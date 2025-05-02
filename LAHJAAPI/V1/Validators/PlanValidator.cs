@@ -10,6 +10,7 @@ namespace LAHJAAPI.V1.Validators
     {
         public static readonly string NumberModels = "number_models";
         public static readonly string AllowedRequests = "allowed_requests";
+        public static readonly string AllowedSpaces = "allowed_spaces";
         public static readonly string Processor = "processor";
         public static readonly string Ram = "ram";
         public static readonly string Speed = "speed";
@@ -22,7 +23,7 @@ namespace LAHJAAPI.V1.Validators
 
 
 
-    public class PlanValidator : BaseValidator<Plan, PlanValidatorStates>, ITValidator
+    public class PlanValidator : ValidatorContext<PlanFeature, PlanValidatorStates>
     {
         private readonly ITFactoryInjector _injector;
 
@@ -34,7 +35,7 @@ namespace LAHJAAPI.V1.Validators
         }
 
 
-
+        //TODO: work on this 
         protected override void InitializeConditions()
         {
 
@@ -43,6 +44,12 @@ namespace LAHJAAPI.V1.Validators
                     PlanFeatureValidatorKeys.NumberModels,
                     CheckHasEnoughModels,
                     "The number of models is less than allowed.");
+
+            RegisterCondition<int>(
+                    PlanValidatorStates.HasAllowedSpaces,
+                    PlanFeatureValidatorKeys.AllowedSpaces,
+                    CheckHasAllowedSpaces,
+                    "The allowed spaces are less than required.");
 
             RegisterCondition<int>(
                 PlanValidatorStates.HasAllowedRequests,
@@ -150,107 +157,163 @@ namespace LAHJAAPI.V1.Validators
 
 
 
-        private Task<ConditionResult> CheckHasEnoughModels(DataFilter<int, PlanFeature> filter)
+        private async Task<ConditionResult> CheckHasEnoughModels(DataFilter<int, PlanFeature> filter)
         {
             if (filter.Share == null)
             {
-                return Task.FromResult(new ConditionResult(false, null, "Feature value is null."));
+                return new ConditionResult(false, null, "Object share is null.");
             }
+
+            //filter.Share = await GetModel(PlanFeatureValidatorKeys.NumberModels, filter.Share.PlanId);
+            //if (filter.Share == null) return ConditionResult.ToError("Feature not found.");
 
             if (!int.TryParse(filter.Share.Value, out var value))
             {
-                return Task.FromResult(new ConditionResult(false, null, "Invalid value format for models."));
+                return new ConditionResult(false, null, "Invalid value format for models.");
             }
 
             return value >= filter.Value
-                ? Task.FromResult(new ConditionResult(true, filter.Share, ""))
-                : Task.FromResult(new ConditionResult(false, null, "The number of models is less than allowed."));
+                ? (new ConditionResult(true, filter.Share, ""))
+                : new ConditionResult(false, null, "The number of models is less than allowed.");
         }
 
-        private Task<ConditionResult> CheckHasAllowedRequests(DataFilter<int, PlanFeature> filter)
+        private async Task<ConditionResult> CheckHasAllowedRequests(DataFilter<int, PlanFeature> filter)
         {
             if (filter.Share == null)
             {
-                return Task.FromResult(new ConditionResult(false, null, "Feature value is null."));
+                return new ConditionResult(false, null, "Object share is null.");
             }
+            //filter.Share = await GetModel(PlanFeatureValidatorKeys.AllowedRequests, filter.Share.PlanId);
+
+            //if (filter.Share == null) return ConditionResult.ToError("Feature not found.");
+
+            if (filter.Share.Value?.Equals("Unlimited", StringComparison.OrdinalIgnoreCase) == true)
+                return ConditionResult.ToSuccess(filter.Share);
 
             if (!int.TryParse(filter.Share.Value, out var value))
             {
-                return Task.FromResult(new ConditionResult(false, null, "Invalid value format for allowed requests."));
+                return new ConditionResult(false, null, "Invalid value format for allowed requests.");
             }
 
             return value >= filter.Value
-                ? Task.FromResult(new ConditionResult(true, filter.Value, ""))
-                : Task.FromResult(new ConditionResult(false, null, "The allowed requests are less than required."));
+                ? new ConditionResult(true, filter.Share, "")
+                : new ConditionResult(false, null, "The allowed requests are less than required.");
         }
 
-        private Task<ConditionResult> CheckHasSharedProcessor(DataFilter<int, PlanFeature> filter)
+        private async Task<ConditionResult> CheckHasAllowedSpaces(DataFilter<int, PlanFeature> filter)
         {
             if (filter.Share == null)
             {
-                return Task.FromResult(new ConditionResult(false, null, "Feature value is null."));
+                return new ConditionResult(false, null, "Object share is null.");
             }
+            //filter.Share = await GetModel(PlanFeatureValidatorKeys.AllowedSpaces, filter.Share.PlanId);
+
+            //if (filter.Share == null) return ConditionResult.ToError("Feature not found.");
+
+            if (filter.Share.Value?.Equals("Unlimited", StringComparison.OrdinalIgnoreCase) == true)
+                return ConditionResult.ToSuccess(filter.Share);
+
+            if (!int.TryParse(filter.Share.Value, out var value))
+            {
+                return new ConditionResult(false, null, "Invalid value format for allowed requests.");
+            }
+
+            return value >= filter.Value
+                ? ConditionResult.ToSuccess(filter.Share)
+                : ConditionResult.ToError("The allowed spaces are less than required.");
+        }
+
+        private async Task<ConditionResult> CheckHasSharedProcessor(DataFilter<int, PlanFeature> filter)
+        {
+            if (filter.Share == null)
+            {
+                return new ConditionResult(false, null, "Object share is null.");
+            }
+
+            //filter.Share = await GetModel(PlanFeatureValidatorKeys.Processor, filter.Share.PlanId);
+
+            //if (filter.Share == null) return ConditionResult.ToError("Feature not found.");
 
             return filter.Share.Value == "shared"
-                ? Task.FromResult(new ConditionResult(true, filter.Value, ""))
-                : Task.FromResult(new ConditionResult(false, null, "Processor is not shared."));
+                ? (new ConditionResult(true, filter.Share, ""))
+                : new ConditionResult(false, null, "Processor is not shared.");
         }
 
-        private Task<ConditionResult> CheckHasEnoughRam(DataFilter<int, PlanFeature> filter)
+        private async Task<ConditionResult> CheckHasEnoughRam(DataFilter<int, PlanFeature> filter)
         {
             if (filter.Share == null)
             {
-                return Task.FromResult(new ConditionResult(false, null, "Feature value is null."));
+                return new ConditionResult(false, null, "Object share is null.");
             }
+            //filter.Share = await GetModel(PlanFeatureValidatorKeys.Ram, filter.Share.PlanId);
+
+            //if (filter.Share == null) return ConditionResult.ToError("Feature not found.");
 
             if (!int.TryParse(filter.Share.Value, out var value))
             {
-                return Task.FromResult(new ConditionResult(false, null, "Invalid value format for RAM."));
+                return (new ConditionResult(false, null, "Invalid value format for RAM."));
             }
 
             return value >= filter.Value
-                ? Task.FromResult(new ConditionResult(true, filter.Value, ""))
-                : Task.FromResult(new ConditionResult(false, null, "RAM is less than required."));
+                ? (new ConditionResult(true, filter.Share, ""))
+                : (new ConditionResult(false, null, "RAM is less than required."));
         }
 
-        private Task<ConditionResult> CheckHasSpeedLimit(DataFilter<double, PlanFeature> filter)
+        private async Task<ConditionResult> CheckHasSpeedLimit(DataFilter<double, PlanFeature> filter)
         {
             if (filter.Share == null)
             {
-                return Task.FromResult(new ConditionResult(false, null, "Feature value is null."));
+                return new ConditionResult(false, null, "Object share is null.");
             }
+
+            //filter.Share = await GetModel(PlanFeatureValidatorKeys.Speed, filter.Share.PlanId);
+
+            //if (filter.Share == null) return ConditionResult.ToError("Feature not found.");
 
             if (!double.TryParse(filter.Share.Value, out var value))
             {
-                return Task.FromResult(new ConditionResult(false, null, "Invalid value format for speed."));
+                return (new ConditionResult(false, null, "Invalid value format for speed."));
             }
 
             return value >= filter.Value
-                ? Task.FromResult(new ConditionResult(true, filter.Value, ""))
-                : Task.FromResult(new ConditionResult(false, null, "Speed is less than required."));
+                ? (new ConditionResult(true, filter.Share, ""))
+                : (new ConditionResult(false, null, "Speed is less than required."));
         }
 
-        private Task<ConditionResult> CheckSupportDisabled(DataFilter<string, PlanFeature> filter)
-        {
-
-
-            return filter.Share.Value == "no"
-                ? Task.FromResult(new ConditionResult(true, filter.Value, ""))
-                : Task.FromResult(new ConditionResult(false, null, "Support should be 'no' for this plan."));
-        }
-
-        private Task<ConditionResult> CheckCustomizationDisabled(DataFilter<string, PlanFeature> filter)
+        private async Task<ConditionResult> CheckSupportDisabled(DataFilter<string, PlanFeature> filter)
         {
             if (filter.Share == null)
             {
-                return Task.FromResult(new ConditionResult(false, null, "Feature value is null."));
+                return (new ConditionResult(false, null, "Feature value is null."));
             }
+            //filter.Share = await GetModel(PlanFeatureValidatorKeys.Support, filter.Share.PlanId);
+
+            //if (filter.Share == null) return ConditionResult.ToError("Feature not found.");
 
             return filter.Share.Value == "no"
-                ? Task.FromResult(new ConditionResult(true, filter.Value, ""))
-                : Task.FromResult(new ConditionResult(false, null, "Customization should be 'no' for this plan."));
+                ? (new ConditionResult(true, filter.Share, ""))
+                : (new ConditionResult(false, null, "Support should be 'no' for this plan."));
         }
 
+        private async Task<ConditionResult> CheckCustomizationDisabled(DataFilter<string, PlanFeature> filter)
+        {
+            if (filter.Share == null)
+            {
+                return (new ConditionResult(false, null, "Feature value is null."));
+            }
+            //filter.Share = await GetModel(PlanFeatureValidatorKeys.Customization, filter.Share.PlanId);
+
+            //if (filter.Share == null) return ConditionResult.ToError("Feature not found.");
+
+            return filter.Share.Value == "no"
+                ? (new ConditionResult(true, filter.Share, ""))
+                : (new ConditionResult(false, null, "Customization should be 'no' for this plan."));
+        }
+        protected async Task<PlanFeature?> GetModel(string key, string planId)
+        {
+            return await _injector.Context.PlanFeatures.FindAsync(key, planId);
+            //return base.GetModel(id);   
+        }
         private async Task<Plan?> getPlan(string? id)
         {
             if (_plantemp != null && _plantemp.Id == id)
@@ -273,6 +336,7 @@ namespace LAHJAAPI.V1.Validators
         HasEnoughRam,
         HasSpeedLimit,
         SupportDisabled,
-        CustomizationDisabled
+        CustomizationDisabled,
+        HasAllowedSpaces
     }
 }

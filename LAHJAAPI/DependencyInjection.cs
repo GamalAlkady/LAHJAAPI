@@ -1,5 +1,4 @@
 ﻿using Api.Config;
-using Api.Utilities;
 using APILAHJA.Utilities;
 using AutoGenerator.Config;
 using LAHJAAPI.Models;
@@ -107,6 +106,7 @@ public static class DependencyInjection
             .AddBearerToken(IdentityConstants.BearerScheme, o =>
             {
                 o.BearerTokenExpiration = TimeSpan.FromDays(10);
+
             })
              .AddJwtBearer(JwtBearerDefaults.AuthenticationScheme, options =>
              {
@@ -121,17 +121,17 @@ public static class DependencyInjection
                      IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(appSettings.Jwt.Secret))
                  };
                  // السماح باستخدام التوكن في الكوكيز
-                 options.Events = new JwtBearerEvents
-                 {
-                     OnMessageReceived = context =>
-                     {
-                         if (context.Request.Cookies.ContainsKey("access_token"))
-                         {
-                             context.Token = context.Request.Cookies["access_token"];
-                         }
-                         return Task.CompletedTask;
-                     }
-                 };
+                 //options.Events = new JwtBearerEvents
+                 //{
+                 //    OnMessageReceived = context =>
+                 //    {
+                 //        if (context.Request.Cookies.ContainsKey("access_token"))
+                 //        {
+                 //            context.Token = context.Request.Cookies["access_token"];
+                 //        }
+                 //        return Task.CompletedTask;
+                 //    }
+                 //};
              })
               .AddGoogle(opt =>
               {
@@ -156,8 +156,43 @@ public static class DependencyInjection
                   //    return Task.CompletedTask;
                   //};
               })
-            .AddIdentityCookies()
+            .AddIdentityCookies(cookies =>
+            {
+                cookies?.ApplicationCookie?.Configure(options =>
+                {
+                    options.Cookie.HttpOnly = true;
+                    options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+                    options.SlidingExpiration = true;
+                    options.ExpireTimeSpan = TimeSpan.FromDays(14);
+
+                    options.Events.OnRedirectToLogin = context =>
+                    {
+                        //context.Response.WriteAsJsonAsync(new
+                        //{
+                        //    Message = "غير مصرح بالوصول",
+                        //    Status = StatusCodes.Status401Unauthorized
+
+                        //});
+                        context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+                        context.Response.ContentType = "application/json";
+                        context.Response.WriteAsJsonAsync(new { error = "Unauthorized" });
+
+                        //context.Response.Body.WriteAsync(Encoding.UTF8.GetBytes("Unauthorized access"));
+                        return Task.CompletedTask;
+                    };
+                    options.Events.OnRedirectToAccessDenied = context =>
+                    {
+                        context.Response.StatusCode = StatusCodes.Status403Forbidden;
+                        return Task.CompletedTask;
+                    };
+                });
+            })
             ;
+
+
+        //    services.AddDataProtection()
+        //.PersistKeysToFileSystem(new DirectoryInfo("/path/to/keys")) // مسار آمن على الخادم
+        //.SetApplicationName("LAHJAAPI");
     }
 
     public static async Task AddPermissionClaim(this RoleManager<IdentityRole> roleManager, IdentityRole role, string[] permissions)

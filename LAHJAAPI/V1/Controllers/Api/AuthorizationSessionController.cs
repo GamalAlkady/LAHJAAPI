@@ -3,7 +3,6 @@ using AutoGenerator.Conditions;
 using AutoGenerator.Helper;
 using AutoGenerator.Helper.Translation;
 using AutoMapper;
-using FluentResults;
 using LAHJAAPI.Services2;
 using LAHJAAPI.Utilities;
 using LAHJAAPI.V1.Validators;
@@ -11,7 +10,6 @@ using LAHJAAPI.V1.Validators.Conditions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
-using Quartz.Util;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text.Json;
@@ -28,12 +26,8 @@ namespace LAHJAAPI.V1.Controllers.Api
     {
         private readonly IUseAuthorizationSessionService _authorizationsessionService;
         private readonly LinkGenerator _linkGenerator;
-        private readonly IUseModelGatewayService _modelGatewayRepository;
         private readonly TokenService _tokenService;
-        private readonly IUseAuthorizationSessionService _sessionService;
         private readonly IUseServiceService _serviceService;
-        private readonly IUseSubscriptionService _subscriptionService;
-        private readonly IUseModelAiService _modelAiRepository;
         private readonly IUserClaimsHelper _userClaims;
         private readonly IConditionChecker _checker;
         private readonly IOptions<AppSettings> _appSettings;
@@ -43,7 +37,6 @@ namespace LAHJAAPI.V1.Controllers.Api
             LinkGenerator linkGenerator,
             TokenService tokenService,
             IUseModelGatewayService modelGatewayService,
-            IUseAuthorizationSessionService sessionService,
             IUseServiceService serviceService,
             IUseSubscriptionService subscriptionService,
             IUseModelAiService modelAiRepository,
@@ -52,14 +45,10 @@ namespace LAHJAAPI.V1.Controllers.Api
             IOptions<AppSettings> appSettings,
             IMapper mapper, ILoggerFactory logger)
         {
-            _authorizationsessionService = authorizationsessionService;
             _linkGenerator = linkGenerator;
-            _modelGatewayRepository = modelGatewayService;
             _tokenService = tokenService;
-            _sessionService = sessionService;
+            _authorizationsessionService = authorizationsessionService;
             _serviceService = serviceService;
-            _subscriptionService = subscriptionService;
-            _modelAiRepository = modelAiRepository;
             _userClaims = userClaims;
             _checker = checker;
             _appSettings = appSettings;
@@ -106,7 +95,7 @@ namespace LAHJAAPI.V1.Controllers.Api
                     return NotFound();
                 }
 
-                if (lg.IsNullOrWhiteSpace()) return Ok(_mapper.Map<AuthorizationSessionOutputVM>(entity));
+                if (string.IsNullOrWhiteSpace(lg)) return Ok(_mapper.Map<AuthorizationSessionOutputVM>(entity));
                 return Ok(_mapper.Map<AuthorizationSessionOutputVM>(entity, opts => opts.Items[HelperTranslation.KEYLG] = lg));
 
             }
@@ -162,24 +151,26 @@ namespace LAHJAAPI.V1.Controllers.Api
         {
             try
             {
+                _logger.LogInformation("Validating AuthorizationSession with data: {@validateToken}", validateToken);
                 //TODO: When create token for service createspace make it temporary
-                var result = (Result<string>)_checker.CheckAndResult(SessionValidatorStates.ValidateCoreToken, validateToken.Token).Result;
-                if (result.IsFailed) return BadRequest(result.Errors);
-                var item = await _sessionService.GetOneByAsync([new FilterCondition("SessionToken", result.Value)]);
+                var result = _checker.CheckAndResult(TokenValidatorStates.ValidateCoreToken, validateToken.Token);
+                if (result.Success == false) return BadRequest(result.Message);
+
+                var item = await _authorizationsessionService.GetOneByAsync([new FilterCondition("SessionToken", result.Result)]);
                 if (item == null) return BadRequest("Not found session by token");
 
                 var token = _tokenService.GenerateToken([
-               new Claim(ClaimTypes2.ServicesIds, item.ServicesIds),
-           new Claim(JwtRegisteredClaimNames.Sub, item.UserId),
-                new Claim(ClaimTypes2.SessionId, item.Id),
-                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())]);
+                    new Claim(ClaimTypes2.ServicesIds, item.ServicesIds),
+                    new Claim(JwtRegisteredClaimNames.Sub, item.UserId),
+                    new Claim(ClaimTypes2.SessionId, item.Id)]);
 
                 item.UserToken = token;
-                await _sessionService.UpdateAsync(_mapper.Map<AuthorizationSessionRequestDso>(item));
+                await _authorizationsessionService.UpdateAsync(_mapper.Map<AuthorizationSessionRequestDso>(item));
                 return Ok(new AuthorizationSessionCoreResponse { Token = item.UserToken });
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, "Error while validating AuthorizationSession");
                 return BadRequest(HandelErrors.Problem(ex));
             }
         }
@@ -198,7 +189,7 @@ namespace LAHJAAPI.V1.Controllers.Api
             {
                 _logger.LogInformation("Creating new AuthorizationSession with data: {@model}", model);
                 var result = await _checker.CheckAndResultAsync(ServiceValidatorStates.IsCreateSpace, new DataFilter(model.ServiceId));
-                if (result.Result == null) return NotFound(HandelErrors.Problem("Create session", "No service found for this id."));
+                if (result.Result == null) return NotFound(result.Result ?? result.Message);
 
                 var service = _mapper.Map<ServiceResponseDso>(result.Result);
                 bool isNeedSpace = true;
@@ -206,15 +197,10 @@ namespace LAHJAAPI.V1.Controllers.Api
                 {
                     isNeedSpace = false;
                     if (await _checker.CheckAndResultAsync(SubscriptionValidatorStates.IsAvailableSpaces) is { Success: false } result2)
-                        return BadRequest(result2.Result);
+                        return BadRequest(result2.Result ?? result2.Message);
                 }
 
-                //var (type, expire, webToken, spaceId) = await ValidateWebToken(model.Token);
                 var response = await PrepareCreateSession([service], model.Token, [model.ServiceId], isNeedSpace);
-
-                var item = _mapper.Map<AuthorizationSessionRequestDso>(model);
-                var createdEntity = await _authorizationsessionService.CreateAsync(item);
-                var createdItem = _mapper.Map<AuthorizationSessionOutputVM>(createdEntity);
                 return Ok(response);
             }
             catch (Exception ex)
@@ -235,6 +221,7 @@ namespace LAHJAAPI.V1.Controllers.Api
         {
             try
             {
+                _logger.LogInformation("Creating new AuthorizationSession for dashboard with data: {@model}", model);
                 var service = await _serviceService.GetByAbsolutePath("dashboard");
                 if (service == null) return NotFound(HandelErrors.Problem("Create session", "No service found for dahsboard."));
                 var response = await PrepareCreateSession([service], model.Token, [service.Id], false);
@@ -243,6 +230,7 @@ namespace LAHJAAPI.V1.Controllers.Api
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, "Error while creating a new AuthorizationSession for dashboard");
                 return BadRequest(HandelErrors.Problem(ex));
             }
         }
@@ -258,6 +246,7 @@ namespace LAHJAAPI.V1.Controllers.Api
         {
             try
             {
+                _logger.LogInformation("Creating new AuthorizationSession for list services with data: {@model}", model);
                 var services = await _serviceService.GetListWithoutSome(model.ServicesIds);
                 if (services.Count == 0) return NotFound(HandelErrors.Problem("Create session", "Services ids that you send not aceptable."));
                 var servicesIds = services.Select(s => s.Id).ToList();
@@ -267,6 +256,7 @@ namespace LAHJAAPI.V1.Controllers.Api
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, "Error while creating a new AuthorizationSession for list services");
                 return BadRequest(HandelErrors.Problem(ex));
             }
         }
@@ -282,7 +272,8 @@ namespace LAHJAAPI.V1.Controllers.Api
         {
             try
             {
-                //TODO: test this endpoint
+                _logger.LogInformation("Creating new AuthorizationSession for all services with data: {@model}", model);
+
                 var services = await _serviceService.GetListWithoutSome(modelId: model.ModelAiId);
                 if (services.Count == 0) return NotFound(HandelErrors.Problem("Create session", "Services ids that you send not aceptable.", null, 404));
                 var servicesIds = services.Select(s => s.Id).ToList();
@@ -292,6 +283,7 @@ namespace LAHJAAPI.V1.Controllers.Api
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, "Error while creating a new AuthorizationSession for all services");
                 return BadRequest(HandelErrors.Problem(ex));
             }
         }
@@ -343,38 +335,64 @@ namespace LAHJAAPI.V1.Controllers.Api
         }
 
 
-
+        [AllowAnonymous]
         [HttpPost("SimulationPlatForm", Name = "SimulationPlatForm")]
-        public ActionResult<string> SimulationPlatForm(EncryptTokenRequest encryptToken)
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+        public async Task<ActionResult<string>> SimulationPlatForm(EncryptTokenRequest encryptToken)
         {
-            var webToken = _appSettings.Value.Jwt.WebSecret;
-            List<Claim> claims = [new Claim("Data", JsonSerializer.Serialize(encryptToken))];
-            //if (encryptToken.Expires != null) claims.Add(new Claim("Expires", encryptToken!.Expires!.ToString()!));
-            var encrptedToken = _tokenService.GenerateTemporary(webToken!, claims, encryptToken.Expires);
-            return Ok(encrptedToken);
+            try
+            {
+                _logger.LogInformation("Creating platform token with data: {@encryptToken}", encryptToken);
+                var webToken = _appSettings.Value.Jwt.WebSecret;
+                List<Claim> claims = [new Claim(ClaimTypes2.Data, JsonSerializer.Serialize(encryptToken))];
+                //if (encryptToken.Expires != null) claims.Add(new Claim("Expires", encryptToken!.Expires!.ToString()!));
+                var encrptedToken = _tokenService.GenerateToken(claims, webToken!, encryptToken.Expires);
+                return Ok(encrptedToken);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error when create platform token.");
+                return BadRequest(ex.Message);
+            }
         }
 
+        [AllowAnonymous]
         [HttpGet("SimulationCore", Name = "SimulationCore")]
-        public ActionResult<string> SimulationCore(string encrptedToken, string coreToken)
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+        public async Task<ActionResult<string>> SimulationCore(string encrptedToken, string coreToken)
         {
-            var decrptedToken = _tokenService.ValidateToken(encrptedToken, coreToken);
-            if (decrptedToken.IsFailed) return Unauthorized(decrptedToken.Errors);
-            var claims = decrptedToken.ValueOrDefault;
-            var sessionToken = claims.FindFirstValue("SessionToken");
-            var data = claims.FindFirstValue("data");
-            var webToken = claims.FindFirstValue("WebToken");
+            try
+            {
+                _logger.LogInformation("Creating core token with data: {@encrptedToken}", encrptedToken);
+                var decrptedToken = _tokenService.ValidateToken(encrptedToken, coreToken);
+                if (decrptedToken.IsFailed) return Unauthorized(decrptedToken.Errors);
+                var claims = decrptedToken.ValueOrDefault;
+                var sessionToken = claims.FindFirstValue(ClaimTypes2.SessionToken);
+                var data = claims.FindFirstValue(ClaimTypes2.Data);
+                var webToken = claims.FindFirstValue(ClaimTypes2.WebToken);
 
-            var token = _tokenService.GenerateTemporary(webToken, [new Claim("SessionToken", sessionToken)]);
+                var token = _tokenService.GenerateToken([new Claim(ClaimTypes2.SessionToken, sessionToken)], webToken);
 
-            return Ok(token);
+                return Ok(token);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error when create core token.");
+                return BadRequest(ex.Message);
+            }
         }
 
         [HttpGet("ValidateWebTokenAsync")]
         public async Task<ActionResult> ValidateWebTokenAsync(string token)
         {
-            var decrptedToken = ValidateWebToken(token);
+            var result = _checker.CheckAndResult(TokenValidatorStates.ValidatePlatformToken, token);
+            //if (result.Success == false) return BadRequest(result.Message);
 
-            return Ok(new { decrptedToken });
+            return Ok(result);
         }
 
         [HttpGet("ValidateCreateToken")]
@@ -402,14 +420,15 @@ namespace LAHJAAPI.V1.Controllers.Api
         {
             try
             {
-                var session = await _sessionService.GetByIdAsync(id);
+                var session = await _authorizationsessionService.GetByIdAsync(id);
                 session.IsActive = false;
 
-                await _sessionService.UpdateAsync(_mapper.Map<AuthorizationSessionRequestDso>(session));
+                await _authorizationsessionService.UpdateAsync(_mapper.Map<AuthorizationSessionRequestDso>(session));
                 return Ok();
             }
             catch (Exception ex)
             {
+
                 return BadRequest(HandelErrors.Problem(ex));
             }
         }
@@ -427,9 +446,9 @@ namespace LAHJAAPI.V1.Controllers.Api
         {
             try
             {
-                var session = await _sessionService.GetByIdAsync(id);
+                var session = await _authorizationsessionService.GetByIdAsync(id);
                 session.IsActive = true;
-                await _sessionService.UpdateAsync(_mapper.Map<AuthorizationSessionRequestDso>(session));
+                await _authorizationsessionService.UpdateAsync(_mapper.Map<AuthorizationSessionRequestDso>(session));
                 return Ok();
             }
             catch (Exception ex)
@@ -438,58 +457,74 @@ namespace LAHJAAPI.V1.Controllers.Api
             }
         }
 
-        private async Task<AuthorizationSessionInfoVM> PrepareCreateSession(List<ServiceResponseDso> services, string token, List<string> servicesIds, bool isNeedSpace = true)
+        private async Task<AuthorizationSessionInfoVM> PrepareCreateSession(List<ServiceResponseDso> services, string token, List<string> servicesIds, bool isSpaceRequired = true)
         {
-            List<Claim> claims = [];
-            var sessionData = new SessionData
+            try
             {
-                Services = services.Select(s => new { s.Id, s.AbsolutePath }).ToList(),
-                SubscriptionId = (await _subscriptionService.GetUserSubscription()).Id
-            };
+                List<Claim> claims = [];
+                var sessionData = new SessionData
+                {
+                    Services = services.Select(s => new { s.Id, s.AbsolutePath }).ToList(),
+                    //SubscriptionId = (await _subscriptionService.GetUserSubscription()).Id
+                };
 
-            // get platform to validate token
-            var dataTokenRequest = (DataTokenRequest?)_checker.CheckAndResult(SessionValidatorStates.ValidatePlatformToken, token).Result;
-            //var dataTokenRequest = await ValidateWebToken(token);
+                // get platform to validate token
+                var resultToken = _checker.CheckAndResult(TokenValidatorStates.ValidatePlatformToken, token);
+                if (resultToken.Success == false) throw new Exception(resultToken.Message);
+                var dataTokenRequest = (DataTokenRequest?)resultToken.Result;
 
-            if (isNeedSpace)
-            {
-                if (string.IsNullOrEmpty(dataTokenRequest?.SpaceId))
-                    throw new Exception("You must encrypt space id with token.");
+                if (isSpaceRequired)
+                {
+                    var resultSpace = await _checker.CheckAndResultAsync(SpaceValidatorStates.IsValid, new DataFilter(dataTokenRequest.SpaceId));
 
-                var space = await _subscriptionService.GetSpace(dataTokenRequest.SpaceId);
-                if (space == null) throw new Exception("This space is not included in your subscription.");
+                    if (resultSpace.Success == false) throw new Exception(resultSpace.Message);
 
-                sessionData.Space = new { space.Id, space.Name };
-                //else throw new Exception($"No space found for id {dataTokenRequest.SpaceId}");
+                    var space = (SpaceResponseDso)resultSpace.Result!;
+                    sessionData.Space = new { space.Id, space.Name };
+                }
+
+                var modelAiId = services[0].ModelAiId;
+                var result = await _checker.CheckAndResultAsync(ModelValidatorStates.HasService, modelAiId);
+                if (result.Success == false) throw new Exception(result.Message);
+
+
+                //var modelAi = await _modelAiRepository.GetOneByAsync([new FilterCondition("Id", services[0].ModelAiId)], new ParamOptions(["ModelGateway"]));
+                var modelAi = _mapper.Map<ModelAiResponseDso>(result.Result);
+
+                var modelCore = modelAi.ModelGateway;
+                //if (modelCore == null) throw new Exception("This model ai not belong to model gateway.");
+
+
+                AuthorizationSessionResponseDso session = await GetOrCreateSession(servicesIds, dataTokenRequest.AuthorizationType, dataTokenRequest.Expires, modelAiId);
+                sessionData.SessionId = session.Id;
+                claims.AddRange([new Claim(ClaimTypes2.SessionToken, session.SessionToken),
+                    new Claim(ClaimTypes2.ApiUrl, GetApiUrl()!),
+                    new Claim(ClaimTypes2.WebToken, dataTokenRequest.Token),
+                    new Claim(ClaimTypes2.Data,JsonSerializer.Serialize(sessionData))]);
+
+                var encrptedToken = _tokenService.GenerateToken(claims, modelCore.Token, session.EndTime);
+
+                string urlCore = $"{modelCore.Url}";
+                if (services.Count == 1) urlCore += $"/{services[0].AbsolutePath}";
+                //string urlCore = $"{modelCore.Url}/{services.AbsolutePath}";
+                return new AuthorizationSessionInfoVM()
+                {
+                    SessionToken = encrptedToken,
+                    URLCore = urlCore
+                };
             }
-
-            var modelAi = await _modelAiRepository.GetOneByAsync([new FilterCondition("Id", services[0].ModelAiId)], new ParamOptions(["ModelGateway"]));
-            var modelCore = modelAi.ModelGateway;
-            if (modelCore == null) throw new Exception("This model ai not belong to model gateway");
-
-            AuthorizationSessionResponseDso session = await GetOrCreateSession(servicesIds, dataTokenRequest.AuthorizationType, dataTokenRequest.Expires, modelAi.Id);
-            sessionData.SessionId = session.Id;
-            claims.AddRange([new Claim("SessionToken", session.SessionToken),
-                    new Claim("ApiUrl", GetApiUrl()!), new Claim("WebToken", dataTokenRequest.Token),new Claim("data",JsonSerializer.Serialize(sessionData))]);
-
-            var encrptedToken = _tokenService.GenerateTemporary(modelCore.Token, claims, session.EndTime);
-
-            string urlCore = $"{modelCore.Url}";
-            if (services.Count == 1) urlCore += $"/{services[0].AbsolutePath}";
-            //string urlCore = $"{modelCore.Url}/{services.AbsolutePath}";
-            return new AuthorizationSessionInfoVM()
+            catch (Exception)
             {
-                SessionToken = encrptedToken,
-                URLCore = urlCore
-            };
+                throw;
+            }
         }
 
         private async Task<AuthorizationSessionResponseDso> GetOrCreateSession(List<string> servicesIds, string type, DateTime? expire, string modelAiId)
         {
-            var resultSession = await _sessionService.GetSessionByServices(_userClaims.UserId, servicesIds, type);
+            var resultSession = await _authorizationsessionService.GetSessionByServices(_userClaims.UserId, servicesIds, type);
             var session = resultSession.ValueOrDefault;
             //DateTime endTime = DateTime.UtcNow.AddDays(30);
-            if (session == null || !_checker.Check(SessionValidatorStates.CheckSessionToken, session.SessionToken))
+            if (resultSession.IsFailed || !_checker.Check(TokenValidatorStates.CheckSessionToken, session.SessionToken))
             {
                 expire ??= DateTime.UtcNow.AddDays(30);
                 string ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
@@ -498,17 +533,18 @@ namespace LAHJAAPI.V1.Controllers.Api
                 {
                     UserId = _userClaims.UserId,
                     EndTime = expire,
-                    SessionToken = _tokenService.GenerateTemporary([new Claim("StartDate", DateTime.UtcNow.ToString())], expire),
+                    SessionToken = _tokenService.GenerateTemporary(expires: expire),
                     AuthorizationType = type,
                     IpAddress = ipAddress,
                     DeviceInfo = "",
                     ServicesIds = JsonSerializer.Serialize(servicesIds),
                 };
-                session = await _sessionService.CreateAsync(newSession);
+                session = await _authorizationsessionService.CreateAsync(newSession);
             }
-            else if (resultSession.IsFailed)
+            else if (!session.IsActive)
             {
-                throw new Exception(resultSession.Errors.FirstOrDefault()?.Message);
+                _logger.LogError("Session is not active for Id:{id}", session.Id);
+                throw new Exception($"Your current session has been suspended for ({session.Id}).", new Exception("Contact with us for more information."));
             }
 
             return session;

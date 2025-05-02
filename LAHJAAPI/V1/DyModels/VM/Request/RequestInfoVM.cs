@@ -13,7 +13,7 @@ namespace V1.DyModels.VMs
         public string? Service { get; set; }
         public string? Token { get; set; }
         public string? EventId { get; set; }
-        public int AllowedRequests { get; internal set; }
+        public string? AllowedRequests { get; set; }
         public int NumberRequests { get; internal set; }
     }
 }

@@ -15,5 +15,9 @@
         public const string CNR = "current_number_requests";
         public const string BillingPeriod = "billing_period";
         public const string CancelAtPeriodEnd = "cancel_at_period_end";
+        internal const string SessionToken = "SessionToken";
+        internal const string WebToken = "WebToken";
+        internal const string ApiUrl = "ApiUrl";
+        internal const string Data = "Data";
     }
 }

@@ -80,7 +80,7 @@ namespace LAHJAAPI.V1.Validators
                     return ConditionResult.ToSuccess(f.Share);
                 }
 
-                return res;
+                return ConditionResult.ToFailure(null, "This ModelAi not belong to ModelGateway.");
             }
 
             return ConditionResult.ToFailure(null, "Model AI is not found");

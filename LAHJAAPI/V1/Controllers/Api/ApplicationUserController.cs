@@ -1,7 +1,6 @@
 using AutoGenerator.Helper.Translation;
 using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
-using Quartz.Util;
 using V1.DyModels.VMs;
 using V1.Services.Services;
 
@@ -20,6 +19,7 @@ namespace LAHJAAPI.V1.Controllers.Api
             _applicationuserService = applicationuserService;
             _mapper = mapper;
             _logger = logger.CreateLogger(typeof(ApplicationUserController).FullName);
+            //_logger.LogWarning("User:" + User);
         }
 
         // Get all ApplicationUsers.
@@ -60,7 +60,7 @@ namespace LAHJAAPI.V1.Controllers.Api
                     _logger.LogWarning("ApplicationUser not found with ID: {id}", id);
                     return NotFound();
                 }
-                if (lg.IsNullOrWhiteSpace())
+                if (string.IsNullOrWhiteSpace(lg))
                     return Ok(_mapper.Map<ApplicationUserOutputVM>(entity));
 
                 return Ok(_mapper.Map<ApplicationUserOutputVM>(entity, opts => opts.Items[HelperTranslation.KEYLG] = lg));

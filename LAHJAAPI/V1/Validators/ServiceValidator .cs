@@ -27,6 +27,7 @@ namespace LAHJAAPI.V1.Validators
         IsServiceModel,
         IsServiceIdsEmpty,
         IsInUserClaims,
+        IsIn,
     }
 
     public class ServiceType
@@ -144,16 +145,32 @@ namespace LAHJAAPI.V1.Validators
         private Task<ConditionResult> ValidateIsServiceType(DataFilter<string, Service> f)
         {
             if (f.Share == null && f.Value == null && f.Name == null)
-                return Task.FromResult(ConditionResult.ToFailure(f.Share?.AbsolutePath, "Both Name and Value are null"));
+                return Task.FromResult(ConditionResult.ToError("Both Name and Value are null"));
             if (f.Share != null)
             {
-                return Task.FromResult(new ConditionResult(f.Share.AbsolutePath.Equals(f.Name ?? f.Value, StringComparison.OrdinalIgnoreCase), f.Share));
+                return Task.FromResult(new ConditionResult(f.Share.AbsolutePath.Equals(f.Name ?? f.Value, StringComparison.OrdinalIgnoreCase), f.Share, $"No service found for {f.Name ?? f.Value}."));
             }
             f.Share = _injector.Context.Services.FirstOrDefault(x => x.AbsolutePath.Contains(f.Name ?? f.Value!));
             bool valid = f.Share != null;
             return valid
                 ? ConditionResult.ToSuccessAsync(f.Share)
-                : ConditionResult.ToFailureAsync(f.Name ?? f.Value);
+                : ConditionResult.ToErrorAsync($"No service found for {f.Name ?? f.Value}.");
+        }
+
+        [RegisterConditionValidator(typeof(ServiceValidatorStates), ServiceValidatorStates.IsIn, "Not a valid service model")]
+        private Task<ConditionResult> IsServiceType(DataFilter<List<string>, Service> f)
+        {
+            if (f.Share == null && f.Value == null)
+                return Task.FromResult(ConditionResult.ToError("Both Name and Value are null"));
+            if (f.Share != null)
+            {
+                return Task.FromResult(new ConditionResult(f.Value.Contains(f.Share.AbsolutePath), f.Share, $"No service found for {f.Value}."));
+            }
+            f.Share = _injector.Context.Services.FirstOrDefault(x => f.Value.Contains(x.AbsolutePath));
+            bool valid = f.Share != null;
+            return valid
+                ? ConditionResult.ToSuccessAsync(f.Share)
+                : ConditionResult.ToErrorAsync($"No service found for {f.Value}.");
         }
 
         protected override async Task<Service?> GetModel(string? id)

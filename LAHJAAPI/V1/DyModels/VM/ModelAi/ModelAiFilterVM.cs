@@ -1,7 +1,4 @@
 using AutoGenerator;
-using AutoGenerator.Helper.Translation;
-using LAHJAAPI.Models;
-using System;
 
 namespace V1.DyModels.VMs
 {
@@ -10,9 +7,13 @@ namespace V1.DyModels.VMs
     /// </summary>
     public class ModelAiFilterVM : ITVM
     {
-        ///
-        public string? Id { get; set; }
-        ///
-        public string? Lg { get; set; }
+        public string? Name { get; set; }
+
+        public string? Category { get; set; }
+        public string? Language { get; set; }
+        public bool? IsStandard { get; set; }
+        public string? Gender { get; set; }
+        public string? Dialect { get; set; }
+        public string? Type { get; set; }
     }
 }

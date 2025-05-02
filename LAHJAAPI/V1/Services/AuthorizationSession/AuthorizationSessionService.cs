@@ -1,8 +1,10 @@
+using APILAHJA.Utilities;
 using AutoGenerator;
 using AutoGenerator.Helper;
 using AutoGenerator.Services.Base;
 using AutoMapper;
 using FluentResults;
+using LAHJAAPI.V1.Validators.Conditions;
 using Newtonsoft.Json;
 using V1.DyModels.Dso.Requests;
 using V1.DyModels.Dso.Responses;
@@ -14,17 +16,29 @@ namespace V1.Services.Services
     public class AuthorizationSessionService : BaseService<AuthorizationSessionRequestDso, AuthorizationSessionResponseDso>, IUseAuthorizationSessionService
     {
         private readonly IAuthorizationSessionShareRepository _share;
-        public AuthorizationSessionService(IAuthorizationSessionShareRepository buildAuthorizationSessionShareRepository, IMapper mapper, ILoggerFactory logger) : base(mapper, logger)
+        private readonly IUserClaimsHelper _userClaims;
+        private readonly IConditionChecker _checker;
+
+        public AuthorizationSessionService(
+            IAuthorizationSessionShareRepository buildAuthorizationSessionShareRepository,
+            IUserClaimsHelper userClaims,
+            IConditionChecker checker,
+            IMapper mapper,
+            ILoggerFactory logger) : base(mapper, logger)
         {
             _share = buildAuthorizationSessionShareRepository;
+            _userClaims = userClaims;
+            _checker = checker;
         }
 
         public async Task<Result<AuthorizationSessionResponseDso>> GetSessionByServices(string userId, List<string> servicesIds, string authorizationType)
         {
             var response = await _share.GetAllByAsync([
                 new FilterCondition("UserId" , userId),
-                new FilterCondition(nameof(authorizationType) ,authorizationType)]);
-            if (response.TotalPages == 0)
+                new FilterCondition(nameof(AuthorizationSessionResponseDso.AuthorizationType) ,authorizationType),
+                new FilterCondition(nameof(AuthorizationSessionResponseDso.ServicesIds) ,servicesIds[0],FilterOperator.Contains),
+                ]);
+            if (response.TotalRecords == 0)
             {
                 return Result.Fail(new Error("No session found for the provided user ID and authorization type."));
             }
@@ -38,13 +52,17 @@ namespace V1.Services.Services
                  SessionToken = s.SessionToken,
              })
              .AsEnumerable()
-             .FirstOrDefault(s => s.Services.Count() == servicesIds.Count() && s.Services.SequenceEqual(servicesIds));
+             .LastOrDefault(s => s.Services.Count() == servicesIds.Count() && s.Services.SequenceEqual(servicesIds));
 
 
-            if (session != null && !session.IsActive) return Result.Fail(new Error("Your current session has been suspended."));
+            if (session == null)
+                return Result.Fail("session is null");
 
             return Result.Ok(session);
         }
+
+
+
 
 
         private AuthorizationSessionResponseDso MapToResponse(AuthorizationSessionRequestDso requestDso)

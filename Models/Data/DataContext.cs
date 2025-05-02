@@ -13,6 +13,7 @@ public class DataContext : AutoIdentityDataContext<ApplicationUser, IdentityRole
     public DbSet<ApplicationUser> ApplicationUsers { get; set; }
     public DbSet<AuthorizationSession> AuthorizationSessions { get; set; }
     public DbSet<Plan> Plans { get; set; }
+    public DbSet<PlanFeature> PlanFeatures { get; set; }
     public DbSet<Subscription> Subscriptions { get; set; }
     public DbSet<UserService> UserServices { get; set; }
     public DbSet<UserModelAi> UserModelAis { get; set; }
@@ -36,7 +37,6 @@ public class DataContext : AutoIdentityDataContext<ApplicationUser, IdentityRole
 
     public DbSet<Setting> Settings { get; set; }
     public DbSet<Space> Spaces { get; set; }
-    public DbSet<PlanFeature> PlanFeatures { get; set; }
     public DataContext(DbContextOptions<DataContext> options) : base(options)
     {
 

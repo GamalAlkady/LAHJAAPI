@@ -3,7 +3,6 @@ using AutoGenerator.Helper.Translation;
 using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Quartz.Util;
 using V1.DyModels.Dso.Requests;
 using V1.DyModels.VMs;
 using V1.Services.Services;
@@ -41,7 +40,7 @@ namespace LAHJAAPI.V1.Controllers.Api
                 _logger.LogInformation("Fetching all CategoryModels...");
                 var result = await _categoryModelService.GetAllAsync();
 
-                if (lg.IsNullOrWhiteSpace())
+                if (string.IsNullOrWhiteSpace(lg))
                     return Ok(_mapper.Map<List<CategoryModelOutputVM>>(result));
 
                 //TODO:error when send lg because there are items have no the same lg 
@@ -73,7 +72,7 @@ namespace LAHJAAPI.V1.Controllers.Api
                     return NotFound();
                 }
 
-                if (lg.IsNullOrWhiteSpace())
+                if (string.IsNullOrWhiteSpace(lg))
                     return Ok(_mapper.Map<CategoryModelOutputVM>(entity));
 
                 //TODO: error when call by id catm_1b43de3b9ed44212a0b9086e5607a81f. I Think because the description is null
@@ -119,7 +118,7 @@ namespace LAHJAAPI.V1.Controllers.Api
                     return NotFound();
                 }
 
-                if (lg.IsNullOrWhiteSpace())
+                if (string.IsNullOrWhiteSpace(lg))
                     return Ok(_mapper.Map<CategoryModelOutputVM>(entity));
 
                 var item = _mapper.Map<CategoryModelOutputVM>(entity, opt => opt.Items.Add(HelperTranslation.KEYLG, lg));

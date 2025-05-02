@@ -26,46 +26,33 @@ namespace LAHJAAPI.Services2
             return Convert.ToBase64String(randomBytes);
         }
 
-        public string GenerateTemporary(string secret, List<Claim> claims, DateTime? expirees = null)
+        public string GenerateTemporary(List<Claim>? claims = null, DateTime? expires = null)
         {
-            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secret));
-            var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
-
-            var token = new JwtSecurityToken(
-                issuer: AppSettings.Jwt.validIssuer,
-                audience: AppSettings.Jwt.ValidAudience,
-                claims: claims,
-                expires: expirees ?? DateTime.UtcNow.AddDays(1),
-                signingCredentials: creds
-            );
-
-            return new JwtSecurityTokenHandler().WriteToken(token);
+            return GenerateToken(claims, AppSettings.Jwt.TempSecret, expires);
         }
 
-        public string GenerateTemporary(List<Claim> claims, DateTime? expirees = null)
-        {
-            return GenerateTemporary(AppSettings.Jwt.TempSecret, claims, expirees);
-        }
-
-        public string GenerateToken(List<Claim>? claims = null, DateTime? expires = null)
+        public string GenerateToken(List<Claim>? claims = null, string? secret = null, DateTime? expires = null)
         {
             claims = claims ?? [];
-            //claims.Add(new Claim(JwtRegisteredClaimNames.Exp, DateTimeOffset.UtcNow.AddMinutes(30).ToUnixTimeSeconds().ToString()));
-            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(AppSettings.Jwt.Secret));
+            expires ??= DateTime.UtcNow.AddDays(30);
+            claims.Add(new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()));
+            claims.Add(new Claim(JwtRegisteredClaimNames.Exp, expires.ToString()));
+            //claims.Add(new Claim(JwtRegisteredClaimNames.Exp, DateTimeOffset.UtcNow.AddDays(30).ToUnixTimeSeconds().ToString()));
+            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secret ?? AppSettings.Jwt.Secret));
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
             var token = new JwtSecurityToken(
                 issuer: AppSettings.Jwt.validIssuer,
                 audience: AppSettings.Jwt.ValidAudience,
                 claims: claims,
-                expires: expires ?? DateTime.UtcNow.AddDays(30),
+                expires: expires,
                 signingCredentials: creds
             );
 
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
 
-        public Result<ClaimsPrincipal> ValidateToken(string token, string secret, string? audience = null)
+        public Result<ClaimsPrincipal> ValidateToken(string token, string? secret = null, string? audience = null)
         {
             if (string.IsNullOrEmpty(token))
             {
@@ -73,7 +60,7 @@ namespace LAHJAAPI.Services2
             }
 
             var tokenHandler = new JwtSecurityTokenHandler();
-            var key = Encoding.UTF8.GetBytes(secret);
+            var key = Encoding.UTF8.GetBytes(secret ?? AppSettings.Jwt.Secret);
 
             try
             {
@@ -102,37 +89,9 @@ namespace LAHJAAPI.Services2
             }
         }
 
-        public Result<ClaimsPrincipal> ValidateToken(string token)
+        public Result<ClaimsPrincipal> ValidateTemporaryToken(string token)
         {
-            if (string.IsNullOrEmpty(token))
-            {
-                return Result.Fail(new Error("Invalid token"));
-            }
-
-            var tokenHandler = new JwtSecurityTokenHandler();
-            var key = Encoding.UTF8.GetBytes(AppSettings.Jwt.Secret);
-
-            try
-            {
-                var claimsPrincipal = tokenHandler.ValidateToken(token, new TokenValidationParameters
-                {
-                    ValidateIssuer = true,
-                    ValidateAudience = true,
-                    ValidateIssuerSigningKey = true,
-                    ValidIssuer = AppSettings.Jwt.validIssuer,
-                    ValidAudience = AppSettings.Jwt.ValidAudience,
-                    IssuerSigningKey = new SymmetricSecurityKey(key),
-                    ValidateLifetime = true // تحقق من انتهاء الصلاحية
-                }, out SecurityToken validatedToken);
-
-
-
-                return Result.Ok(claimsPrincipal);
-            }
-            catch (Exception ex)
-            {
-                return Result.Fail(new Error($"Token validation failed: {ex.Message}").CausedBy(ex));
-            }
+            return ValidateToken(token, AppSettings.Jwt.TempSecret);
         }
     }
 

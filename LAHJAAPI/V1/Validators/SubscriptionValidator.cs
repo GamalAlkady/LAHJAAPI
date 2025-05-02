@@ -72,10 +72,17 @@ public class SubscriptionValidator : ValidatorContext<Subscription, Subscription
     async Task<ConditionResult> IsSpacesAvailableAsync(DataFilter<string, Subscription> data)
     {
         data.Share ??= await GetModel(null);
-        var countSpaces = await _checker.Injector.Context.Spaces.CountAsync(x => x.SubscriptionId == data.Share.Id);
-        data.Value = countSpaces.ToString();
-        if ((data.Share?.AllowedSpaces > countSpaces))
+        if (data.Share == null) return ConditionResult.ToFailure(null, "Subscription is null.Please provide correct id or share");
+        if (await _checker.CheckAsync(SpaceValidatorStates.IsAvailable, new DataFilter
+        {
+            Items = new Dictionary<string, object> {
+                 { "subscriptionId", data.Share?.Id! },
+                { "planId", data.Share?.PlanId! }
+            },
+        }))
+        {
             return ConditionResult.ToSuccess(data.Share, "Not Available");
+        }
         return ConditionResult.ToFailure(new ProblemDetails
         {
             Title = "Coudn't create space",
