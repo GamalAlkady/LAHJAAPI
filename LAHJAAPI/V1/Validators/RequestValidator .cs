@@ -23,7 +23,7 @@ namespace LAHJAAPI.V1.Validators
         HasValidDate,
         HasServiceIdIfNeeded,
         HasSubscriptionIdIfNeeded,
-        IsValid,
+        IsValidForCreate,
     }
 
     public class RequestValidator : ValidatorContext<Request, RequestValidatorStates>
@@ -80,14 +80,7 @@ namespace LAHJAAPI.V1.Validators
                     )
                 );
 
-            //_provider.Register(
-            //    RequestValidatorStates.IsAllowed,
-            //    new LambdaCondition<SubscriptionResponseDso>(
-            //        nameof(RequestValidatorStates.IsAllowed),
-            //        context => IsAllowedRequests(context),
-            //        "Requests not allowed"
-            //    )
-            //);
+
 
             _provider.Register(
                    RequestValidatorStates.IsValidRequestId,
@@ -120,23 +113,10 @@ namespace LAHJAAPI.V1.Validators
 
 
 
-        //bool IsAllowedRequests(SubscriptionResponseDso context)
-        //{
-        //    var requests = _checker.Injector.Context.Requests
-        //        .Where(r => r.SubscriptionId == context.Id
-        //        && r.Status == RequestStatus.Success.ToString()
-        //        && r.CreatedAt >= context.CurrentPeriodStart && r.CreatedAt <= context.CurrentPeriodEnd)
-        //        .ToList();
 
-        //    return context.AllowedRequests > requests.Count;
-        //}
 
         [RegisterConditionValidator(typeof(RequestValidatorStates), RequestValidatorStates.IsAllowed, "You have exhausted all allowed subscription requests.")]
         async Task<ConditionResult> IsAllowed(DataFilter<SubscriptionResponseDso, Request> data)
-        {
-            return await IsAllowedRequests(data);
-        }
-        async Task<ConditionResult> IsAllowedRequests(DataFilter<SubscriptionResponseDso, Request> data)
         {
 
             if (data.Value == null)
@@ -165,33 +145,15 @@ namespace LAHJAAPI.V1.Validators
             {
                 Title = "Requests not allowed",
                 Detail = "You have exhausted all allowed subscription requests.",
-                Status = SubscriptionValidatorStates.IsAllowedRequests.ToInt()
+                Status = SubscriptionValidatorStates.IsAllowedRequestsForCreate.ToInt()
             });
         }
 
-        [RegisterConditionValidator(typeof(RequestValidatorStates), RequestValidatorStates.IsValid, "You have exhausted all allowed subscription requests.")]
-        private async Task<ConditionResult> IsValid(DataFilter<SubscriptionResponseDso, Request> data)
+        [RegisterConditionValidator(typeof(RequestValidatorStates), RequestValidatorStates.IsValidForCreate, "You have exhausted all allowed subscription requests.")]
+        private async Task<ConditionResult> IsValidForCreate(DataFilter<SubscriptionResponseDso, Request> data)
         {
-            if (data == null)
-            {
-                return ConditionResult.ToFailure(new ProblemDetails
-                {
-                    Title = "Not valid",
-                    Detail = "Request is not valid",
-                    Status = (int)RequestValidatorStates.IsValid
-                }, "Request is not valid.");
-            }
-
             if (data?.Items?.ContainsKey("serviceId") != true)
                 return ConditionResult.ToError("Item must contains serviceId");
-
-            var resultAllowed = await IsAllowedRequests(data);
-            if (resultAllowed.Success == false)
-            {
-                return resultAllowed;
-
-            }
-
 
             if (_checker.CheckAndResult(TokenValidatorStates.IsServiceIdFound, data.Items["serviceId"].ToString()) is { Success: false } resultService)
             {
@@ -229,6 +191,13 @@ namespace LAHJAAPI.V1.Validators
                     Detail = "This space is not included in your subscription.",
                     Status = (int)SpaceValidatorStates.IsFound
                 });
+            }
+
+            var resultAllowed = await IsAllowed(data);
+            if (resultAllowed.Success == false)
+            {
+                return resultAllowed;
+
             }
 
             return ConditionResult.ToSuccess(resultAllowed.Result);

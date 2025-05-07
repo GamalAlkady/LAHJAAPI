@@ -50,7 +50,7 @@ namespace LAHJAAPI.V1.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error while fetching all Plans");
-                return StatusCode(500, HandelErrors.Problem(ex));
+                return StatusCode(500, HandelResult.Problem(ex));
             }
         }
 
@@ -82,7 +82,7 @@ namespace LAHJAAPI.V1.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error while fetching Plan with ID: {id}", id);
-                return StatusCode(500, HandelErrors.Problem(ex));
+                return StatusCode(500, HandelResult.Problem(ex));
             }
         }
 
@@ -101,7 +101,7 @@ namespace LAHJAAPI.V1.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error while counting Plans");
-                return StatusCode(500, HandelErrors.Problem(ex));
+                return StatusCode(500, HandelResult.Problem(ex));
             }
         }
     }

@@ -1,7 +1,10 @@
+using AutoGenerator.Conditions;
 using AutoGenerator.Schedulers;
 using AutoNotificationService.Services.Email;
 using LAHJAAPI.V1.Helper;
+using LAHJAAPI.V1.Validators;
 using LAHJAAPI.V1.Validators.Conditions;
+using V1.DyModels.VMs;
 
 namespace ApiCore.Schedulers
 {
@@ -15,75 +18,49 @@ namespace ApiCore.Schedulers
 
         }
         static bool isons = false;
-
+        static DateOnly? date;
         static string confirmationLink = "https://example.com/confirm?token=123456";
+        string renewalLink = "https://example.com/confirm?token=123456";
 
 
 
         //private async Task<List<string>> GetEmailByRequestCodtion() { }
         //private async Task<List<string>>GetEmailBySpacCodtion() { }
 
-
-
         public override async Task Execute(JobEventArgs context)
-        {   // „À«· 
-            if (!isons)
+        {
+            //if (date is null || date != DateOnly.FromDateTime(DateTime.Now))
             {
 
-                await _checker.Injector.Notifier.NotifyAsyn(new BatchEmailModel()
+                //send notification if subscription is about to expire after 7 days or 2 days
+                if (await _checker.CheckAndResultAsync(SubscriptionValidatorStates.IsExpireAfter, new DataFilter
                 {
-                    Body = TemplateTagEmail.GetConfirmationEmailHtml(confirmationLink),
-                    Subject = "LHJA",
-                    ToEmails = new List<string>() { "engneerazdd@gmail.com" }
-                });
-
-                // await _checker.Injector.Notifier.NotifyAsyn(new EmailModel()
-                // {
-                //     Body = TemplateTagEmail.GetConfirmationEmailHtml(confirmationLink),
-                //     Subject = "LHJA",
-                //     ToEmail = "engneerazdd@gmail.com"
-                // });
-
-
-                //await _checker.Injector.Notifier.NotifyAsyn(new EmailModel()
-                // {
-                //     Body = TemplateTagEmail.PasswordResetTemplate(confirmationLink),
-                //     Subject = "LHJA",
-                //     ToEmail = "engneerazdd@gmail.com"
-                // });
-
-
-                // await _checker.Injector.Notifier.NotifyAsyn(new EmailModel()
-                // {
-                //     Body = TemplateTagEmail.PaymentFailedTemplate(),
-                //     Subject = "LHJA",
-                //     ToEmail = "engneerazdd@gmail.com"
-                // });
-                // await _checker.Injector.Notifier.NotifyAsyn(new EmailModel()
-                // {
-                //     Body = TemplateTagEmail.SecurityAlertTemplate("",""),
-                //     Subject = "LHJA",
-                //     ToEmail = "engneerazdd@gmail.com"
-                // });
-
-                // await _checker.Injector.Notifier.NotifyAsyn(new EmailModel()
-                // {
-                //     Body = TemplateTagEmail.WelcomeEmailTemplate("Anas"),
-                //     Subject = "LHJA",
-                //     ToEmail = "modelasg@gmail.com"
-                // });
-                isons = true;
+                    Value = new List<int> { 7, 2 }
+                }) is { Success: true } result)
+                {
+                    var users = (List<ApplicationUserFilterVM>)result.Result;
+                    foreach (var user in users)
+                    {
+                        //send email to each user
+                        await _checker.Injector.Notifier.NotifyAsyn(new EmailModel()
+                        {
+                            Body = TemplateTagEmail.SubscriptionEndingSoonTemplate(user.Days, renewalLink),
+                            Subject = "Renew your subscription",
+                            ToEmail = user.Email
+                        });
+                    }
+                    date = DateOnly.FromDateTime(DateTime.Now);
+                }
             }
 
-            Console.WriteLine($"Executing job: {_options.JobName} with cron: {_options.Cron}");
 
         }
 
         protected override void InitializeJobOptions()
         {
             // _options.
-            _options.JobName = "Subscription1";
-            _options.Cron = CronSchedule.EveryMinute;
+            _options.JobName = "IsSubscriptionExpireAfter";
+            _options.Cron = CronSchedule.EveryHour;
         }
     }
 }

@@ -6,6 +6,7 @@ using StripeGateway;
 
 namespace LAHJAAPI.V1.Controllers.Api
 {
+    [ApiExplorerSettings(GroupName = "User")]
     [Route("api/v1/user/[controller]")]
     [ApiController]
     public class PaymentMethodController(

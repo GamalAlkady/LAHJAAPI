@@ -34,7 +34,7 @@ namespace V1.Services.Services
         public async Task<Result<AuthorizationSessionResponseDso>> GetSessionByServices(string userId, List<string> servicesIds, string authorizationType)
         {
             var response = await _share.GetAllByAsync([
-                new FilterCondition("UserId" , userId),
+                new FilterCondition(nameof(AuthorizationSessionResponseDso.UserId) , userId),
                 new FilterCondition(nameof(AuthorizationSessionResponseDso.AuthorizationType) ,authorizationType),
                 new FilterCondition(nameof(AuthorizationSessionResponseDso.ServicesIds) ,servicesIds[0],FilterOperator.Contains),
                 ]);

@@ -61,10 +61,14 @@ namespace V1.Services.Services
                 _logger.LogInformation("Counting Service entities...");
                 return _share.CountAsync();
             }
+            catch (ArgumentNullException)
+            {
+                return null;
+            }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error in CountAsync for Service entities.");
-                return Task.FromResult(0);
+                throw;
             }
         }
 
@@ -78,10 +82,14 @@ namespace V1.Services.Services
                 _logger.LogInformation("Created Service entity successfully.");
                 return output;
             }
+            catch (ArgumentNullException)
+            {
+                return null;
+            }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error while creating Service entity.");
-                return null;
+                throw;
             }
         }
 
@@ -107,10 +115,14 @@ namespace V1.Services.Services
                 var results = await _share.GetAllAsync();
                 return GetMapper().Map<IEnumerable<ServiceResponseDso>>(results);
             }
+            catch (ArgumentNullException)
+            {
+                return null;
+            }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error in GetAllAsync for Service entities.");
-                return null;
+                throw;
             }
         }
 
@@ -158,7 +170,7 @@ namespace V1.Services.Services
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error in UpdateAsync for Service entity.");
-                return null;
+                throw;
             }
         }
 

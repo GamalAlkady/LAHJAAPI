@@ -257,10 +257,11 @@ namespace V1.Repositories.Share
                 _logger.LogInformation("[Share]Retrieving  ModelAi entities as pagination...");
                 return MapToPagedResponse(await _builder.GetAllByAsync(conditions, options));
             }
+            catch (ArgumentNullException) { return null; }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "[Share]Error in GetAllByAsync for ModelAi entities as pagination.");
-                return null;
+                throw;
             }
         }
 

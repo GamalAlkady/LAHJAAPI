@@ -19,7 +19,7 @@ namespace V1.DyModels.Dto.Build.Requests
         /// <summary>
         /// CreatedAt property for DTO.
         /// </summary>
-        public DateTime CreatedAt { get; set; }
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         /// <summary>
         /// RequestId property for DTO.
         /// </summary>

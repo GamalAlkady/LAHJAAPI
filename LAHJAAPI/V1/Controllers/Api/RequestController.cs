@@ -13,7 +13,7 @@ using V1.Services.Services;
 
 namespace LAHJAAPI.V1.Controllers.Api
 {
-    //[ApiExplorerSettings(GroupName = "V1")]
+    [ApiExplorerSettings(GroupName = "User")]
     [Route("api/v1/user/[controller]")]
     [ApiController]
     public class RequestController : ControllerBase
@@ -139,29 +139,13 @@ namespace LAHJAAPI.V1.Controllers.Api
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        [ProducesResponseType(StatusCodes.Status402PaymentRequired)]
         public async Task<ActionResult<RequestOutputVM>> Create([FromBody] RequestCreateVM model)
         {
             try
             {
                 var subscription = await _subscriptionService.GetUserSubscription();
-
-                //if (!_checker.Check(SubscriptionValidatorStates.IsAllowedRequests, new SubscriptionFilterVM() { }))
-                //    return new ObjectResult(HandelErrors.Problem("Create request", "You have exhausted all allowed subscription requests.", null, (int)SubscriptionValidatorStates.IsNotAllowedRequests))
-                //    { StatusCode = StatusCodes.Status402PaymentRequired };
-
-                //string errorMessage = string.Empty;
-                //if (!_checker.CheckWithError(TokenValidatorStates.IsServiceIdFound, model.ServiceId, out errorMessage))
-                //    return NotFound(HandelErrors.Problem("Service id not in token", errorMessage));
-
-
-                //if (!_checker.Check(SessionValidatorStates.IsFound, new AuthorizationSessionFilterVM(null, null)))
-                //    return BadRequest(HandelErrors.Problem("Session not found", "This session not found"));
-
-                //if (!_checker.Check(SessionValidatorStates.IsActive, new AuthorizationSessionFilterVM(null, null)))
-                //    return BadRequest(HandelErrors.Problem("Create request", "This session has been suspended."));
-
-                //if (!_checker.Check(SpaceValidatorStates.IsFound, new SpaceFilterVM(model.SpaceId, null)))
-                //    return BadRequest(HandelErrors.Problem("Create request", $"This space is not included in your subscription."));
                 var requestFilter = new DataFilter
                 {
                     Value = subscription,
@@ -171,11 +155,11 @@ namespace LAHJAAPI.V1.Controllers.Api
                         {"sessionId", _userClaims.SessionId }, // Check if space is found
                     },
                 };
-                var result = await _checker.CheckAndResultAsync(RequestValidatorStates.IsValid, requestFilter);
+                var result = await _checker.CheckAndResultAsync(RequestValidatorStates.IsValidForCreate, requestFilter);
                 if (result.Success == false)
                 {
                     if (result.Result is ProblemDetails problem)
-                        return StatusCode(problem.Status ?? StatusCodes.Status402PaymentRequired, problem);
+                        return StatusCode(StatusCodes.Status402PaymentRequired, problem);
                     return StatusCode(StatusCodes.Status402PaymentRequired, result.Result ?? result.Message);
                 }
                 var requestInfo = (RequestInfoVM)result.Result!;
@@ -185,7 +169,7 @@ namespace LAHJAAPI.V1.Controllers.Api
                 new ParamOptions(["ModelAi.ModelGateway"]));
 
                 if (service == null)
-                    return NotFound(HandelErrors.Problem("Create request", "This service not found."));
+                    return NotFound(HandelResult.Problem("Create request", "This service not found."));
                 var modelAi = service.ModelAi;
                 var modelGateway = modelAi.ModelGateway;
 
@@ -245,9 +229,9 @@ namespace LAHJAAPI.V1.Controllers.Api
                 //var subscription = await subscriptionRepository.GetSubscription();
 
                 var eventRequest = await _eventRequestService.GetByIdAsync(eventRequestCreate.EventId);
-                if (eventRequest == null) return BadRequest(HandelErrors.Problem("Create Event", "EventId not found."));
+                if (eventRequest == null) return NotFound(HandelResult.Problem("Create Event", "EventId not found."));
                 if (eventRequest.Status != RequestStatus.Created.GetDisplayName())
-                    return BadRequest(HandelErrors.Problem("Create Event", "This event not acceptable."));
+                    return BadRequest(HandelResult.Problem("Create Event", "This event not acceptable."));
 
 
 
@@ -255,7 +239,7 @@ namespace LAHJAAPI.V1.Controllers.Api
                 var request = await _requestService.GetByIdAsync(requestId);
 
                 if (request.Status == RequestStatus.Success.ToString())
-                    return BadRequest(HandelErrors.Problem("Create Event", "This request has completed."));
+                    return BadRequest(HandelResult.Problem("Create Event", "This request has completed."));
                 request.Status = eventRequestCreate.Status.ToString();
                 request.UpdatedAt = DateTime.UtcNow;
 
@@ -290,7 +274,7 @@ namespace LAHJAAPI.V1.Controllers.Api
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error while creating a new Request");
-                return BadRequest(HandelErrors.Problem(ex));
+                return BadRequest(HandelResult.Problem(ex));
             }
         }
 

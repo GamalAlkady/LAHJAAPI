@@ -9,7 +9,7 @@ using V1.Services.Services;
 
 namespace LAHJAAPI.V1.Controllers.Api
 {
-    //[ApiExplorerSettings(GroupName = "V1")]
+    [ApiExplorerSettings(GroupName = "User")]
     [Route("api/v1/user/[controller]")]
     [ApiController]
     public class ModelGatewayController : ControllerBase
@@ -221,7 +221,7 @@ namespace LAHJAAPI.V1.Controllers.Api
                 var modelGateway = await _modelgatewayService.GetByIdAsync(id);
                 if (modelGateway == null)
                 {
-                    return NotFound(HandelErrors.NotFound("Record not found make sure that id is correct."));
+                    return NotFound(HandelResult.NotFound("Record not found make sure that id is correct."));
                 }
 
                 var item = _mapper.Map<ModelGatewayRequestDso>(modelGateway);
@@ -256,7 +256,7 @@ namespace LAHJAAPI.V1.Controllers.Api
                 var modelGateway = await _modelgatewayService.GetByIdAsync(id);
                 if (modelGateway == null)
                 {
-                    return NotFound(HandelErrors.NotFound("Record not found make sure that id is correct."));
+                    return NotFound(HandelResult.NotFound("Record not found make sure that id is correct."));
                 }
 
                 if (!modelGateway.IsDefault)

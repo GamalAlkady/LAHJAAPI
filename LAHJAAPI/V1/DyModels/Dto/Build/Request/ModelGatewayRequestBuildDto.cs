@@ -1,8 +1,4 @@
 using AutoGenerator;
-using AutoGenerator.Helper.Translation;
-using LAHJAAPI.Models;
-using AutoGenerator.Config;
-using System;
 
 namespace V1.DyModels.Dto.Build.Requests
 {
@@ -11,19 +7,19 @@ namespace V1.DyModels.Dto.Build.Requests
         /// <summary>
         /// Id property for DTO.
         /// </summary>
-        public String? Id { get; set; }= $"modelgateway_{Guid.NewGuid():N}";
+        public string Id { get; set; } = $"modg_{Guid.NewGuid():N}";
         /// <summary>
         /// Name property for DTO.
         /// </summary>
-        public String? Name { get; set; }
+        public required String Name { get; set; }
         /// <summary>
         /// Url property for DTO.
         /// </summary>
-        public String? Url { get; set; }
+        public required String Url { get; set; }
         /// <summary>
         /// Token property for DTO.
         /// </summary>
-        public String? Token { get; set; }
+        public required String Token { get; set; }
         /// <summary>
         /// IsDefault property for DTO.
         /// </summary>

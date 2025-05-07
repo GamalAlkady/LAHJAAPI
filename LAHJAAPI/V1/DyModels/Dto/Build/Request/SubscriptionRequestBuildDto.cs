@@ -55,14 +55,14 @@ namespace V1.DyModels.Dto.Build.Requests
         /// <summary>
         /// PlanId property for DTO.
         /// </summary>
-        public String? PlanId { get; set; }
+        public required String PlanId { get; set; }
         //public PlanRequestBuildDto? Plan { get; set; }
         /// <summary>
         /// UserId property for DTO.
         /// </summary>
-        public String? UserId { get; set; }
-        //public ApplicationUserRequestBuildDto? User { get; set; }
-        //public ICollection<RequestRequestBuildDto>? Requests { get; set; }
-        //public ICollection<SpaceRequestBuildDto>? Spaces { get; set; }
+        //public String? UserId { get; set; }
+        public ApplicationUserRequestBuildDto? User { get; set; }
+        public ICollection<RequestRequestBuildDto>? Requests { get; set; }
+        public ICollection<SpaceRequestBuildDto>? Spaces { get; set; }
     }
 }

@@ -9,6 +9,8 @@ namespace V1.Services.Services
     //, IApplicationUserBuilderRepository<ApplicationUserRequestDso, ApplicationUserResponseDso>
     , IBasePublicRepository<ApplicationUserRequestDso, ApplicationUserResponseDso>
     {
+        Task<IEnumerable<ServiceResponseDso>?> GetServices(string? userId = null);
+        Task<IEnumerable<ModelAiResponseDso>?> GetModels(string? userId = null);
         Task<ApplicationUserResponseDso> GetUser();
         Task<ApplicationUserResponseDso> GetUserWithSubscription();
     }

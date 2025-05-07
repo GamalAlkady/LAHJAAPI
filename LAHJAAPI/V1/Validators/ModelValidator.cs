@@ -11,6 +11,7 @@ namespace LAHJAAPI.V1.Validators
         IsStandardModel,
         HasDialect,
         HasService,
+        IsFound,
     }
 
     public class ModelFeatureValidatorKeys
@@ -32,6 +33,12 @@ namespace LAHJAAPI.V1.Validators
             // All conditions now registered via attributes
 
 
+        }
+
+        [RegisterConditionValidator(typeof(ModelValidatorStates), ModelValidatorStates.IsFound)]
+        async Task<ConditionResult> IsFound(DataFilter<string, ModelAi> filter)
+        {
+            return new ConditionResult(filter.Share != null, "ModelAi not found.");
         }
 
         [RegisterConditionValidator(typeof(ModelValidatorStates), ModelValidatorStates.HasCategory, "Model category does not match the required value.", Value = ModelFeatureValidatorKeys.Category)]

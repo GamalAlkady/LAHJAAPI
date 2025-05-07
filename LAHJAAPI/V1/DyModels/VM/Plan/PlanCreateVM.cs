@@ -1,5 +1,6 @@
 using AutoGenerator;
 using AutoGenerator.Helper.Translation;
+using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 
 namespace V1.DyModels.VMs
@@ -9,19 +10,23 @@ namespace V1.DyModels.VMs
     /// </summary>
     public class PlanCreateVM : ITVM
     {
+        [DefaultValue("")]
         public String? ProductId { get; set; }
         public TranslationData? ProductName { get; set; }
         public TranslationData? Description { get; set; }
-        public List<String>? Images { get; set; }
+        [DefaultValue(null)]
+        public List<String>? Images { get; set; } = new List<string>();
 
         [Required]
+        [DefaultValue("month")]
         public String BillingPeriod { get; set; } = "month";
 
         [Required]
         public Double Amount { get; set; }
 
         [Required]
-        public string Currency { get; set; } = "USD";
+        [DefaultValue("SAR")]
+        public string Currency { get; set; } = "SAR";
         public Boolean Active { get; set; } = true;
     }
 

@@ -1,48 +1,43 @@
-﻿//using Api.Utilities;
-//using Microsoft.AspNetCore.Authentication;
-//using Microsoft.AspNetCore.Identity;
-//using System.Security.Claims;
+﻿using LAHJAAPI.Models;
+using LAHJAAPI.Utilities;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 
-//namespace Api;
+namespace LAHJAAPI;
 
-//public class MyClaimsTransformation(
-//    ClaimsChange claimsChange,
-//    UserManager<ApplicationUser> userManager,
-//    TrackSubscription trackSubscription,
-//    IUserClaims userClaims,
-//    IUserClaimRepository userClaimRepository,
-//    IPlanRepository planRepository) : IClaimsTransformation
-//{
-//    public async Task<ClaimsPrincipal> TransformAsync(ClaimsPrincipal principal)
-//    {
-//        //ClaimsIdentity claimsIdentity = new ClaimsIdentity();
-//        if (principal.Identity != null && principal.Identity.IsAuthenticated)
-//        {
-//            var userId = principal.FindFirstValue(ClaimTypes.NameIdentifier);
-//            if (trackSubscription.UserId != userId) trackSubscription.RefreshData();
-//            trackSubscription.UserId = userId!;
-//            await trackSubscription.GetSubscriptionsAsync();
-//            userClaims.CustomerId = trackSubscription.CustomerId;
+public class MyClaimsTransformation(
+    ClaimsChange claimsChange,
+    UserManager<ApplicationUser> userManager) : IClaimsTransformation
+{
+    public async Task<ClaimsPrincipal> TransformAsync(ClaimsPrincipal principal)
+    {
+        ClaimsIdentity claimsIdentity = new ClaimsIdentity();
+        if (principal.Identity != null && principal.Identity.IsAuthenticated)
+        {
+            var userId = principal.FindFirstValue(ClaimTypes.NameIdentifier);
 
-//            // var user = await userManager.Users.Include(u => u.Subscription)
-//            //.FirstOrDefaultAsync(u => u.Id == userId);
-//            //userClaims.CustomerId = user!.CustomerId;
-//            //claimsChange.IsChange = false;
-//        }
+            if (!principal.HasClaim(c => c.Type == ClaimTypes2.SubscriptionId))
+            {
+                var user = await userManager.Users.FirstOrDefaultAsync(u => u.Id == userId);
+                if (user != null && user.SubscriptionId != null)
+                {
+                    claimsIdentity.AddClaim(new Claim(ClaimTypes2.SubscriptionId, user.SubscriptionId.ToString()));
+                }
+            }
 
-//        //if (!principal.HasClaim(c => c.Type == ClaimTypes2.CustomerId))
-//        //{
-//        //    var claim = await userClaimRepository.GetByAsync(c => c.UserId == userId && c.ClaimType == ClaimTypes2.CustomerId);
+            if (!principal.HasClaim(c => c.Type == ClaimTypes2.CustomerId))
+            {
+                var user = await userManager.FindByIdAsync(userId);
+                if (user != null)
+                {
+                    claimsIdentity.AddClaim(new Claim(ClaimTypes2.CustomerId, user.CustomerId ?? ""));
+                }
+            }
+        }
 
-//        //    if (claim != null)
-//        //    {
-//        //        //trackSubscription.CurrentNumberRequests = claim.ClaimValue.ToInt64();
-//        //        claimsIdentity.AddClaim(claim.ToClaim());
-//        //    }
-//        //}
-
-
-//        //principal.AddIdentity(claimsIdentity);
-//        return principal;
-//    }
-//}
+        principal.AddIdentity(claimsIdentity);
+        return principal;
+    }
+}

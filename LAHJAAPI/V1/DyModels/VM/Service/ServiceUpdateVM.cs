@@ -9,9 +9,12 @@ namespace V1.DyModels.VMs
     public class ServiceUpdateVM : ITVM
     {
         [Required]
-        public String AbsolutePath { get; set; }
+        public String Name { get; set; }
 
         [Required]
-        public String Token { get; set; }
+        public String AbsolutePath { get; set; }
+
+        //[Required]
+        //public String Token { get; set; }
     }
 }

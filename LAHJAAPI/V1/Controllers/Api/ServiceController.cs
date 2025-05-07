@@ -1,13 +1,16 @@
+using AutoGenerator;
+using AutoGenerator.Helper;
 using AutoGenerator.Helper.Translation;
 using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
+using Quartz.Util;
 using V1.DyModels.Dso.Requests;
 using V1.DyModels.VMs;
 using V1.Services.Services;
 
 namespace LAHJAAPI.V1.Controllers.Api
 {
-    //[ApiExplorerSettings(GroupName = "V1")]
+    [ApiExplorerSettings(GroupName = "User")]
     [Route("api/v1/user/[controller]")]
     [ApiController]
     public class ServiceController : ControllerBase
@@ -142,6 +145,64 @@ namespace LAHJAAPI.V1.Controllers.Api
             }
         }
 
+        [HttpGet("GetServicesByModelAi", Name = "GetServicesByModelAi")]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+        public async Task<ActionResult<PagedResponse<ServiceOutputVM>>> GetServicesByModelAiId(string modelAiId, string? lg = null)
+        {
+
+            try
+            {
+                var response = await _serviceService.GetAllByAsync([new FilterCondition(nameof(ServiceRequestDso.ModelAiId), modelAiId)]);
+
+                if (response.TotalRecords == 0)
+                {
+                    _logger.LogWarning("Services not found  by  modelAiId: {modelAiId}", modelAiId);
+                    return NotFound($"Services not found  by  modelAiId: {modelAiId}");
+                }
+                if (lg.IsNullOrWhiteSpace())
+                {
+                    return Ok(response.ToResponse(_mapper.Map<IEnumerable<ServiceOutputVM>>(response.Data)));
+                }
+                var response1 = response.ToResponse(_mapper.Map<IEnumerable<ServiceOutputVM>>(response.Data, opt => opt.Items.Add(HelperTranslation.KEYLG, lg)));
+                return Ok(response1);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error while fetching Services with Lg: {lg}", lg);
+                return StatusCode(500, ex.Message);
+            }
+        }
+
+        [HttpGet("GetModelAiByService", Name = "GetModelAiByService")]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+        public async Task<ActionResult<ModelAiOutputVM>> GetModelAiByService(string serviceId, string? lg = null)
+        {
+
+            try
+            {
+                var service = await _serviceService.GetOneByAsync(
+                    [new FilterCondition(nameof(ServiceRequestDso.Id), serviceId)], new ParamOptions([nameof(ServiceRequestDso.ModelAi)]));
+
+                if (service == null) return NotFound(HandelResult.Text("Service not found."));
+                if (lg.IsNullOrWhiteSpace())
+                {
+                    return Ok(_mapper.Map<ModelAiOutputVM>(service.ModelAi));
+                }
+
+                return Ok(_mapper.Map<ModelAiOutputVM>(service.ModelAi, opt => opt.Items.Add(HelperTranslation.KEYLG, lg)));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error while fetching Services with Lg: {lg}", lg);
+                return StatusCode(500, ex.Message);
+            }
+        }
+
+
         // Create a new Service.
         [HttpPost(Name = "CreateService")]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -215,14 +276,19 @@ namespace LAHJAAPI.V1.Controllers.Api
 
             try
             {
+                var existingItem = await _serviceService.GetByIdAsync(id);
+                if (existingItem == null)
+                {
+                    _logger.LogWarning("Service not found with ID: {id}", id);
+                    return NotFound(string.Format("Service not found with ID: {id}", id));
+                }
                 _logger.LogInformation("Updating Service with ID: {id}", id);
                 var item = _mapper.Map<ServiceRequestDso>(model);
+                item.Id = id; // Ensure the ID is set for the update operation
+                item.ModelAiId = existingItem.ModelAiId; // Preserve the ModelAiId if needed
+                item.Token = existingItem.Token; // Preserve the Token if needed
+
                 var updatedEntity = await _serviceService.UpdateAsync(item);
-                if (updatedEntity == null)
-                {
-                    _logger.LogWarning("Service not found for update with ID: {id}", id);
-                    return NotFound();
-                }
 
                 var updatedItem = _mapper.Map<ServiceOutputVM>(updatedEntity);
                 return Ok(updatedItem);
@@ -230,7 +296,7 @@ namespace LAHJAAPI.V1.Controllers.Api
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error while updating Service with ID: {id}", id);
-                return StatusCode(500, "Internal Server Error");
+                return StatusCode(500, HandelResult.Problem(ex));
             }
         }
 

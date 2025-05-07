@@ -50,13 +50,14 @@ namespace LAHJAAPI.V1.Validators
                 )
             );
 
-            _provider.Register(TokenValidatorStates.IsServiceIdsEmpty,
-                new LambdaCondition<bool>(
-                    nameof(TokenValidatorStates.IsServiceIdsEmpty),
-                    context => IsServiceIdsEmpty(context),
-                    "Service Ids is empty."
-                )
-            );
+            RegisterCondition<string>(TokenValidatorStates.IsServiceIdsEmpty, IsServiceIdsEmpty, "Service Ids is not empty.");
+            //_provider.Register(TokenValidatorStates.IsServiceIdsEmpty,
+            //    new LambdaCondition<bool?>(
+            //        nameof(TokenValidatorStates.IsServiceIdsEmpty),
+            //        context => IsServiceIdsEmpty(),
+            //        "Service Ids is not empty."
+            //    )
+            //);
 
 
             _provider.Register(TokenValidatorStates.ValidatePlatformToken,
@@ -95,9 +96,11 @@ namespace LAHJAAPI.V1.Validators
             return ConditionResult.ToError("No service found in this token.");
         }
 
-        bool IsServiceIdsEmpty(bool idServ)
+        async Task<ConditionResult> IsServiceIdsEmpty(DataFilter<string, ServiceRequestDso> d)
         {
-            return _checker.Injector.UserClaims.ServicesIds?.Count == 0;
+            if (_checker.Injector.UserClaims.ServicesIds?.Count > 0)
+                return ConditionResult.ToError("Service Ids is not empty.");
+            return ConditionResult.ToSuccess(null);
         }
 
         private ConditionResult ValidatePlatformToken(string token)

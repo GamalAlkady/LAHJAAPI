@@ -1,8 +1,4 @@
 using AutoGenerator;
-using AutoGenerator.Helper.Translation;
-using LAHJAAPI.Models;
-using AutoGenerator.Config;
-using System;
 
 namespace V1.DyModels.Dto.Build.Requests
 {
@@ -11,7 +7,7 @@ namespace V1.DyModels.Dto.Build.Requests
         /// <summary>
         /// Id property for DTO.
         /// </summary>
-        public String? Id { get; set; }= $"servicemethod_{Guid.NewGuid():N}";
+        public required string Id { get; set; } = $"servm_{Guid.NewGuid():N}";
         /// <summary>
         /// Method property for DTO.
         /// </summary>

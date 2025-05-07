@@ -1,4 +1,4 @@
-﻿using AutoGenerator.Conditions;
+﻿using LAHJAAPI.Attributes;
 using LAHJAAPI.V1.Validators;
 using LAHJAAPI.V1.Validators.Conditions;
 using Microsoft.AspNetCore.Mvc;
@@ -11,12 +11,18 @@ public class SubscriptionCheckFilter(IConditionChecker checker) : IAsyncActionFi
     {
         try
         {
-            var result = await checker.CheckAndResultAsync(SubscriptionValidatorStates.IsNotSubscribe, new DataFilter("userId"));
-            if (result.Success == true)
+            var skip = context.ActionDescriptor.EndpointMetadata
+         .OfType<SkipSubscriptionCheckAttribute>()
+         .Any();
+            if (!skip)
             {
-                context.Result = new ObjectResult(result.Result ?? result.Message)
-                { StatusCode = StatusCodes.Status402PaymentRequired };
-                return;
+                var result = await checker.CheckAndResultAsync(SubscriptionValidatorStates.IsNotSubscribe);
+                if (result.Success == true)
+                {
+                    context.Result = new ObjectResult(result.Result ?? result.Message)
+                    { StatusCode = StatusCodes.Status402PaymentRequired };
+                    return;
+                }
             }
         }
         catch (Exception ex)

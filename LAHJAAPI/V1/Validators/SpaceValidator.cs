@@ -260,7 +260,7 @@ namespace LAHJAAPI.V1.Validators
         [RegisterConditionValidator(typeof(SpaceValidatorStates), SpaceValidatorStates.IsValid, "Space is not valid")]
         async Task<ConditionResult> IsValidAsync(DataFilter<string, Space> data)
         {
-            if (_checker.Check(TokenValidatorStates.IsServiceIdsEmpty, true))
+            if (_checker.Check(TokenValidatorStates.IsServiceIdsEmpty))
             {
                 return ConditionResult.ToFailure(new ProblemDetails
                 {
@@ -270,7 +270,7 @@ namespace LAHJAAPI.V1.Validators
                 });
             }
 
-            if ((await _checker.CheckAndResultAsync(SubscriptionValidatorStates.IsAvailableSpaces, new DataFilter("userId"))) is { Success: !true } result2)
+            if ((await _checker.CheckAndResultAsync(SubscriptionValidatorStates.IsAvailableSpaces)) is { Success: !true } result2)
             {
                 return result2;
             }
@@ -284,9 +284,9 @@ namespace LAHJAAPI.V1.Validators
                     Title = "Coudn't create space",
                     Detail = "You coudn't create space with this session. You need to create service CreateSpace.",
                     Status = GeneralServices.CreateSpace.ToInt()
-                });
+                }, "You coudn't create space with this session. You need to create service CreateSpace.");
             }
-            return ConditionResult.ToSuccess("");
+            return ConditionResult.ToSuccess(_injector.Mapper.Map<SpaceResponseDso>(data.Share));
         }
 
 
@@ -294,13 +294,6 @@ namespace LAHJAAPI.V1.Validators
         async Task<ConditionResult> IsValidForSessionAsync(DataFilter<string, Space> data)
         {
             if (string.IsNullOrEmpty(data.Id)) return ConditionResult.ToError("You must encrypt space id with token.");
-
-            if ((await _checker.CheckAndResultAsync(SubscriptionValidatorStates.IsAvailableSpaces, new DataFilter("userId"))) is { Success: !true } result2)
-            {
-                return result2;
-            }
-
-            //var service = _checker.Injector.Context.Services.FirstOrDefault(s => s.AbsolutePath == GeneralServices.CreateSpace.ToString());
 
             if (data.Share == null)
             {
@@ -310,6 +303,11 @@ namespace LAHJAAPI.V1.Validators
                     Detail = "This space is not included in your subscription.",
                     Status = SpaceValidatorStates.IsValid.ToInt()
                 });
+            }
+
+            if ((await _checker.CheckAndResultAsync(SubscriptionValidatorStates.IsAvailableSpaces)) is { Success: !true } result2)
+            {
+                return result2;
             }
 
             return ConditionResult.ToSuccess(_injector.Mapper.Map<SpaceResponseDso>(data.Share));

@@ -1,19 +1,13 @@
+using AutoGenerator;
+using AutoGenerator.Helper;
+using AutoGenerator.Repositories.Share;
 using AutoMapper;
 using LAHJAAPI.Data;
-using LAHJAAPI.Models;
-using V1.Repositories.Base;
-using AutoGenerator.Repositories.Builder;
 using V1.DyModels.Dto.Build.Requests;
 using V1.DyModels.Dto.Build.Responses;
-using AutoGenerator;
-using V1.Repositories.Builder;
-using AutoGenerator.Repositories.Share;
-using System.Linq.Expressions;
-using AutoGenerator.Repositories.Base;
-using AutoGenerator.Helper;
 using V1.DyModels.Dto.Share.Requests;
 using V1.DyModels.Dto.Share.Responses;
-using System;
+using V1.Repositories.Builder;
 
 namespace V1.Repositories.Share
 {
@@ -31,7 +25,7 @@ namespace V1.Repositories.Share
         {
             // Initialize the builder repository.
             _builder = new ServiceBuilderRepository(dbContext, mapper, logger.CreateLogger(typeof(ServiceShareRepository).FullName));
-        // Initialize the logger.
+            // Initialize the logger.
         }
 
         /// <summary>
@@ -44,10 +38,14 @@ namespace V1.Repositories.Share
                 _logger.LogInformation("Counting Service entities...");
                 return _builder.CountAsync();
             }
+            catch (ArgumentNullException)
+            {
+                return null;
+            }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error in CountAsync for Service entities.");
-                return Task.FromResult(0);
+                throw;
             }
         }
 
@@ -70,7 +68,7 @@ namespace V1.Repositories.Share
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error while creating Service entity.");
-                return null;
+                throw;
             }
         }
 
@@ -84,10 +82,14 @@ namespace V1.Repositories.Share
                 _logger.LogInformation("Retrieving all Service entities...");
                 return MapToIEnumerableShareResponseDto(await _builder.GetAllAsync());
             }
+            catch (ArgumentNullException)
+            {
+                return null;
+            }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error in GetAllAsync for Service entities.");
-                return null;
+                throw;
             }
         }
 
@@ -101,10 +103,14 @@ namespace V1.Repositories.Share
                 _logger.LogInformation($"Retrieving Service entity with ID: {id}...");
                 return MapToShareResponseDto(await _builder.GetByIdAsync(id));
             }
+            catch (ArgumentNullException)
+            {
+                return null;
+            }
             catch (Exception ex)
             {
                 _logger.LogError(ex, $"Error in GetByIdAsync for Service entity with ID: {id}.");
-                return null;
+                throw;
             }
         }
 
@@ -155,7 +161,7 @@ namespace V1.Repositories.Share
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error in UpdateAsync for Service entity.");
-                return null;
+                throw;
             }
         }
 

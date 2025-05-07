@@ -9,11 +9,12 @@ namespace LAHJAAPI.Models
         public required long NumberRequests { get; set; }
         [DefaultValue(1)]
         public int Scope { get; set; } = 1;
+
         [EnumDataType(typeof(ProcessorType))]
         public ProcessorType Processor { get; set; }
 
-        [EnumDataType(typeof(ConnectionType))]
-        public ConnectionType ConnectionType { get; set; }
+        //[EnumDataType(typeof(ConnectionType))]
+        public int ConnectionType { get; set; }
 
         public string PlanId { get; set; }
         public Plan Plan { get; set; }

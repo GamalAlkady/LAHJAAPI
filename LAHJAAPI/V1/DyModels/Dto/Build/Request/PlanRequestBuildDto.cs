@@ -8,11 +8,11 @@ namespace V1.DyModels.Dto.Build.Requests
         /// <summary>
         /// Id property for DTO.
         /// </summary>
-        public String? Id { get; set; } = $"planrequest_{Guid.NewGuid():N}";
+        public string Id { get; set; } = $"plan_{Guid.NewGuid():N}";
         /// <summary>
         /// ProductId property for DTO.
         /// </summary>
-        public String? ProductId { get; set; }
+        public required String ProductId { get; set; }
         public TranslationData? ProductName { get; set; } = new();
         public TranslationData? Description { get; set; } = new();
         public List<String>? Images { get; set; }
@@ -34,11 +34,11 @@ namespace V1.DyModels.Dto.Build.Requests
         /// <summary>
         /// UpdatedAt property for DTO.
         /// </summary>
-        public DateTime UpdatedAt { get; set; }
+        public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
         /// <summary>
         /// CreatedAt property for DTO.
         /// </summary>
-        public DateTime CreatedAt { get; set; }
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public ICollection<SubscriptionRequestBuildDto>? Subscriptions { get; set; }
         public ICollection<PlanFeatureRequestBuildDto>? PlanFeatures { get; set; }
     }

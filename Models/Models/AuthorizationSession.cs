@@ -7,7 +7,7 @@ namespace LAHJAAPI.Models
     public class AuthorizationSession : ITModel
     {
         [Key]
-        public string Id { get; set; }
+        public string Id { get; set; } = $"sess_{Guid.NewGuid():N}";
 
         [Required]
         public string SessionToken { get; set; }

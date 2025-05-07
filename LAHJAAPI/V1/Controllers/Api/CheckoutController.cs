@@ -1,5 +1,4 @@
-﻿using AutoGenerator.Conditions;
-using AutoMapper;
+﻿using AutoMapper;
 using LAHJAAPI.V1.DyModels.VM.Stripe.Checkout;
 using LAHJAAPI.V1.DyModels.VM.Stripe.Customer;
 using LAHJAAPI.V1.DyModels.VM.Stripe.Payment;
@@ -15,6 +14,7 @@ using V1.Services.Services;
 
 namespace LAHJAAPI.V1.Controllers.Api
 {
+    [ApiExplorerSettings(GroupName = "User")]
     [Route("api/v1/user/[controller]")]
     [ApiController]
     public class CheckoutController(
@@ -38,10 +38,14 @@ namespace LAHJAAPI.V1.Controllers.Api
         {
             try
             {
-                var user = await userService.GetUserWithSubscription();
-                if (checker.Check(SubscriptionValidatorStates.IsSubscribe, new DataFilter("userId")))
+                var user = await userService.GetUser();
+                if (await checker.CheckAsync(SubscriptionValidatorStates.IsSubscribe))
                 {
                     return Conflict(new ProblemDetails { Detail = "You already have subscription" });
+                }
+                else if (await checker.CheckAndResultAsync(SubscriptionValidatorStates.IsCancelAtPeriodEnd) is { Success: true } result1)
+                {
+                    return BadRequest(result1.Result ?? result1.Message);
                 }
 
                 await CreateCustomer(user);
@@ -175,7 +179,7 @@ namespace LAHJAAPI.V1.Controllers.Api
             if (sub != null)
             {
                 logger.LogInformation("Successfully created free subscription with ID: {subscriptionId}", sub.Id);
-                return Ok();
+                return Ok($"Successfully created free subscription with ID: {sub.Id}");
                 //return Ok(new { Message = "You have successfully subscribed to the free plan." });
             }
 

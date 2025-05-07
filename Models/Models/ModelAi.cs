@@ -15,11 +15,12 @@ namespace LAHJAAPI.Models
         public string? Token { get; set; }
 
         public string? AbsolutePath { get; set; }
+
         [ToTranslation]
         public string? Category { get; set; }
         public string? Language { get; set; }
 
-        public bool? IsStandard { get; set; }
+        public bool IsStandard { get; set; }
 
         public string? Gender { get; set; }
 

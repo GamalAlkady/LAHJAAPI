@@ -22,10 +22,10 @@ namespace LAHJAAPI.Models
         public DateTime? CancelAt { get; set; }
         public DateTime? CanceledAt { get; set; }
 
-        public string? PlanId { get; set; }
+        public required string PlanId { get; set; }
         public Plan? Plan { get; set; }
 
-        public string? UserId { get; set; }
+        //public string? UserId { get; set; }
         public ApplicationUser? User { get; set; }
         public ICollection<Request>? Requests { get; set; } = [];
         public ICollection<Space> Spaces { get; set; } = [];

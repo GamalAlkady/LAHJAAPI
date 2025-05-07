@@ -192,7 +192,8 @@ public static class IdentityApiEndpointRouteBuilderExtensions
 
             var newPrincipal = await signInManager.CreateUserPrincipalAsync(user);
             return TypedResults.SignIn(newPrincipal, authenticationScheme: IdentityConstants.BearerScheme);
-        }).WithTags("Auth");
+        })
+            .WithTags("Auth").WithGroupName("User");
 
         routeGroup.MapPost("/confirmEmail", async Task<Results<Ok, ContentHttpResult, UnauthorizedHttpResult>>
             ([FromBody] ConfirmEmailRequest confirmEmail, [FromServices] IServiceProvider sp) =>
@@ -335,7 +336,10 @@ public static class IdentityApiEndpointRouteBuilderExtensions
         })
             .WithTags("Auth");
 
-        var accountGroup = routeGroup.MapGroup("/manage").RequireAuthorization().WithTags("Manage");
+        var accountGroup = routeGroup.MapGroup("/manage")
+            .RequireAuthorization()
+            .WithTags("Manage")
+            .WithGroupName("User");
 
         accountGroup.MapPost("/twofa", async Task<Results<Ok<TwoFactorResponse>, ValidationProblem, NotFound>>
             (ClaimsPrincipal claimsPrincipal, [FromBody] TwoFactorRequest tfaRequest, [FromServices] IServiceProvider sp) =>

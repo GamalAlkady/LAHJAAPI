@@ -8,7 +8,8 @@ public interface IUserClaimsHelper
 {
     ClaimsPrincipal? User { get; }
     string UserId { get; }
-    string? CustomerId { get; set; }
+    string? SubscriptionId { get; }
+    string? CustomerId { get; }
     string? UserRole { get; }
     string? Email { get; }
     //long NumberRequests { get; }
@@ -34,9 +35,8 @@ public class UserClaimsHelper(IHttpContextAccessor httpContext) : IUserClaimsHel
         }
     }
     public string? SessionId => HttpContext?.User?.FindFirstValue(ClaimTypes2.SessionId);
+    public string? SubscriptionId => HttpContext?.User?.FindFirstValue(ClaimTypes2.SubscriptionId);
 
-    public string? CustomerId { get; set; }
-
-    //public string? CustomerId => HttpContext?.User?.FindFirstValue(ClaimTypes2.CustomerId);
+    public string? CustomerId => HttpContext?.User?.FindFirstValue(ClaimTypes2.CustomerId);
 }
 

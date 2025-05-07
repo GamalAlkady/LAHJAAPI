@@ -22,6 +22,21 @@ namespace Data.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
+            modelBuilder.Entity("ApplicationUserModelGateway", b =>
+                {
+                    b.Property<string>("ModelGatewaysId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("UsersId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("ModelGatewaysId", "UsersId");
+
+                    b.HasIndex("UsersId");
+
+                    b.ToTable("ApplicationUserModelGateway");
+                });
+
             modelBuilder.Entity("LAHJAAPI.Models.Advertisement", b =>
                 {
                     b.Property<string>("Id")
@@ -128,6 +143,9 @@ namespace Data.Migrations
                     b.Property<DateTimeOffset?>("LockoutEnd")
                         .HasColumnType("datetimeoffset");
 
+                    b.Property<string>("ModelGatewayId")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("NormalizedEmail")
                         .HasMaxLength(256)
                         .HasColumnType("nvarchar(256)");
@@ -151,6 +169,9 @@ namespace Data.Migrations
                     b.Property<string>("SecurityStamp")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("SubscriptionId")
+                        .HasColumnType("nvarchar(450)");
+
                     b.Property<bool>("TwoFactorEnabled")
                         .HasColumnType("bit");
 
@@ -170,6 +191,10 @@ namespace Data.Migrations
                         .IsUnique()
                         .HasDatabaseName("UserNameIndex")
                         .HasFilter("[NormalizedUserName] IS NOT NULL");
+
+                    b.HasIndex("SubscriptionId")
+                        .IsUnique()
+                        .HasFilter("[SubscriptionId] IS NOT NULL");
 
                     b.ToTable("AspNetUsers", (string)null);
                 });
@@ -380,7 +405,7 @@ namespace Data.Migrations
                     b.Property<string>("Gender")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<bool?>("IsStandard")
+                    b.Property<bool>("IsStandard")
                         .HasColumnType("bit");
 
                     b.Property<string>("Language")
@@ -419,6 +444,7 @@ namespace Data.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Token")
+                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Url")
@@ -477,13 +503,13 @@ namespace Data.Migrations
                         .HasColumnType("float");
 
                     b.Property<string>("BillingPeriod")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
                     b.Property<string>("Currency")
+                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Description")
@@ -772,16 +798,9 @@ namespace Data.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("UserId")
-                        .HasColumnType("nvarchar(450)");
-
                     b.HasKey("Id");
 
                     b.HasIndex("PlanId");
-
-                    b.HasIndex("UserId")
-                        .IsUnique()
-                        .HasFilter("[UserId] IS NOT NULL");
 
                     b.ToTable("Subscriptions");
                 });
@@ -819,12 +838,6 @@ namespace Data.Migrations
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
-
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.HasKey("UserId", "ModelAiId");
 
@@ -987,6 +1000,21 @@ namespace Data.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
+            modelBuilder.Entity("ApplicationUserModelGateway", b =>
+                {
+                    b.HasOne("LAHJAAPI.Models.ModelGateway", null)
+                        .WithMany()
+                        .HasForeignKey("ModelGatewaysId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("LAHJAAPI.Models.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("UsersId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("LAHJAAPI.Models.AdvertisementTab", b =>
                 {
                     b.HasOne("LAHJAAPI.Models.Advertisement", "Advertisement")
@@ -996,6 +1024,16 @@ namespace Data.Migrations
                         .IsRequired();
 
                     b.Navigation("Advertisement");
+                });
+
+            modelBuilder.Entity("LAHJAAPI.Models.ApplicationUser", b =>
+                {
+                    b.HasOne("LAHJAAPI.Models.Subscription", "Subscription")
+                        .WithOne("User")
+                        .HasForeignKey("LAHJAAPI.Models.ApplicationUser", "SubscriptionId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Subscription");
                 });
 
             modelBuilder.Entity("LAHJAAPI.Models.AuthorizationSession", b =>
@@ -1152,14 +1190,7 @@ namespace Data.Migrations
                         .HasForeignKey("PlanId")
                         .OnDelete(DeleteBehavior.Restrict);
 
-                    b.HasOne("LAHJAAPI.Models.ApplicationUser", "User")
-                        .WithOne("Subscription")
-                        .HasForeignKey("LAHJAAPI.Models.Subscription", "UserId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
                     b.Navigation("Plan");
-
-                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("LAHJAAPI.Models.UserModelAi", b =>
@@ -1260,8 +1291,6 @@ namespace Data.Migrations
                 {
                     b.Navigation("Requests");
 
-                    b.Navigation("Subscription");
-
                     b.Navigation("UserModelAis");
 
                     b.Navigation("UserServices");
@@ -1309,6 +1338,8 @@ namespace Data.Migrations
                     b.Navigation("Requests");
 
                     b.Navigation("Spaces");
+
+                    b.Navigation("User");
                 });
 #pragma warning restore 612, 618
         }

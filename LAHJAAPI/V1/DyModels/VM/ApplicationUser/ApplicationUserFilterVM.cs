@@ -1,7 +1,4 @@
 using AutoGenerator;
-using AutoGenerator.Helper.Translation;
-using LAHJAAPI.Models;
-using System;
 
 namespace V1.DyModels.VMs
 {
@@ -14,5 +11,11 @@ namespace V1.DyModels.VMs
         public string? Id { get; set; }
         ///
         public string? Lg { get; set; }
+        public string? Email { get; internal set; }
+        public string SubscriptionId { get; internal set; }
+        public string SubscriptionStatus { get; internal set; }
+        public string SubscriptionPlanName { get; internal set; }
+        public string? SubscriptionPlanId { get; internal set; }
+        public int Days { get; internal set; }
     }
 }

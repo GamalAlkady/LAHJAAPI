@@ -1,8 +1,5 @@
 using AutoGenerator;
 using AutoGenerator.Helper.Translation;
-using LAHJAAPI.Models;
-using AutoGenerator.Config;
-using System;
 
 namespace V1.DyModels.Dto.Build.Requests
 {
@@ -11,7 +8,7 @@ namespace V1.DyModels.Dto.Build.Requests
         /// <summary>
         /// Id property for DTO.
         /// </summary>
-        public String? Id { get; set; }=$"adv_{Guid.NewGuid():N}";
+        public String Id { get; set; } = $"adv_{Guid.NewGuid():N}";
         public TranslationData? Title { get; set; } = new();
         public TranslationData? Description { get; set; } = new();
         /// <summary>
@@ -26,6 +23,6 @@ namespace V1.DyModels.Dto.Build.Requests
         /// Url property for DTO.
         /// </summary>
         public String? Url { get; set; }
-      //  public ICollection<AdvertisementTabRequestBuildDto>? AdvertisementTabs { get; set; }
+        //  public ICollection<AdvertisementTabRequestBuildDto>? AdvertisementTabs { get; set; }
     }
 }

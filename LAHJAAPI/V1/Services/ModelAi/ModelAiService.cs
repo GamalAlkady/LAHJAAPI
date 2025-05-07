@@ -81,9 +81,18 @@ namespace V1.Services.Services
             if ((!string.IsNullOrWhiteSpace(searchModel.Category)))
             {
                 conditions.Add(new FilterCondition { PropertyName = nameof(ModelAi.Category), Operator = FilterOperator.Contains, Value = searchModel.Category });
-
+            }
+            //TODO: error when implementing this
+            if (searchModel.IsStandard != null)
+            {
+                //conditions.Add(new FilterCondition { PropertyName = nameof(ModelAi.IsStandard), Operator = FilterOperator.Contains, Value = (bool)searchModel.IsStandard });
             }
 
+            if (conditions.Count == 0)
+            {
+                _logger.LogWarning("No filters provided for ModelAi search.");
+                throw new ArgumentException("No filters provided for ModelAi search.");
+            }
             var response = await _share.GetAllByAsync(conditions);
             //if (response.TotalRecords == 0)
             //{

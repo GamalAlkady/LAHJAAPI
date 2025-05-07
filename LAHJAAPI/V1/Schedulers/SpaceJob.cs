@@ -6,23 +6,16 @@ namespace LAHJAAPI.V1.Schedulers
 {
 
 
-    public class ScapeJob : BaseJob
+    public class SpaceJob : BaseJob
 
     {
 
         private readonly IConditionChecker _checker;
-        public ScapeJob(IConditionChecker checker) : base()
+        public SpaceJob(IConditionChecker checker) : base()
         {
-
-
-
             _checker = checker;
-
-
-
-
-
         }
+
         public override Task Execute(JobEventArgs context)
         {
             var item = _checker.Check(SpaceValidatorStates.IsFull, context);
@@ -38,12 +31,6 @@ namespace LAHJAAPI.V1.Schedulers
             // _options.
             _options.JobName = "space1";
             _options.Cron = CronSchedule.EveryMinute;
-
-
-
-
-
-
         }
 
 

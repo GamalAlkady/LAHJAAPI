@@ -1,6 +1,7 @@
 ﻿using AutoGenerator;
 using Microsoft.AspNetCore.Identity;
 using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
 
 namespace LAHJAAPI.Models
 {
@@ -22,11 +23,18 @@ namespace LAHJAAPI.Models
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
+        //TODO: add model gateway id to user and relation many to many 
 
+        public string? ModelGatewayId { get; set; }
+        public ICollection<ModelGateway>? ModelGateways { get; set; } = new List<ModelGateway>();
+
+
+        public string? SubscriptionId { get; set; }
         public Subscription? Subscription { get; set; }
 
-        //TODO: add model gateway id to user and relation many to many 
+        [JsonIgnore]
         public ICollection<UserModelAi> UserModelAis { get; set; }
+        [JsonIgnore]
         public ICollection<UserService> UserServices { get; set; }
         public ICollection<Request> Requests { get; set; } = [];
     }

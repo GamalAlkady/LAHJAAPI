@@ -7,11 +7,11 @@ namespace V1.DyModels.Dto.Build.Requests
         /// <summary>
         /// Id property for DTO.
         /// </summary>
-        public string? Id { get; set; } = $"sess_{Guid.NewGuid():N}";
+        public string Id { get; set; } = $"sess_{Guid.NewGuid():N}";
         /// <summary>
         /// SessionToken property for DTO.
         /// </summary>
-        public String? SessionToken { get; set; }
+        public required String SessionToken { get; set; }
         /// <summary>
         /// UserToken property for DTO.
         /// </summary>

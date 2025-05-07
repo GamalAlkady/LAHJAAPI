@@ -59,31 +59,31 @@
         public static string EmailConfirmationTemplate(string confirmationLink)
         {
             string template = @"
-<!DOCTYPE html>
-<html lang='ar'>
-<head>
-    <meta charset='UTF-8'>
-    <style>
-        body { font-family: 'Segoe UI', sans-serif; background-color: #f2f4f6; margin: 0; padding: 0; direction: rtl; }
-        .card { max-width: 600px; margin: 40px auto; background: #fff; border-radius: 12px; padding: 30px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-        .header { font-size: 24px; color: #333; margin-bottom: 10px; display: flex; align-items: center; }
-        .icon { font-size: 28px; margin-left: 10px; }
-        .message { font-size: 16px; color: #555; line-height: 1.6; }
-        .btn { display: inline-block; margin-top: 20px; padding: 12px 24px; background: #28a745; color: #fff; border-radius: 6px; text-decoration: none; font-size: 16px; }
-        .footer { font-size: 12px; color: #999; margin-top: 30px; }
-    </style>
-</head>
-<body>
-    <div class='card'>
-        <div class='header'><span class='icon'>✅</span>تأكيد البريد الإلكتروني</div>
-        <div class='message'>
-            شكرًا لتسجيلك لدينا! الرجاء تأكيد بريدك الإلكتروني بالضغط على الزر أدناه:
-        </div>
-        <a class='btn' href='{{confirmation_link}}'>تأكيد الآن</a>
-        <div class='footer'>إذا لم تقم بإنشاء هذا الحساب، يمكنك تجاهل هذه الرسالة.</div>
-    </div>
-</body>
-</html>";
+                        <!DOCTYPE html>
+                        <html lang='ar'>
+                        <head>
+                            <meta charset='UTF-8'>
+                            <style>
+                                body { font-family: 'Segoe UI', sans-serif; background-color: #f2f4f6; margin: 0; padding: 0; direction: rtl; }
+                                .card { max-width: 600px; margin: 40px auto; background: #fff; border-radius: 12px; padding: 30px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+                                .header { font-size: 24px; color: #333; margin-bottom: 10px; display: flex; align-items: center; }
+                                .icon { font-size: 28px; margin-left: 10px; }
+                                .message { font-size: 16px; color: #555; line-height: 1.6; }
+                                .btn { display: inline-block; margin-top: 20px; padding: 12px 24px; background: #28a745; color: #fff; border-radius: 6px; text-decoration: none; font-size: 16px; }
+                                .footer { font-size: 12px; color: #999; margin-top: 30px; }
+                            </style>
+                        </head>
+                        <body>
+                            <div class='card'>
+                                <div class='header'><span class='icon'>✅</span>تأكيد البريد الإلكتروني</div>
+                                <div class='message'>
+                                    شكرًا لتسجيلك لدينا! الرجاء تأكيد بريدك الإلكتروني بالضغط على الزر أدناه:
+                                </div>
+                                <a class='btn' href='{{confirmation_link}}'>تأكيد الآن</a>
+                                <div class='footer'>إذا لم تقم بإنشاء هذا الحساب، يمكنك تجاهل هذه الرسالة.</div>
+                            </div>
+                        </body>
+                        </html>";
             return template.Replace("{{confirmation_link}}", confirmationLink);
         }
 
@@ -201,6 +201,42 @@
 </html>";
             return template;
         }
+
+        public static string SubscriptionEndingSoonTemplate(int daysLeft, string renewalLink)
+        {
+            string template = @"
+                    <!DOCTYPE html>
+                    <html lang='ar'>
+                    <head>
+                        <meta charset='UTF-8'>
+                        <style>
+                            body { font-family: 'Segoe UI', sans-serif; background-color: #f2f4f6; margin: 0; padding: 0; direction: rtl; }
+                            .card { max-width: 600px; margin: 40px auto; background: #fff; border-radius: 12px; padding: 30px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+                            .header { font-size: 24px; color: #333; margin-bottom: 10px; display: flex; align-items: center; }
+                            .icon { font-size: 28px; margin-left: 10px; }
+                            .message { font-size: 16px; color: #555; line-height: 1.6; }
+                            .btn { display: inline-block; margin-top: 20px; padding: 12px 24px; background: #007bff; color: #fff; border-radius: 6px; text-decoration: none; font-size: 16px; }
+                            .footer { font-size: 12px; color: #999; margin-top: 30px; }
+                        </style>
+                    </head>
+                    <body>
+                        <div class='card'>
+                            <div class='header'><span class='icon'>⏰</span>تنبيه بانتهاء الاشتراك</div>
+                            <div class='message'>
+                                نود إعلامك بأن اشتراكك الحالي سينتهي خلال <strong>{{days_left}} يوم</strong>.<br/>
+                                لضمان استمرار الخدمة دون انقطاع، يُرجى تجديد الاشتراك قبل انتهاء المدة.
+                            </div>
+                            <a class='btn' href='{{renewal_link}}'>تجديد الاشتراك الآن</a>
+                            <div class='footer'>إذا كنت قد جددت اشتراكك مؤخرًا، يرجى تجاهل هذه الرسالة.</div>
+                        </div>
+                    </body>
+                    </html>";
+
+            return template
+                .Replace("{{days_left}}", daysLeft.ToString())
+                .Replace("{{renewal_link}}", renewalLink); // يمكنك تخصيص الرابط هنا
+        }
+
 
     }
 }

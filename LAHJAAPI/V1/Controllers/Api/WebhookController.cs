@@ -13,7 +13,7 @@ using V1.Services.Services;
 
 namespace LAHJAAPI.V1.Controllers.Api;
 
-[ApiExplorerSettings(IgnoreApi = true)]
+//[ApiExplorerSettings(IgnoreApi = true)]
 [AllowAnonymous]
 [Route("api/v1/user/[controller]")]
 [ApiController]
@@ -126,22 +126,24 @@ public class WebhookController(
         // Resolve DataContext from the new scope
         var context = scope.ServiceProvider.GetRequiredService<DataContext>();
         var planFeatureService = scope.ServiceProvider.GetRequiredService<IUsePlanFeatureService>();
-        //var userService = scope.ServiceProvider.GetRequiredService<IUseApplicationUserService>();
+        //var userManager = scope.ServiceProvider.GetRequiredService<UserManager<Models.ApplicationUser>>();
         //var subscriptionService = scope.ServiceProvider.GetRequiredService<IUseSubscriptionService>();
 
-        var user = await context.Users.FirstOrDefaultAsync(u => u.CustomerId == subscription.CustomerId);
+        var user = await context.Users.Include(u => u.Subscription)
+            .FirstOrDefaultAsync(u => u.CustomerId == subscription.CustomerId);
         if (user == null)
         {
             logger.LogInformation("User with customer id ({0}) not found ", subscription.CustomerId);
             throw new Exception($"User with customer id {subscription.CustomerId} not found");
         }
 
-        var oldSubscription = await context.Subscriptions.FirstOrDefaultAsync(u => u.UserId == user.Id);
+        //var oldSubscription = await context.Subscriptions.FirstOrDefaultAsync(u => u.UserId == user.Id);
+        //var oldSubscription = user.Subscription;
 
         var newSubscription = new Models.Subscription()
         {
             Id = subscription.Id,
-            UserId = user.Id,// store the
+            //UserId = user.Id,// store the
             CustomerId = subscription.CustomerId,
             Status = subscription.Status,
             PlanId = price.Id,
@@ -150,16 +152,18 @@ public class WebhookController(
             CurrentPeriodEnd = subscription.Items.First().CurrentPeriodEnd,
         };
 
-        if (oldSubscription != null)
-        {
-            oldSubscription.UserId = null;
-            context.Subscriptions.Update(oldSubscription);
-        }
-        newSubscription.AllowedRequests = await planFeatureService.GetNumberRequests(price.Id);
-        newSubscription.AllowedSpaces = await planFeatureService.GetNumberSpaces(price.Id);
+        //if (oldSubscription != null)
+        //{
+        //    oldSubscription.UserId = null;
+        //    context.Subscriptions.Update(oldSubscription);
+        //}
+        //newSubscription.AllowedRequests = await planFeatureService.GetNumberRequests(price.Id);
+        //newSubscription.AllowedSpaces = await planFeatureService.GetNumberSpaces(price.Id);
 
         claimsChange.IsChange = true;
         await context.Subscriptions.AddAsync(newSubscription);
+        user.SubscriptionId = newSubscription.Id;
+        context.Users.Update(user);
         await context.SaveChangesAsync();
 
     }
@@ -239,10 +243,16 @@ public class WebhookController(
             var context = scope.ServiceProvider.GetRequiredService<DataContext>();
             //var delete = await context.Subscriptions.Where(us => us.Id == subscription.Id).ExecuteDeleteAsync();
             var subscription1 = await context.Subscriptions.FirstOrDefaultAsync(us => us.Id == subscription.Id);
+
             if (subscription1 != null)
             {
+                var user = await context.Users.FirstOrDefaultAsync(u => u.SubscriptionId == subscription.Id);
+                if (user != null)
+                {
+                    user.SubscriptionId = null;
+                }
                 subscription1.Status = subscription.Status;
-                subscription1.UserId = null;
+                //subscription1.UserId = null;
                 context.Subscriptions.Update(subscription1);
                 await context.SaveChangesAsync();
                 //trackSubscription.Status = SubscriptionStatus.Canceled;

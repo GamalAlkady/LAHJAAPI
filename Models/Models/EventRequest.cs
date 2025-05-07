@@ -9,7 +9,7 @@ namespace LAHJAAPI.Models
         public string Id { get; set; } = $"event_{Guid.NewGuid():N}";
 
         [Required]
-        public string Status { get; set; }
+        public required string Status { get; set; }
         [DataType(DataType.MultilineText)]
         public string? Details { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;

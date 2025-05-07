@@ -10,7 +10,7 @@ using V1.Services.Services;
 
 namespace LAHJAAPI.V1.Controllers.Api
 {
-    //[ApiExplorerSettings(GroupName = "V1")]
+    [ApiExplorerSettings(GroupName = "User")]
     [Route("api/v1/user/[controller]")]
     [ApiController]
     public class PlanFeatureController : ControllerBase

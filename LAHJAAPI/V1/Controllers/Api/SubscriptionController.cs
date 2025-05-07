@@ -1,15 +1,16 @@
-﻿using AutoGenerator.Helper.Translation;
+﻿using APILAHJA.Utilities;
 using AutoMapper;
+using LAHJAAPI.Attributes;
 using Microsoft.AspNetCore.Mvc;
 using StripeGateway;
 using V1.DyModels.Dso.Requests;
-using V1.DyModels.Dso.Responses;
 using V1.DyModels.VMs;
 using V1.Services.Services;
 
 namespace LAHJAAPI.V1.Controllers.Api
 {
-    //[ApiExplorerSettings(GroupName = "V1")]
+    [ApiExplorerSettings(GroupName = "User")]
+    [ServiceFilter(typeof(SubscriptionCheckFilter))]
     [Route("api/v1/user/[controller]")]
     [ApiController]
     public class SubscriptionController : ControllerBase
@@ -18,8 +19,8 @@ namespace LAHJAAPI.V1.Controllers.Api
         private readonly IUseApplicationUserService _userService;
         private readonly IStripeCustomer _stripeCustomer;
         private readonly IStripeSubscription _stripeSubscription;
-        private readonly IUsePlanService _planService;
         private readonly IUsePlanFeatureService _planFeatureService;
+        private readonly IUserClaimsHelper _userClaims;
         private readonly IMapper _mapper;
         private readonly ILogger _logger;
         public SubscriptionController(
@@ -29,6 +30,7 @@ namespace LAHJAAPI.V1.Controllers.Api
             IStripeSubscription stripeSubscription,
             IUsePlanService planService,
             IUsePlanFeatureService planFeatureService,
+            IUserClaimsHelper userClaims,
             IMapper mapper,
             ILoggerFactory logger)
         {
@@ -36,13 +38,14 @@ namespace LAHJAAPI.V1.Controllers.Api
             _userService = userService;
             _stripeCustomer = stripeCustomer;
             _stripeSubscription = stripeSubscription;
-            _planService = planService;
             _planFeatureService = planFeatureService;
+            _userClaims = userClaims;
             _mapper = mapper;
             _logger = logger.CreateLogger(typeof(SubscriptionController).FullName);
         }
 
         // Get all Subscriptions.
+        [SkipSubscriptionCheck]
         [HttpGet(Name = "GetSubscriptions")]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status200OK)]
@@ -66,6 +69,7 @@ namespace LAHJAAPI.V1.Controllers.Api
         }
 
         // Get a Subscription by ID.
+        [SkipSubscriptionCheck]
         [HttpGet("{id}", Name = "GetSubscription")]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status200OK)]
@@ -98,83 +102,44 @@ namespace LAHJAAPI.V1.Controllers.Api
             }
         }
 
-        // // Get a Subscription by Lg.
-        [HttpGet("GetSubscriptionByLanguage", Name = "GetSubscriptionByLg")]
+        [HttpGet("My", Name = "GetMySubscription")]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-        public async Task<ActionResult<SubscriptionOutputVM>> GetSubscriptionByLg(SubscriptionFilterVM model)
+        [SkipSubscriptionCheck]
+        public async Task<ActionResult<SubscriptionOutputVM>> GetMy()
         {
-            var id = model.Id;
-            if (string.IsNullOrWhiteSpace(id))
-            {
-                _logger.LogWarning("Invalid Subscription ID received.");
-                return BadRequest("Invalid Subscription ID.");
-            }
 
             try
             {
-                _logger.LogInformation("Fetching Subscription with ID: {id}", id);
-                var entity = await _subscriptionService.GetByIdAsync(id);
+                _logger.LogInformation("Fetching My Subscription.");
+                var entity = await _subscriptionService.GetUserSubscription();
                 if (entity == null)
                 {
-                    _logger.LogWarning("Subscription not found with ID: {id}", id);
+                    _logger.LogWarning("Subscription not found.");
                     return NotFound();
                 }
 
-                var item = _mapper.Map<SubscriptionOutputVM>(entity, opt => opt.Items.Add(HelperTranslation.KEYLG, model.Lg));
+                var item = _mapper.Map<SubscriptionOutputVM>(entity);
                 return Ok(item);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error while fetching Subscription with ID: {id}", id);
-                return StatusCode(500, "Internal Server Error");
+                _logger.LogError(ex, "Error while fetching my Subscription.");
+                return StatusCode(500, ex.Message);
             }
         }
 
-        // // Get a Subscriptions by Lg.
-        [HttpGet("GetSubscriptionsByLanguage", Name = "GetSubscriptionsByLg")]
-        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-        public async Task<ActionResult<IEnumerable<SubscriptionOutputVM>>> GetSubscriptionsByLg(string? lg)
-        {
-            if (string.IsNullOrWhiteSpace(lg))
-            {
-                _logger.LogWarning("Invalid Subscription lg received.");
-                return BadRequest("Invalid Subscription lg null ");
-            }
-
-            try
-            {
-                var subscriptions = await _subscriptionService.GetAllAsync();
-                if (subscriptions == null)
-                {
-                    _logger.LogWarning("Subscriptions not found  by  ");
-                    return NotFound();
-                }
-
-                var items = _mapper.Map<IEnumerable<SubscriptionOutputVM>>(subscriptions, opt => opt.Items.Add(HelperTranslation.KEYLG, lg));
-                return Ok(items);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error while fetching Subscriptions with Lg: {lg}", lg);
-                return StatusCode(500, "Internal Server Error");
-            }
-        }
-
-
-
-        [HttpPut("PauseCollection/{id}")]
+        [HttpPut("PauseCollection", Name = "PauseCollection")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
-        public async Task<IActionResult> PauseCollection(string id, SubscriptionUpdateRequest subscriptionUpdate)
+        public async Task<IActionResult> PauseCollection(SubscriptionUpdateRequest subscriptionUpdate)
         {
             try
             {
-                var result = await _stripeSubscription.UpdateAsync(id, new Stripe.SubscriptionUpdateOptions
+
+                var result = await _stripeSubscription.UpdateAsync(_userClaims.SubscriptionId, new Stripe.SubscriptionUpdateOptions
                 {
                     PauseCollection = new Stripe.SubscriptionPauseCollectionOptions()
                     {
@@ -189,84 +154,86 @@ namespace LAHJAAPI.V1.Controllers.Api
             }
             catch (Exception ex)
             {
-                return BadRequest(HandelErrors.Problem(ex));
+                return BadRequest(HandelResult.Problem(ex));
             }
         }
 
 
-        [HttpPut("ResumeCollection/{id}")]
+        [HttpPut("ResumeCollection", Name = "ResumeCollection")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
-        public async Task<IActionResult> ResumeCollection(string id)
+        public async Task<IActionResult> ResumeCollection()
         {
             try
             {
                 var options = new Stripe.SubscriptionUpdateOptions();
                 options.AddExtraParam("pause_collection", "");
 
-                var result = await _stripeSubscription.UpdateAsync(id, options);
+                var result = await _stripeSubscription.UpdateAsync(_userClaims.SubscriptionId, options);
                 //var item = await subscriptionRepository.GetByIdAsync(id);
                 return Ok();
             }
             catch (Stripe.StripeException ex)
             {
-                return BadRequest(HandelErrors.Problem(ex));
+                return BadRequest(HandelResult.Problem(ex));
             }
             catch (Exception ex)
             {
-                return BadRequest(HandelErrors.Problem(ex));
+                return BadRequest(HandelResult.Problem(ex));
             }
         }
 
 
 
-        [HttpDelete("cancel/{id}", Name = "CancelSubscription")]
+        [HttpDelete("Cancel", Name = "CancelSubscription")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
-        public async Task<IActionResult> CancelSubscription(string id)
+        public async Task<IActionResult> CancelSubscription()
         {
             try
             {
-                var result = await _stripeSubscription.CancelAsync(id);
+                var result = await _stripeSubscription.CancelAsync(_userClaims.SubscriptionId);
                 return Ok();
             }
             catch (Exception ex)
             {
-                return BadRequest(HandelErrors.Problem(ex));
+                return BadRequest(HandelResult.Problem(ex));
             }
         }
 
-        [HttpPut("CancelAtEnd/{id}", Name = "CancelAtEnd")]
+        [HttpPut("CancelAtEnd", Name = "CancelAtEnd")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
-        public async Task<IActionResult> CancelAtEnd(string id)
+        public async Task<IActionResult> CancelAtEnd()
         {
             try
             {
-                var result = await _stripeSubscription.UpdateAsync(id, new Stripe.SubscriptionUpdateOptions
+                _logger.LogInformation("Canceling subscription at the end of the period for Subscription ID: {id}", _userClaims.SubscriptionId);
+                var result = await _stripeSubscription.UpdateAsync(_userClaims.SubscriptionId, new Stripe.SubscriptionUpdateOptions
                 {
                     CancelAtPeriodEnd = true
                 });
-                return Ok();
+                return Ok(HandelResult.Text("Subscription canceled successfully"));
             }
             catch (Exception ex)
             {
-                return BadRequest(HandelErrors.Problem(ex));
+                return BadRequest(HandelResult.Problem(ex));
             }
         }
 
-        [HttpPut("Renew/{id}")]
+        [SkipSubscriptionCheck]
+        [HttpPut("Renew", Name = "RenewSubscription")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
-        public async Task<IActionResult> Renew(string id)
+        public async Task<IActionResult> Renew()
         {
             try
             {
-                var result = await _stripeSubscription.UpdateAsync(id, new Stripe.SubscriptionUpdateOptions
+                var result = await _stripeSubscription.UpdateAsync(_userClaims.SubscriptionId, new Stripe.SubscriptionUpdateOptions
                 {
                     CancelAtPeriodEnd = false
                 });
@@ -274,19 +241,20 @@ namespace LAHJAAPI.V1.Controllers.Api
             }
             catch (Exception ex)
             {
-                return BadRequest(HandelErrors.Problem(ex));
+                return BadRequest(HandelResult.Problem(ex));
             }
         }
 
-        [HttpPut("resume/{id}")]
+        [SkipSubscriptionCheck]
+        [HttpPut("Resume", Name = "ResumeSubscription")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
-        public async Task<IActionResult> Resume(string id, SubscriptionResumeRequest subscriptionResume)
+        public async Task<IActionResult> Resume(SubscriptionResumeRequest subscriptionResume)
         {
             try
             {
-                var result = await _stripeSubscription.ResumeAsync(id, new Stripe.SubscriptionResumeOptions
+                var result = await _stripeSubscription.ResumeAsync(_userClaims.SubscriptionId, new Stripe.SubscriptionResumeOptions
                 {
                     BillingCycleAnchor = Stripe.SubscriptionBillingCycleAnchor.Now, // إعادة ضبط تاريخ الفوترة
                     ProrationBehavior = subscriptionResume.ProrationBehavior
@@ -296,70 +264,13 @@ namespace LAHJAAPI.V1.Controllers.Api
             }
             catch (Stripe.StripeException ex)
             {
-                return BadRequest(HandelErrors.Problem(ex));
+                return BadRequest(HandelResult.Problem(ex));
             }
             catch (Exception ex)
             {
-                return BadRequest(HandelErrors.Problem(ex));
+                return BadRequest(HandelResult.Problem(ex));
             }
         }
-
-
-        [HttpPut("resetRequests/{id}")]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
-        public async Task<IActionResult> ResetRequests(string id)
-        {
-            try
-            {
-                _logger.LogInformation("Resetting requests for subscription with ID: {id}", id);
-                var subscription = await _subscriptionService.GetByIdAsync(id);
-                subscription.AllowedRequests = await _planFeatureService.GetNumberRequests(subscription.PlanId);
-                var subscriptionVM = _mapper.Map<SubscriptionOutputVM>(subscription);
-                await _subscriptionService.UpdateAsync(_mapper.Map<SubscriptionRequestDso>(subscriptionVM));
-                return Ok();
-            }
-            catch (Stripe.StripeException ex)
-            {
-                _logger.LogError(ex, "Error while resetting requests for subscription with ID: {id}", id);
-                return BadRequest(HandelErrors.Problem(ex));
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error while resetting requests for subscription with ID: {id}", id);
-                return BadRequest(HandelErrors.Problem(ex));
-            }
-        }
-
-
-        [HttpPut("resetSpaces/{id}")]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
-        public async Task<IActionResult> ResetSpaces(string id)
-        {
-            try
-            {
-                _logger.LogInformation("Resetting spaces for subscription with ID: {id}", id);
-                var subscription = await _subscriptionService.GetByIdAsync(id);
-                subscription.AllowedSpaces = await _planFeatureService.GetNumberSpaces(subscription.PlanId);
-                var subscriptionVM = _mapper.Map<SubscriptionOutputVM>(subscription);
-                await _subscriptionService.UpdateAsync(_mapper.Map<SubscriptionRequestDso>(subscriptionVM));
-                return Ok();
-            }
-            catch (Stripe.StripeException ex)
-            {
-                _logger.LogError(ex, "Error while resetting spaces for subscription with ID: {id}", id);
-                return BadRequest(HandelErrors.Problem(ex));
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error while resetting spaces for subscription with ID: {id}", id);
-                return BadRequest(HandelErrors.Problem(ex));
-            }
-        }
-
 
 
 
@@ -382,69 +293,7 @@ namespace LAHJAAPI.V1.Controllers.Api
         //}
 
 
-        private async Task<ActionResult> CreateFreeSubscription(string planId, string customerId)
-        {
-            _logger.LogInformation("Creating free subscription for plan ID: {planId}", planId);
-            var sub = await _stripeSubscription.CreateAsync(new Stripe.SubscriptionCreateOptions()
-            {
-                Customer = customerId,
-                Items = new List<Stripe.SubscriptionItemOptions>{
-                        new Stripe.SubscriptionItemOptions
-                        {
-                            Price = planId,
-                        },
-                    },
-                TrialPeriodDays = 0, // بدون فترة تجريبية
-                PaymentBehavior = "default_incomplete", // يتم تجاهل الدفع لأنه مجاني
-
-            });
-            if (sub != null)
-            {
-                _logger.LogInformation("Successfully created free subscription with ID: {subscriptionId}", sub.Id);
-                return Ok(new { Message = "You have successfully subscribed to the free plan." });
-            }
-
-            _logger.LogError("Failed to create free subscription for plan ID: {planId}", planId);
-            return BadRequest(new ProblemDetails { Detail = "con not subscribe for free plan" });
-        }
-
-
-        private async Task CreateCustomer(ApplicationUserResponseDso user)
-        {
-            try
-            {
-                _logger.LogInformation("Creating customer for user: {@user}", user);
-                var customers = await _stripeCustomer.GetCustomersByEmail(user.Email);
-                var customer = customers.FirstOrDefault();
-                if (customer == null)
-                {
-                    customer = await _stripeCustomer.CreateAsync(new Stripe.CustomerCreateOptions()
-                    {
-                        Name = user.DisplayName,
-                        Email = user.Email
-                    });
-
-                    user.CustomerId = customer.Id;
-                    //await userManager.AddClaimAsync(user, new Claim(ClaimTypes2.CustomerId, customer.Id));
-                }
-                else
-                {
-                    user.CustomerId = customer.Id;
-                }
-                var userVM = _mapper.Map<ApplicationUserInfoVM>(user);
-                var userRequest = _mapper.Map<ApplicationUserRequestDso>(userVM);
-                _logger.LogInformation("Updating user with new customer ID: {customerId}", user.CustomerId);
-                await _userService.UpdateAsync(userRequest);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error while creating customer for user: {@user}", user);
-                throw;
-            }
-        }
-
-
-        // Update an existing Subscription.
+        [ApiExplorerSettings(IgnoreApi = true)]
         [HttpPut(Name = "UpdateSubscription")]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status200OK)]
@@ -475,17 +324,13 @@ namespace LAHJAAPI.V1.Controllers.Api
 
         // Delete a Subscription.
         [ApiExplorerSettings(IgnoreApi = true)]
-        [HttpDelete("{id}", Name = "DeleteSubscription")]
+        [HttpDelete(Name = "DeleteSubscription")]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> Delete(string? id)
+        public async Task<IActionResult> Delete()
         {
-            if (string.IsNullOrWhiteSpace(id))
-            {
-                _logger.LogWarning("Invalid Subscription ID received in Delete.");
-                return BadRequest("Invalid Subscription ID.");
-            }
+            string id = _userClaims.SubscriptionId!;
 
             try
             {
@@ -502,7 +347,7 @@ namespace LAHJAAPI.V1.Controllers.Api
 
         // Get count of Subscriptions.
         [ApiExplorerSettings(IgnoreApi = true)]
-        [HttpGet("CountSubscription")]
+        [HttpGet("Count", Name = "CountSubscription")]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
@@ -521,23 +366,5 @@ namespace LAHJAAPI.V1.Controllers.Api
             }
         }
 
-        [HttpGet("NumberAllowedRequests")]
-        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-        public async Task<ActionResult<int>> NumberAllowedRequests()
-        {
-            try
-            {
-                _logger.LogInformation("Fetching number of allowed requests...");
-                var count = await _subscriptionService.GetNumberRequests();
-                return Ok(count);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error while fetching number of allowed requests");
-                return StatusCode(500, "Internal Server Error");
-            }
-        }
     }
 }

@@ -1,24 +1,38 @@
 using AutoGenerator.Helper.Translation;
 using AutoMapper;
+using LAHJAAPI.V1.Validators;
+using LAHJAAPI.V1.Validators.Conditions;
 using Microsoft.AspNetCore.Mvc;
 using V1.DyModels.VMs;
 using V1.Services.Services;
 
 namespace LAHJAAPI.V1.Controllers.Api
 {
-    //[ApiExplorerSettings(GroupName = "V1")]
+    [ApiExplorerSettings(GroupName = "User")]
     [Route("api/v1/user/[controller]")]
     [ApiController]
     public class ApplicationUserController : ControllerBase
     {
         private readonly IUseApplicationUserService _applicationuserService;
+        private readonly IConditionChecker _checker;
+        private readonly IUseUserServiceService _userServiceService;
+        private readonly IUseUserModelAiService _userModelAiService;
         private readonly IMapper _mapper;
         private readonly ILogger _logger;
-        public ApplicationUserController(IUseApplicationUserService applicationuserService, IMapper mapper, ILoggerFactory logger)
+        public ApplicationUserController(
+            IUseApplicationUserService applicationuserService,
+            IConditionChecker checker,
+            IMapper mapper,
+            ILoggerFactory logger,
+            IUseUserServiceService userServiceService,
+            IUseUserModelAiService userModelAiService)
         {
             _applicationuserService = applicationuserService;
+            _checker = checker;
             _mapper = mapper;
             _logger = logger.CreateLogger(typeof(ApplicationUserController).FullName);
+            _userServiceService = userServiceService;
+            _userModelAiService = userModelAiService;
             //_logger.LogWarning("User:" + User);
         }
 
@@ -104,6 +118,84 @@ namespace LAHJAAPI.V1.Controllers.Api
             }
         }
 
+
+        [HttpPost("AssignService", Name = "AssignService")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        public async Task<ActionResult<string>> AssignService(AssignServiceRequestVM assignService)
+        {
+            try
+            {
+                if (await _checker.CheckAndResultAsync(ApplicationUserValidatorStates.CanAssignService, assignService.ServiceId) is not { Success: false } res)
+                {
+                    return Ok(HandelResult.Text("Service successfully assigned."));
+                }
+                return BadRequest(HandelResult.Text(res.Message!));
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(HandelResult.Problem(ex));
+            }
+        }
+
+        [HttpPost("AssignModelAi", Name = "AssignModelAi")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        public async Task<ActionResult<string>> AssignModelAi(AssignModelRequestVM requestVM)
+        {
+            try
+            {
+                if (await _checker.CheckAsync(ApplicationUserValidatorStates.CanAssignModel, requestVM.ModelAiId))
+                {
+                    return Ok(HandelResult.Text("Model AI successfully assigned."));
+                }
+                return BadRequest(HandelResult.Text("Model AI Already assigned to user."));
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(HandelResult.Problem(ex));
+            }
+        }
+
+        //[HttpPost("assignRole")]
+        //[ProducesResponseType(StatusCodes.Status200OK)]
+        //[ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        //[ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+        //public async Task<ActionResult<UserResponse>> AssignRole(RoleAssign roleAssign)
+        //{
+        //    try
+        //    {
+        //        //var user = await userManager.FindByEmailAsync(roleAssign.Email);
+        //        ApplicationUser user = (await userManager.FindByIdAsync(userClaims.UserId!))!;
+        //        var roles = await userManager.GetRolesAsync(user);
+        //        await userManager.RemoveFromRolesAsync(user, roles);
+
+        //        var role = await roleManager.FindByIdAsync(roleAssign.RoleId);
+        //        if (role != null)
+        //        {
+        //            IdentityResult result = await userManager.AddToRoleAsync(user, role.Name!);
+        //            if (result.Succeeded)
+        //            {
+        //                var claims = await roleManager.GetClaimsAsync(role);
+        //                //await userManager.AddClaimsAsync
+        //                await userManager.UpdateAsync(user);
+        //                await signInManager.RefreshSignInAsync(user);
+        //                var response = mapper.Map<UserResponse>(user);
+        //                return Ok(response);
+        //            }
+        //            else
+        //                return Conflict(HandelErrors.Problem("Assign Role", "Connot assign this role to user"));
+        //        }
+        //        else
+        //        {
+        //            return NotFound(HandelErrors.NotFound($"There is no role with id {roleAssign.RoleId}"));
+        //        }
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        return BadRequest(HandelErrors.Problem(ex));
+        //    }
+        //}
 
         // Delete a ApplicationUser.
         [HttpDelete("{id}", Name = "DeleteApplicationUser")]

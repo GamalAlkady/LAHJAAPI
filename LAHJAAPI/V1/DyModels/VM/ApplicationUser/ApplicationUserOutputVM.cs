@@ -31,6 +31,7 @@ namespace V1.DyModels.VMs
         public DateTime CreatedAt { get; set; }
         ///
         public DateTime UpdatedAt { get; set; }
+        public string? SubscriptionId { get; set; }
         public SubscriptionOutputVM? Subscription { get; set; }
         //
         public List<UserModelAiOutputVM>? UserModelAis { get; set; }

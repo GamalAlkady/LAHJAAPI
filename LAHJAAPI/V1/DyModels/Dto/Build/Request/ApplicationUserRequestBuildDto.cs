@@ -47,11 +47,14 @@ namespace V1.DyModels.Dto.Build.Requests
         /// <summary>
         /// CreatedAt property for DTO.
         /// </summary>
-        public DateTime CreatedAt { get; set; }
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         /// <summary>
         /// UpdatedAt property for DTO.
         /// </summary>
-        public DateTime UpdatedAt { get; set; }
+        public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+
+        public string? SubscriptionId { get; set; }
+
         public SubscriptionRequestBuildDto? Subscription { get; set; }
         public ICollection<UserModelAiRequestBuildDto>? UserModelAis { get; set; }
         public ICollection<UserServiceRequestBuildDto>? UserServices { get; set; }

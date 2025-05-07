@@ -1,7 +1,4 @@
 using AutoGenerator;
-using AutoGenerator.Helper.Translation;
-using LAHJAAPI.Models;
-using System;
 
 namespace V1.DyModels.VMs
 {
@@ -36,13 +33,10 @@ namespace V1.DyModels.VMs
         public Nullable<DateTime> CanceledAt { get; set; }
         ///
         public String? PlanId { get; set; }
-        public PlanOutputVM? Plan { get; set; }
+        //public PlanOutputVM? Plan { get; set; }
         ///
         public String? UserId { get; set; }
-        public ApplicationUserOutputVM? User { get; set; }
-        //
-        public List<RequestOutputVM>? Requests { get; set; }
-        //
-        public List<SpaceOutputVM>? Spaces { get; set; }
+
+        //public List<SpaceOutputVM>? Spaces { get; set; }
     }
 }

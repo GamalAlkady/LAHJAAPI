@@ -3,12 +3,14 @@ using ApiCore.Schedulers;
 using AutoGenerator;
 using AutoGenerator.Notifications.Config;
 using AutoGenerator.Schedulers;
+using LAHJAAPI;
 using LAHJAAPI.CustomPolicy;
 using LAHJAAPI.Data;
+using LAHJAAPI.Middlewares;
 using LAHJAAPI.Models;
-using LAHJAAPI.Seeds;
 using LAHJAAPI.Utilities;
 using LAHJAAPI.V1.Validators.Conditions;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Identity;
@@ -93,7 +95,7 @@ builder.Services.AddApiServices(builder.Configuration);
 
 
 
-//builder.Services.AddTransient<IClaimsTransformation, MyClaimsTransformation>();
+builder.Services.AddTransient<IClaimsTransformation, MyClaimsTransformation>();
 
 var appSettings = builder.Configuration.GetSection(nameof(AppSettings)).Get<AppSettings>();
 
@@ -140,13 +142,13 @@ builder.Services.AddScoped<IAuthorizationHandler, PermissionHandler>();
 //});
 
 // Add a CORS policy for the client
-//builder.Services.AddCors(
-//    options => options.AddPolicy(
-//        "wasm",
-//        policy => policy.WithOrigins(["https://lahja-api.runasp.net", "https://localhost:7001", "https://localhost:5002"])
-//            .AllowAnyMethod()
-//            .AllowAnyHeader()
-//            .AllowCredentials()));
+builder.Services.AddCors(
+    options => options.AddPolicy(
+        "wasm",
+        policy => policy.WithOrigins(["https://lahja-api.runasp.net", "https://localhost:7001", "https://localhost:5002"])
+            .AllowAnyMethod()
+            .AllowAnyHeader()
+            .AllowCredentials()));
 
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
@@ -155,7 +157,10 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
     //c.EnableAnnotations();
-    c.SwaggerDoc("v1", new OpenApiInfo { Title = "My API", Version = "v1" });
+    //c.SchemaFilter<NullDefaultsSchemaFilter>();
+    c.SwaggerDoc("User", new OpenApiInfo { Title = "User API", Version = "v1" });
+    c.SwaggerDoc("V1", new OpenApiInfo { Title = "Public Api", Version = "v1" });
+    c.SwaggerDoc("Admin", new OpenApiInfo { Title = "Admin API", Version = "v1" });
 
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
@@ -180,15 +185,14 @@ builder.Services.AddSwaggerGen(c =>
             Array.Empty<string>()
         }
     });
-    // تخصيص Swagger لتحديد القيم
-    //c.OperationFilter<CustomProductParameterFilter>();
 });
 
 
 var app = builder.Build();
 app.UseSchedulerDashboard();
-//app.UseCors("wasm");
-SeedData.EnsureSeedData(app);
+app.UseCors("wasm");
+app.UseMiddleware<ProblemDetailsMiddleware>();
+//SeedData.EnsureSeedData(app);
 
 // Configure the HTTP request pipeline.
 
@@ -205,6 +209,9 @@ SeedData.EnsureSeedData(app);
 app.UseSwagger();
 app.UseSwaggerUI(o =>
 {
+    o.SwaggerEndpoint("/swagger/User/swagger.json", "User API v1");
+    o.SwaggerEndpoint("/swagger/Admin/swagger.json", "Admin API v1");
+    o.SwaggerEndpoint("/swagger/V1/swagger.json", "My API v1");
     //o.SwaggerEndpoint("/swagger/v1/swagger.json", "API v1");
     //o.RoutePrefix = string.Empty;
     // collapse endpoints 

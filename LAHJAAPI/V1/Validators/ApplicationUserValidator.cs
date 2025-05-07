@@ -1,8 +1,9 @@
 using AutoGenerator.Conditions;
 using LAHJAAPI.Models;
 using LAHJAAPI.V1.Validators.Conditions;
+using Microsoft.EntityFrameworkCore;
+using Quartz.Util;
 using V1.DyModels.Dso.Requests;
-using V1.DyModels.Dso.ResponseFilters;
 
 namespace LAHJAAPI.V1.Validators
 {
@@ -14,6 +15,7 @@ namespace LAHJAAPI.V1.Validators
         IsActive = 6500,
         IsFull,
         HasCustomerId,
+        IsHasService,
         HasFirstName,
         HasLastName,
         HasDisplayName,
@@ -24,13 +26,14 @@ namespace LAHJAAPI.V1.Validators
         HasUpdatedAt,
         IsNotArchived,
         HasArchivedDate,
-        HasLastLoginDate
-
-
+        HasLastLoginDate,
+        IsHasModelAi,
+        CanAssignModel,
+        CanAssignService
     }
 
 
-    public class ApplicationUserValidator : BaseValidator<ApplicationUserResponseFilterDso, ApplicationUserValidatorStates>, ITValidator
+    public class ApplicationUserValidator : ValidatorContext<ApplicationUser, ApplicationUserValidatorStates>
     {
 
         private readonly IConditionChecker _checker;
@@ -113,15 +116,92 @@ namespace LAHJAAPI.V1.Validators
                        )
                    );
 
+            RegisterCondition<string>(
+                ApplicationUserValidatorStates.IsHasService,
+                IsHasService,
+                "Service not belong to user."
+            );
+
+            RegisterCondition<string>(
+                ApplicationUserValidatorStates.CanAssignService,
+                CanAssignService,
+                "Service not belong to user."
+            );
+        }
+
+        //TODO: test bellow two functions
 
 
 
+        async Task<ConditionResult> IsHasService(DataFilter<string, ApplicationUser> data)
+        {
+            if (data.Id.IsNullOrWhiteSpace()) return ConditionResult.ToError("Id is null.");
+
+            var result = await _checker.Injector.Context.Set<UserService>()
+                .AnyAsync(x => x.UserId == _injector.UserClaims.UserId && x.ServiceId == data.Id);
+            return result
+                ? ConditionResult.ToSuccess(null, "Service Already assigned to user.")
+                : ConditionResult.ToError("Service not belong to user.");
+
+        }
+        async Task<ConditionResult> CanAssignService(DataFilter<string, ApplicationUser> data)
+        {
+            if (data.Id.IsNullOrWhiteSpace()) return ConditionResult.ToError("Id is null.");
+
+            var resultService = await _checker.CheckAndResultAsync(ServiceValidatorStates.IsFound, data.Id);
+            if (resultService.Success == true)
+            {
+                var service = (Service)resultService.Result!;
+                if (await IsHasModelAi(new DataFilter<string, ApplicationUser> { Id = service.ModelAiId }) is { Success: true })
+                {
+                    if (await IsHasService(data) is { Success: true } res)
+                        return ConditionResult.ToError(res.Message!);
+
+                    // assigned service to user
+                    var userService = new UserService { UserId = _injector.UserClaims.UserId, ServiceId = service.Id };
+                    await _injector.Context.UserServices.AddAsync(userService);
+                    await _injector.Context.SaveChangesAsync();
+                    return ConditionResult.ToSuccess(userService, "Service assigned successfully.");
+                }
+                return ConditionResult.ToError($"Service with Id: {service.Id} not belong to UserModelAi");
+
+            }
+            return ConditionResult.ToError(resultService.Message ?? "Service not found!.");
+        }
+
+        [RegisterConditionValidator(typeof(ApplicationUserValidatorStates), ApplicationUserValidatorStates.IsHasModelAi, "Model AI not belong to user.")]
+        async Task<ConditionResult> IsHasModelAi(DataFilter<string, ApplicationUser> data)
+        {
+            if (data.Id.IsNullOrWhiteSpace()) return ConditionResult.ToError("Id is null.");
+
+            var result = await _checker.Injector.Context.Set<UserModelAi>()
+                .AnyAsync(x => x.UserId == _injector.UserClaims.UserId && x.ModelAiId == data.Id);
+            return result
+                ? ConditionResult.ToSuccess(null, "ModelAi already assign to user.")
+                : ConditionResult.ToError("Model AI not belong to user.");
 
         }
 
+        [RegisterConditionValidator(typeof(ApplicationUserValidatorStates), ApplicationUserValidatorStates.CanAssignModel, "Model AI not belong to user.")]
+        async Task<ConditionResult> CanAssignModel(DataFilter<string, ApplicationUser> data)
+        {
+            if (data.Id.IsNullOrWhiteSpace()) return ConditionResult.ToError("Id is null.");
 
+            var resultModelAi = await _checker.CheckAndResultAsync(ModelValidatorStates.IsFound, data.Id);
+            if (resultModelAi.Success == true)
+            {
+                if (await IsHasModelAi(data) is { Success: true } res) return ConditionResult.ToError(res.Message!);
 
+                // assigned modelAi to user
+                var userModelAi = new UserModelAi { UserId = _injector.UserClaims.UserId, ModelAiId = data.Id };
+                await _injector.Context.UserModelAis.AddAsync(userModelAi);
+                await _injector.Context.SaveChangesAsync();
 
+                return ConditionResult.ToSuccess(userModelAi, "ModelAi assigned successfully.");
+
+            }
+            return ConditionResult.ToError(resultModelAi.Message ?? "ModelAi not found!.");
+        }
 
         bool isAcive(string id)
         {

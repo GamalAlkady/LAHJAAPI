@@ -7,9 +7,11 @@ namespace LAHJAAPI.Models
     {
         [Key]
         public string Id { get; set; } = $"modg_{Guid.NewGuid():N}";
-        public string Name { get; set; }
-        public string Url { get; set; }
-        public string? Token { get; set; }
+        public required string Name { get; set; }
+        public required string Url { get; set; }
+        public required string Token { get; set; }
         public bool IsDefault { get; set; }
+
+        public ICollection<ApplicationUser> Users { get; set; } = new List<ApplicationUser>();
     }
 }

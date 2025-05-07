@@ -9,7 +9,7 @@ using V1.Services.Services;
 
 namespace LAHJAAPI.V1.Controllers.Api
 {
-    //[ApiExplorerSettings(GroupName = "V1")]
+    [ApiExplorerSettings(GroupName = "User")]
     [Route("api/v1/user/[controller]")]
     [ApiController]
     public class AdvertisementTabController : ControllerBase
@@ -230,7 +230,7 @@ namespace LAHJAAPI.V1.Controllers.Api
                 if (item == null)
                 {
                     _logger.LogWarning("AdvertisementTab not found for update with ID: {id}", id);
-                    return NotFound(HandelErrors.NotFound($"AdvertisementTab not found for update with ID: {id}"));
+                    return NotFound(HandelResult.NotFound($"AdvertisementTab not found for update with ID: {id}"));
                 }
                 _logger.LogInformation("Updating AdvertisementTab with ID: {id}", id);
                 var newItem = _mapper.Map<AdvertisementTabRequestDso>(model);
@@ -262,7 +262,7 @@ namespace LAHJAAPI.V1.Controllers.Api
                 if (!await _advertisementtabService.ExistsAsync(id))
                 {
                     _logger.LogWarning("AdvertisementTab not found with ID: {id}", id);
-                    return NotFound(HandelErrors.NotFound($"AdvertisementTab not found with ID: {id}"));
+                    return NotFound(HandelResult.NotFound($"AdvertisementTab not found with ID: {id}"));
                 }
 
                 _logger.LogInformation("Deleting AdvertisementTab with ID: {id}", id);

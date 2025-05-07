@@ -3,6 +3,7 @@ using AutoGenerator.Conditions;
 using AutoGenerator.Helper;
 using AutoGenerator.Helper.Translation;
 using AutoMapper;
+using LAHJAAPI.Exceptions;
 using LAHJAAPI.Services2;
 using LAHJAAPI.Utilities;
 using LAHJAAPI.V1.Validators;
@@ -20,6 +21,7 @@ using V1.Services.Services;
 
 namespace LAHJAAPI.V1.Controllers.Api
 {
+    [ApiExplorerSettings(GroupName = "User")]
     [Route("api/v1/user/[controller]")]
     [ApiController]
     public class AuthorizationSessionController : ControllerBase
@@ -73,7 +75,7 @@ namespace LAHJAAPI.V1.Controllers.Api
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error while fetching all AuthorizationSessions");
-                return StatusCode(500, "Internal Server Error");
+                return StatusCode(500, ex.Message);
             }
         }
 
@@ -102,7 +104,7 @@ namespace LAHJAAPI.V1.Controllers.Api
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error while fetching AuthorizationSession with ID: {id}", id);
-                return StatusCode(500, "Internal Server Error");
+                return StatusCode(500, ex.Message);
             }
         }
 
@@ -135,7 +137,7 @@ namespace LAHJAAPI.V1.Controllers.Api
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error while fetching AuthorizationSessions with Lg: {lg}", lg);
-                return StatusCode(500, "Internal Server Error");
+                return StatusCode(500, ex.Message);
             }
         }
 
@@ -171,7 +173,7 @@ namespace LAHJAAPI.V1.Controllers.Api
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error while validating AuthorizationSession");
-                return BadRequest(HandelErrors.Problem(ex));
+                return BadRequest(HandelResult.Problem(ex));
             }
         }
 
@@ -203,11 +205,16 @@ namespace LAHJAAPI.V1.Controllers.Api
                 var response = await PrepareCreateSession([service], model.Token, [model.ServiceId], isNeedSpace);
                 return Ok(response);
             }
+            catch (ProblemDetailsException ex)
+            {
+                _logger.LogError(ex, "Error while creating a new AuthorizationSession");
+                return BadRequest(ex.Problem);
+            }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error while creating a new AuthorizationSession");
                 //return StatusCode(500, "Internal Server Error");
-                return BadRequest(HandelErrors.Problem(ex));
+                return BadRequest(HandelResult.Problem(ex));
             }
         }
 
@@ -223,15 +230,20 @@ namespace LAHJAAPI.V1.Controllers.Api
             {
                 _logger.LogInformation("Creating new AuthorizationSession for dashboard with data: {@model}", model);
                 var service = await _serviceService.GetByAbsolutePath("dashboard");
-                if (service == null) return NotFound(HandelErrors.Problem("Create session", "No service found for dahsboard."));
+                if (service == null) return NotFound(HandelResult.Problem("Create session", "No service found for dahsboard."));
                 var response = await PrepareCreateSession([service], model.Token, [service.Id], false);
 
                 return Ok(response);
             }
+            catch (ProblemDetailsException ex)
+            {
+                _logger.LogError(ex, "Error while creating a new AuthorizationSession for dashboard");
+                return BadRequest(ex.Problem);
+            }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error while creating a new AuthorizationSession for dashboard");
-                return BadRequest(HandelErrors.Problem(ex));
+                return BadRequest(HandelResult.Problem(ex));
             }
         }
 
@@ -248,16 +260,21 @@ namespace LAHJAAPI.V1.Controllers.Api
             {
                 _logger.LogInformation("Creating new AuthorizationSession for list services with data: {@model}", model);
                 var services = await _serviceService.GetListWithoutSome(model.ServicesIds);
-                if (services.Count == 0) return NotFound(HandelErrors.Problem("Create session", "Services ids that you send not aceptable."));
+                if (services.Count == 0) return NotFound(HandelResult.Problem("Create session", "Services ids that you send not aceptable."));
                 var servicesIds = services.Select(s => s.Id).ToList();
 
                 var response = await PrepareCreateSession(services, model.Token, model.ServicesIds);
                 return Ok(response);
             }
+            catch (ProblemDetailsException ex)
+            {
+                _logger.LogError(ex, "Error while creating a new AuthorizationSession for list services");
+                return BadRequest(ex.Problem);
+            }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error while creating a new AuthorizationSession for list services");
-                return BadRequest(HandelErrors.Problem(ex));
+                return BadRequest(HandelResult.Problem(ex));
             }
         }
 
@@ -275,16 +292,21 @@ namespace LAHJAAPI.V1.Controllers.Api
                 _logger.LogInformation("Creating new AuthorizationSession for all services with data: {@model}", model);
 
                 var services = await _serviceService.GetListWithoutSome(modelId: model.ModelAiId);
-                if (services.Count == 0) return NotFound(HandelErrors.Problem("Create session", "Services ids that you send not aceptable.", null, 404));
+                if (services.Count == 0) return NotFound(HandelResult.Problem("Create session", "Services ids that you send not aceptable.", null, 404));
                 var servicesIds = services.Select(s => s.Id).ToList();
 
                 var response = await PrepareCreateSession(services, model.Token, servicesIds);
                 return Ok(response);
             }
+            catch (ProblemDetailsException ex)
+            {
+                _logger.LogError(ex, "Error while creating a new AuthorizationSession for all services");
+                return BadRequest(ex.Problem);
+            }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error while creating a new AuthorizationSession for all services");
-                return BadRequest(HandelErrors.Problem(ex));
+                return BadRequest(HandelResult.Problem(ex));
             }
         }
 
@@ -351,6 +373,11 @@ namespace LAHJAAPI.V1.Controllers.Api
                 var encrptedToken = _tokenService.GenerateToken(claims, webToken!, encryptToken.Expires);
                 return Ok(encrptedToken);
             }
+            catch (ProblemDetailsException ex)
+            {
+                _logger.LogError(ex, "Error when create platform token.");
+                return BadRequest(ex.Problem);
+            }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error when create platform token.");
@@ -378,6 +405,11 @@ namespace LAHJAAPI.V1.Controllers.Api
                 var token = _tokenService.GenerateToken([new Claim(ClaimTypes2.SessionToken, sessionToken)], webToken);
 
                 return Ok(token);
+            }
+            catch (ProblemDetailsException ex)
+            {
+                _logger.LogError(ex, "Error when create core token.");
+                return BadRequest(ex.Problem);
             }
             catch (Exception ex)
             {
@@ -429,7 +461,7 @@ namespace LAHJAAPI.V1.Controllers.Api
             catch (Exception ex)
             {
 
-                return BadRequest(HandelErrors.Problem(ex));
+                return BadRequest(HandelResult.Problem(ex));
             }
         }
 
@@ -453,7 +485,7 @@ namespace LAHJAAPI.V1.Controllers.Api
             }
             catch (Exception ex)
             {
-                return BadRequest(HandelErrors.Problem(ex));
+                return BadRequest(HandelResult.Problem(ex));
             }
         }
 
@@ -475,9 +507,9 @@ namespace LAHJAAPI.V1.Controllers.Api
 
                 if (isSpaceRequired)
                 {
-                    var resultSpace = await _checker.CheckAndResultAsync(SpaceValidatorStates.IsValid, new DataFilter(dataTokenRequest.SpaceId));
+                    var resultSpace = await _checker.CheckAndResultAsync(SpaceValidatorStates.IsValidForSession, new DataFilter(dataTokenRequest.SpaceId));
 
-                    if (resultSpace.Success == false) throw new Exception(resultSpace.Message);
+                    if (resultSpace.Success == false) throw new ProblemDetailsException(resultSpace.Result ?? resultSpace.Message);
 
                     var space = (SpaceResponseDso)resultSpace.Result!;
                     sessionData.Space = new { space.Id, space.Name };
@@ -485,7 +517,7 @@ namespace LAHJAAPI.V1.Controllers.Api
 
                 var modelAiId = services[0].ModelAiId;
                 var result = await _checker.CheckAndResultAsync(ModelValidatorStates.HasService, modelAiId);
-                if (result.Success == false) throw new Exception(result.Message);
+                if (result.Success == false) throw new ProblemDetailsException(result.Result ?? result.Message);
 
 
                 //var modelAi = await _modelAiRepository.GetOneByAsync([new FilterCondition("Id", services[0].ModelAiId)], new ParamOptions(["ModelGateway"]));
@@ -513,7 +545,7 @@ namespace LAHJAAPI.V1.Controllers.Api
                     URLCore = urlCore
                 };
             }
-            catch (Exception)
+            catch
             {
                 throw;
             }

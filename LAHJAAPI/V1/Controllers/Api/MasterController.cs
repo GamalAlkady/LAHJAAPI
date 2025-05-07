@@ -4,8 +4,9 @@ using V1.DyModels.Dso.Requests;
 using V1.DyModels.VMs;
 using V1.Services.Services;
 
-namespace Api.Controllers
+namespace LAHJAAPI.V1.Controllers.Api
 {
+    [ApiExplorerSettings(GroupName = "User")]
     [Route("api/v1/user/[controller]")]
     [ApiController]
 

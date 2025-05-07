@@ -28,7 +28,8 @@ namespace V1.Services.Services
             try
             {
                 _logger.LogInformation("Fetching user...");
-                var result = await _share.GetByIdAsync(_userClaims.UserId);
+                var result = await _share.GetByIdAsync(_userClaims.UserId)
+                    ?? throw new ArgumentNullException($"User not found with Id: {_userClaims.UserId} that come from token.");
                 _logger.LogInformation("User fetched successfully.");
                 return GetMapper().Map<ApplicationUserResponseDso>(result);
             }
@@ -55,6 +56,62 @@ namespace V1.Services.Services
                 throw;
             }
         }
+
+        public async Task<IEnumerable<ServiceResponseDso>?> GetServices(string? userId = null)
+        {
+            try
+            {
+                userId ??= _userClaims.UserId;
+                _logger.LogInformation("Fetching user...");
+                var result = await _share.GetOneByAsync(
+                    [new FilterCondition("Id", userId)], new ParamOptions(["UserServices.Service"]));
+                if (result == null) return null;
+
+                var services = result.UserServices?.Select(s => new ServiceResponseDso
+                {
+                    Id = s.Service?.Id,
+                    Name = s.Service?.Name,
+                    AbsolutePath = s.Service?.AbsolutePath,
+                    ModelAiId = s.Service?.ModelAiId,
+                    Token = s.Service?.Token,
+                });
+
+                _logger.LogInformation("User fetched successfully.");
+                return services;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error while fetching user.");
+                throw;
+            }
+        }
+
+        public async Task<IEnumerable<ModelAiResponseDso>?> GetModels(string? userId = null)
+        {
+            try
+            {
+                userId ??= _userClaims.UserId;
+                _logger.LogInformation("Fetching user...");
+                var result = await _share.GetOneByAsync(
+                    [new FilterCondition("Id", userId)], new ParamOptions(["UserModelAis.ModelAi"]));
+                if (result == null) return null;
+                var models = result.UserModelAis?.Select(s => new ModelAiResponseDso
+                {
+                    Id = s.ModelAi?.Id,
+                    Name = s.ModelAi?.Name,
+                    AbsolutePath = s.ModelAi?.AbsolutePath,
+                    Token = s.ModelAi?.Token,
+                });
+                _logger.LogInformation("User fetched successfully.");
+                return models;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error while fetching user.");
+                throw;
+            }
+        }
+
         public override Task<int> CountAsync()
         {
             try

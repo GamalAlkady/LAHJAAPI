@@ -1,7 +1,9 @@
 ﻿using APILAHJA.Utilities;
 using AutoGenerator.Helper;
+using AutoGenerator.Helper.Translation;
 using AutoMapper;
 using LAHJAAPI.V1.Enums;
+using V1.DyModels.Dso.Responses;
 using V1.DyModels.VM;
 using V1.Services.Services;
 
@@ -9,12 +11,12 @@ namespace LAHJAAPI.V1.Services.Statistics
 {
     public class StatisticsService : IStatisticsService
     {
-        private readonly IUseApplicationUserService _userService;
         private readonly IUseUserServiceService _userServiceService;
         private readonly IUseSubscriptionService _subscriptionService;
         private readonly IUseRequestService _requestService;
         private readonly ILogger<StatisticsService> _logger;
         private readonly IUserClaimsHelper _userClaims;
+        private readonly IUseServiceService _serviceService;
         private readonly IMapper _mapper;
         public StatisticsService(
             IUseApplicationUserService userService,
@@ -23,21 +25,22 @@ namespace LAHJAAPI.V1.Services.Statistics
             IUseRequestService requestService,
             ILogger<StatisticsService> logger,
             IUserClaimsHelper userClaims,
+            IUseServiceService serviceService,
             IMapper mapper)
         {
-            _userService = userService;
             _userServiceService = userServiceService;
             _subscriptionService = subscriptionService;
             _requestService = requestService;
             _logger = logger;
             _userClaims = userClaims;
+            _serviceService = serviceService;
             _mapper = mapper;
 
         }
 
         public async Task<List<UsedRequestsVm>> GetServiceUsageDataAsync()
         {
-            var response = await _userServiceService.GetAllByAsync([new FilterCondition("UserId", _userClaims.UserId)], new ParamOptions(["Service.Requests"]));
+            var response = await _userServiceService.GetAllByAsync([new FilterCondition(nameof(UserServiceResponseDso.UserId), _userClaims.UserId)], new ParamOptions(["Service.Requests"]));
             if (response.TotalRecords > 0)
             {
 
@@ -50,6 +53,16 @@ namespace LAHJAAPI.V1.Services.Statistics
             return [];
         }
 
+        public async Task<IEnumerable<ServiceUsersCount>> ServiceUsersCount()
+        {
+            var items = await _serviceService.GetAllAsync();
+            var r = items.Select(s => new ServiceUsersCount
+            {
+                ServiceType = s.Name,
+                Count = s.UserServices.Count()
+            }).ToList();
+            return r;
+        }
 
         public async Task<IEnumerable<UsedRequestsVm>> GetServiceUsageAndRemaining()
         {
@@ -184,13 +197,13 @@ namespace LAHJAAPI.V1.Services.Statistics
             return data;
         }
 
-        public async Task<IEnumerable<ModelAiServiceData>> GetModelAiServicesRequests()
+        public async Task<IEnumerable<ModelAiServiceData>> GetModelAiServicesRequests(string lg)
         {
             List<FilterCondition> filterConditions = [new FilterCondition("UserId", _userClaims.UserId)];
             var response = await _requestService.GetAllByAsync(filterConditions, new ParamOptions(["Service.ModelAi"]));
             if (response.TotalRecords == 0) return [];
 
-            var items = response.Data.GroupBy(s => s.Service.ModelAi!.Name)
+            var items = response.Data.GroupBy(s => lg == null ? s.Service.ModelAi!.Name : HelperTranslation.getTranslationValueByLG(s.Service.ModelAi!.Name, lg))
           .Select(s => new ModelAiServiceData
           {
               ModelAi = s.Key,

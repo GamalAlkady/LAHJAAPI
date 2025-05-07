@@ -8,11 +8,11 @@ namespace Models.Data.Configurations
     {
         public void Configure(EntityTypeBuilder<Subscription> builder)
         {
-            builder
-            .HasOne(s => s.User)
-            .WithOne(u => u.Subscription)
-            .HasForeignKey<Subscription>(s => s.UserId)
-            .OnDelete(DeleteBehavior.SetNull);
+            //builder
+            //.HasOne(s => s.User)
+            //.WithOne(u => u.Subscription)
+            //.HasForeignKey<Subscription>(s => s.UserId)
+            //.OnDelete(DeleteBehavior.SetNull);
 
             builder
            .HasMany(u => u.Requests)

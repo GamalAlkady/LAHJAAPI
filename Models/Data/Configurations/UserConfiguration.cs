@@ -12,6 +12,11 @@ namespace Models.Data.Configurations
                 .HasMany(u => u.Requests)
                 .WithOne(u => u.User)
                 .IsRequired();
+
+            builder.HasOne(u => u.Subscription)
+                .WithOne(u => u.User)
+                .HasForeignKey<ApplicationUser>(s => s.SubscriptionId)
+                .OnDelete(DeleteBehavior.SetNull);
             // Each User can have many UserClaims
             //builder
             //    .HasMany(e => e.Claims)

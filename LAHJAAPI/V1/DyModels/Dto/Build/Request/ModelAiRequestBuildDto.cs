@@ -8,8 +8,8 @@ namespace V1.DyModels.Dto.Build.Requests
         /// <summary>
         /// Id property for DTO.
         /// </summary>
-        public String? Id { get; set; }= $"modelai_{Guid.NewGuid():N}";
-        public TranslationData? Name { get; set; } = new();
+        public string Id { get; set; } = $"mod_{Guid.NewGuid():N}";
+        public required TranslationData Name { get; set; } = new();
         /// <summary>
         /// Token property for DTO.
         /// </summary>
@@ -20,7 +20,7 @@ namespace V1.DyModels.Dto.Build.Requests
         public String? AbsolutePath { get; set; }
         public TranslationData? Category { get; set; } = new();
         public string? Language { get; set; }
-        public bool? IsStandard { get; set; }
+        public bool IsStandard { get; set; }
         public string? Gender { get; set; }
         public TranslationData? Dialect { get; set; } = new();
         /// <summary>
