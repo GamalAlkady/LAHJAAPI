@@ -16,6 +16,7 @@ namespace LAHJAAPI.Services2
         private AppSettings AppSettings => options.Value;
 
 
+
         public static string GenerateSecureToken(int length = 32)
         {
             byte[] randomBytes = new byte[length];

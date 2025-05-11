@@ -8,31 +8,25 @@ using V1.Services.Services;
 
 namespace LAHJAAPI.V1.Controllers.Api
 {
-    [ApiExplorerSettings(GroupName = "User")]
+    //[ApiExplorerSettings(GroupName = "User")]
     [Route("api/v1/user/[controller]")]
     [ApiController]
     public class ApplicationUserController : ControllerBase
     {
         private readonly IUseApplicationUserService _applicationuserService;
         private readonly IConditionChecker _checker;
-        private readonly IUseUserServiceService _userServiceService;
-        private readonly IUseUserModelAiService _userModelAiService;
         private readonly IMapper _mapper;
         private readonly ILogger _logger;
         public ApplicationUserController(
             IUseApplicationUserService applicationuserService,
             IConditionChecker checker,
             IMapper mapper,
-            ILoggerFactory logger,
-            IUseUserServiceService userServiceService,
-            IUseUserModelAiService userModelAiService)
+            ILoggerFactory logger)
         {
             _applicationuserService = applicationuserService;
             _checker = checker;
             _mapper = mapper;
             _logger = logger.CreateLogger(typeof(ApplicationUserController).FullName);
-            _userServiceService = userServiceService;
-            _userModelAiService = userModelAiService;
             //_logger.LogWarning("User:" + User);
         }
 
@@ -126,15 +120,19 @@ namespace LAHJAAPI.V1.Controllers.Api
         {
             try
             {
-                if (await _checker.CheckAndResultAsync(ApplicationUserValidatorStates.CanAssignService, assignService.ServiceId) is not { Success: false } res)
+                _logger.LogInformation("Assigning service to user with ID: {id}", assignService.ServiceId);
+                if (await _checker.CheckAndResultAsync(ApplicationUserValidatorStates.IsServiceAssigned, assignService.ServiceId) is { Success: true } res)
                 {
-                    return Ok(HandelResult.Text("Service successfully assigned."));
+                    return BadRequest(HandleResult.Text(res.Message ?? "Service already assigned."));
                 }
-                return BadRequest(HandelResult.Text(res.Message!));
+                await _applicationuserService.AssignService(assignService.ServiceId);
+                _logger.LogInformation("Service successfully assigned to user with ID: {id}", assignService.ServiceId);
+                return Ok(HandleResult.Text("Service successfully assigned."));
             }
             catch (Exception ex)
             {
-                return BadRequest(HandelResult.Problem(ex));
+                _logger.LogError(ex, "Error while assigning service to user with ID: {id}", assignService.ServiceId);
+                return BadRequest(HandleResult.Problem(ex));
             }
         }
 
@@ -145,15 +143,19 @@ namespace LAHJAAPI.V1.Controllers.Api
         {
             try
             {
-                if (await _checker.CheckAsync(ApplicationUserValidatorStates.CanAssignModel, requestVM.ModelAiId))
+                _logger.LogInformation("Assigning Model AI to user with ID: {id}", requestVM.ModelAiId);
+                if (await _checker.CheckAndResultAsync(ApplicationUserValidatorStates.IsModelAssigned, requestVM.ModelAiId) is { Success: true } res)
                 {
-                    return Ok(HandelResult.Text("Model AI successfully assigned."));
+                    return BadRequest(HandleResult.Text(res.Message ?? "ModelAi already assigned."));
                 }
-                return BadRequest(HandelResult.Text("Model AI Already assigned to user."));
+                await _applicationuserService.AssignModelAi(requestVM.ModelAiId);
+                _logger.LogInformation("Model AI successfully assigned to user with ID: {id}", requestVM.ModelAiId);
+                return Ok(HandleResult.Text("Model AI successfully assigned."));
             }
             catch (Exception ex)
             {
-                return BadRequest(HandelResult.Problem(ex));
+                _logger.LogError(ex, "Error while assigning Model AI to user with ID: {id}", requestVM.ModelAiId);
+                return BadRequest(HandleResult.Problem(ex));
             }
         }
 

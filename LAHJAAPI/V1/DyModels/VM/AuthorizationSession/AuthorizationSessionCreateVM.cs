@@ -14,6 +14,8 @@ namespace V1.DyModels.VMs
 
         [Required]
         public string ServiceId { get; set; }
+
+        public string? SpaceId { get; set; }
     }
 
     public class CreateAuthorizationForDashboard
@@ -29,6 +31,7 @@ namespace V1.DyModels.VMs
 
         [Required(ErrorMessage = "The ServicesIds field is required.")]
         public List<string> ServicesIds { get; set; }
+        public string? SpaceId { get; set; }
 
     }
 
@@ -39,6 +42,15 @@ namespace V1.DyModels.VMs
 
         [DefaultValue("")]
         public string? ModelAiId { get; set; }
+        public string SpaceId { get; internal set; }
+    }
 
+    public class DataAuthSession
+    {
+        public required string Token { get; set; }
+
+        public string? ModelAiId { get; set; }
+        public string? SpaceId { get; set; }
+        public List<string> ServicesIds { get; internal set; }
     }
 }

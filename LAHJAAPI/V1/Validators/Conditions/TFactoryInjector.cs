@@ -1,44 +1,30 @@
-using APILAHJA.Utilities;
+using AutoGenerator.Conditions;
 using AutoGenerator.Notifications;
 using AutoMapper;
-using LAHJAAPI.Data;
 using LAHJAAPI.Services2;
 using LAHJAAPI.Utilities;
 using Microsoft.Extensions.Options;
 
 namespace LAHJAAPI.V1.Validators.Conditions
 {
-    public class TFactoryInjector : ITFactoryInjector
+    public class TFactoryInjector : TBaseFactoryInjector, ITFactoryInjector
     {
-        private readonly IMapper _mapper;
-        private readonly DataContext _context;
-
-        // يمكنك حقن اي طبقة
+        private readonly SingletonContextFactory _contextFactory;
         public TFactoryInjector(
             IMapper mapper,
-            DataContext context,
-            IUserClaimsHelper userClaims,
-            TokenService tokenService,
+            IAutoNotifier notifier,
             IOptions<AppSettings> appSettings,
-            IAutoNotifier notifier)
+            TokenService tokenService,
+            SingletonContextFactory contextFactory) : base(mapper, notifier)
         {
-            _mapper = mapper;
-            _context = context;
-            UserClaims = userClaims;
-            Notifier = notifier;
             TokenService = tokenService;
+            _contextFactory = contextFactory;
             AppSettings = appSettings.Value;
         }
 
-        public IMapper Mapper => _mapper;
-        public DataContext Context => _context;
-        public IUserClaimsHelper UserClaims { get; }
-
-        public IAutoNotifier Notifier { get; }
-
+        public SingletonContextFactory ContextFactory => _contextFactory;
         public TokenService TokenService { get; }
-
         public AppSettings AppSettings { get; }
-
+        // يمكنك حقن اي طبقة
     }
 }

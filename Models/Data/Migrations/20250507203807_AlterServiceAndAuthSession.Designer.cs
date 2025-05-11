@@ -4,6 +4,7 @@ using LAHJAAPI.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Data.Migrations
 {
     [DbContext(typeof(DataContext))]
-    partial class DataContextModelSnapshot : ModelSnapshot
+    [Migration("20250507203807_AlterServiceAndAuthSession")]
+    partial class AlterServiceAndAuthSession
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -35,6 +38,21 @@ namespace Data.Migrations
                     b.HasIndex("UsersId");
 
                     b.ToTable("ApplicationUserModelGateway");
+                });
+
+            modelBuilder.Entity("AuthorizationSessionService", b =>
+                {
+                    b.Property<string>("AuthorizationSessionsId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("ServicesId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("AuthorizationSessionsId", "ServicesId");
+
+                    b.HasIndex("ServicesId");
+
+                    b.ToTable("AuthorizationSessionService");
                 });
 
             modelBuilder.Entity("LAHJAAPI.Models.Advertisement", b =>
@@ -245,21 +263,6 @@ namespace Data.Migrations
                     b.HasIndex("UserId");
 
                     b.ToTable("AuthorizationSessions");
-                });
-
-            modelBuilder.Entity("LAHJAAPI.Models.AuthorizationSessionService", b =>
-                {
-                    b.Property<string>("AuthorizationSessionId")
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<string>("ServiceId")
-                        .HasColumnType("nvarchar(450)");
-
-                    b.HasKey("AuthorizationSessionId", "ServiceId");
-
-                    b.HasIndex("ServiceId");
-
-                    b.ToTable("AuthorizationSessionService");
                 });
 
             modelBuilder.Entity("LAHJAAPI.Models.CategoryModel", b =>
@@ -1033,6 +1036,21 @@ namespace Data.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("AuthorizationSessionService", b =>
+                {
+                    b.HasOne("LAHJAAPI.Models.AuthorizationSession", null)
+                        .WithMany()
+                        .HasForeignKey("AuthorizationSessionsId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("LAHJAAPI.Models.Service", null)
+                        .WithMany()
+                        .HasForeignKey("ServicesId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("LAHJAAPI.Models.AdvertisementTab", b =>
                 {
                     b.HasOne("LAHJAAPI.Models.Advertisement", "Advertisement")
@@ -1065,25 +1083,6 @@ namespace Data.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("LAHJAAPI.Models.AuthorizationSessionService", b =>
-                {
-                    b.HasOne("LAHJAAPI.Models.AuthorizationSession", "AuthorizationSession")
-                        .WithMany("AuthorizationSessionServices")
-                        .HasForeignKey("AuthorizationSessionId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("LAHJAAPI.Models.Service", "Service")
-                        .WithMany("AuthorizationSessionServices")
-                        .HasForeignKey("ServiceId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("AuthorizationSession");
-
-                    b.Navigation("Service");
-                });
-
             modelBuilder.Entity("LAHJAAPI.Models.Dialect", b =>
                 {
                     b.HasOne("LAHJAAPI.Models.Language", "Language")
@@ -1109,7 +1108,7 @@ namespace Data.Migrations
             modelBuilder.Entity("LAHJAAPI.Models.ModelAi", b =>
                 {
                     b.HasOne("LAHJAAPI.Models.ModelGateway", "ModelGateway")
-                        .WithMany("ModelAis")
+                        .WithMany()
                         .HasForeignKey("ModelGatewayId");
 
                     b.Navigation("ModelGateway");
@@ -1333,21 +1332,11 @@ namespace Data.Migrations
                     b.Navigation("UserServices");
                 });
 
-            modelBuilder.Entity("LAHJAAPI.Models.AuthorizationSession", b =>
-                {
-                    b.Navigation("AuthorizationSessionServices");
-                });
-
             modelBuilder.Entity("LAHJAAPI.Models.ModelAi", b =>
                 {
                     b.Navigation("Services");
 
                     b.Navigation("UserModelAis");
-                });
-
-            modelBuilder.Entity("LAHJAAPI.Models.ModelGateway", b =>
-                {
-                    b.Navigation("ModelAis");
                 });
 
             modelBuilder.Entity("LAHJAAPI.Models.Plan", b =>
@@ -1366,8 +1355,6 @@ namespace Data.Migrations
 
             modelBuilder.Entity("LAHJAAPI.Models.Service", b =>
                 {
-                    b.Navigation("AuthorizationSessionServices");
-
                     b.Navigation("PlanServices");
 
                     b.Navigation("Requests");

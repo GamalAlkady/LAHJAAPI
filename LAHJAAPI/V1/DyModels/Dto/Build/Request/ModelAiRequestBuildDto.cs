@@ -32,5 +32,8 @@ namespace V1.DyModels.Dto.Build.Requests
         /// </summary>
         public String? ModelGatewayId { get; set; }
 
+        public ICollection<ServiceRequestBuildDto>? Services { get; set; }
+
+
     }
 }

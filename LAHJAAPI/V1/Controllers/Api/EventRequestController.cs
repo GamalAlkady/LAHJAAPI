@@ -5,7 +5,7 @@ using V1.Services.Services;
 
 namespace LAHJAAPI.V1.Controllers.Api
 {
-    [ApiExplorerSettings(GroupName = "User")]
+    //[ApiExplorerSettings(GroupName = "User")]
     [Route("api/v1/user/[controller]")]
     [ApiController]
     public class EventRequestController : ControllerBase
@@ -88,7 +88,7 @@ namespace LAHJAAPI.V1.Controllers.Api
                 if (!await _eventrequestService.ExistsAsync(id))
                 {
                     _logger.LogWarning("EventRequest not found with ID: {id}", id);
-                    return NotFound(HandelResult.NotFound($"EventRequest not found with ID: {id}"));
+                    return NotFound(HandleResult.NotFound($"EventRequest not found with ID: {id}"));
                 }
                 _logger.LogInformation("Deleting EventRequest with ID: {id}", id);
                 await _eventrequestService.DeleteAsync(id);

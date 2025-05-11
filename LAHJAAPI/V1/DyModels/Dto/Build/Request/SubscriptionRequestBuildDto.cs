@@ -7,7 +7,7 @@ namespace V1.DyModels.Dto.Build.Requests
         /// <summary>
         /// Id property for DTO.
         /// </summary>
-        public String? Id { get; set; } = $"sub_{Guid.NewGuid():N}";
+        public String? Id { get; set; }
         /// <summary>
         /// CustomerId property for DTO.
         /// </summary>
@@ -24,10 +24,10 @@ namespace V1.DyModels.Dto.Build.Requests
         /// CurrentPeriodEnd property for DTO.
         /// </summary>
         public DateTime CurrentPeriodEnd { get; set; }
-        /// <summary>
-        /// Status property for DTO.
-        /// </summary>
-        public String? Status { get; set; }
+
+        public bool IsFree { get; set; } = false;
+        public required string Status { get; set; }
+        public string? BillingPeriod { get; set; }
         /// <summary>
         /// CancelAtPeriodEnd property for DTO.
         /// </summary>

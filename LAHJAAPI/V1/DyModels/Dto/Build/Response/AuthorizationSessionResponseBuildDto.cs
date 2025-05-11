@@ -1,8 +1,4 @@
 using AutoGenerator;
-using AutoGenerator.Helper.Translation;
-using LAHJAAPI.Models;
-using AutoGenerator.Config;
-using System;
 
 namespace V1.DyModels.Dto.Build.Responses
 {
@@ -53,5 +49,6 @@ namespace V1.DyModels.Dto.Build.Responses
         /// ServicesIds property for DTO.
         /// </summary>
         public String? ServicesIds { get; set; }
+        public List<ServiceResponseBuildDto>? Services { get; set; }
     }
 }

@@ -28,5 +28,6 @@ namespace V1.DyModels.Dto.Build.Requests
         public ICollection<ServiceMethodRequestBuildDto>? ServiceMethods { get; set; }
         public ICollection<UserServiceRequestBuildDto>? UserServices { get; set; }
         public ICollection<RequestRequestBuildDto>? Requests { get; set; }
+        public ICollection<AuthorizationSessionRequestBuildDto>? AuthorizationSessions { get; set; } = [];
     }
 }

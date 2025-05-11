@@ -1,6 +1,7 @@
 using AutoGenerator.Conditions;
 using LAHJAAPI.V1.Validators.Conditions;
 using V1.DyModels.Dso.ResponseFilters;
+using WasmAI.ConditionChecker.Base;
 
 namespace LAHJAAPI.V1.Validators
 {

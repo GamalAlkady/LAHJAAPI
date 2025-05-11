@@ -13,5 +13,7 @@ namespace V1.Services.Services
         Task<IEnumerable<ModelAiResponseDso>?> GetModels(string? userId = null);
         Task<ApplicationUserResponseDso> GetUser();
         Task<ApplicationUserResponseDso> GetUserWithSubscription();
+        Task<UserModelAiResponseDso?> AssignModelAi(string modelAiId, string? userId = null);
+        Task<UserServiceResponseDso?> AssignService(string serviceId, string? userId = null);
     }
 }

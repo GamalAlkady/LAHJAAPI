@@ -4,7 +4,7 @@ namespace LAHJAAPI.Models
 {
     public class UserModelAi : ITModel
     {
-        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public DateTime AssignedAt { get; set; } = DateTime.UtcNow;
         public required string UserId { get; set; }
         public ApplicationUser? User { get; set; }
 

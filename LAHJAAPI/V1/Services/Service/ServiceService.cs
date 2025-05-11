@@ -13,9 +13,16 @@ namespace V1.Services.Services
     public class ServiceService : BaseService<ServiceRequestDso, ServiceResponseDso>, IUseServiceService
     {
         private readonly IServiceShareRepository _share;
-        public ServiceService(IServiceShareRepository buildServiceShareRepository, IMapper mapper, ILoggerFactory logger) : base(mapper, logger)
+        private readonly IUserServiceShareRepository _userServiceShare;
+
+        public ServiceService(
+            IServiceShareRepository buildServiceShareRepository,
+            IUserServiceShareRepository userServiceShare,
+            IMapper mapper,
+            ILoggerFactory logger) : base(mapper, logger)
         {
             _share = buildServiceShareRepository;
+            _userServiceShare = userServiceShare;
         }
 
         public async Task<ServiceResponseDso> GetByAbsolutePath(string absolutePath)
@@ -36,6 +43,27 @@ namespace V1.Services.Services
 
             var response = await _share.GetAllByAsync(filterConditions);
             return MapToResponse(response.Data).ToList();
+        }
+
+        public async Task<List<ServiceResponseDso>> GetUserServices(string userId)
+        {
+            try
+            {
+                _logger.LogInformation("Fetching UserServices...");
+                var result = await _userServiceShare.GetAllByAsync(
+                    [new FilterCondition("UserId", userId)]);
+                if (result.TotalRecords == 0) return [];
+
+                var services = result.Data.Select(s => s.Service);
+
+                _logger.LogInformation("User fetched successfully.");
+                return GetMapper().Map<List<ServiceResponseDso>>(services);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error while fetching user.");
+                throw;
+            }
         }
 
         public async Task<ServiceResponseDso> GetByName(string name)

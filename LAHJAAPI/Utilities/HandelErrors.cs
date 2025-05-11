@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 
 
-public class HandelResult
+public class HandleResult
 {
     private readonly object _value;
 
@@ -19,31 +19,36 @@ public class HandelResult
     }
 
 
-    public HandelResult(object value)
+    public HandleResult(object value)
     {
         Data = value;
         IsSuccess = true;
         //Error = Error.None;
     }
 
-    public HandelResult(bool IsSuccess = true) { this.IsSuccess = IsSuccess; }
+    public HandleResult(bool IsSuccess = true) { this.IsSuccess = IsSuccess; }
 
 
 
-    public static HandelResult Ok()
+    public static HandleResult Ok()
     {
-        return new HandelResult();
+        return new HandleResult();
     }
 
-    public static HandelResult Ok(object value)
+    public static HandleResult Ok(object value)
     {
-        var r = new HandelResult(value);
+        var r = new HandleResult(value);
         return r;
     }
 
     public static string Text(string str)
     {
         return str;
+    }
+
+    public static ProblemDetails Problem(ProblemDetails problem)
+    {
+        return problem;
     }
 
     public static ProblemDetails Problem(Exception ex)

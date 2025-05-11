@@ -12,7 +12,7 @@ namespace V1.Services.Services
     {
         Task<int> AllowedRequests();
         Task<int> AvailableSpace(string? subscriptionId = null);
-        Task<SubscriptionResponseDso> GetCustomerSubscription(string subscriptionId);
+        Task<SubscriptionResponseDso> GetSubscriptionByCustomer(string subscriptionId, string? customerId = null);
         Task<PagedResponse<SubscriptionResponseDso>> GetCustomerSubscriptions();
         Task<int> GetNumberRequests(string? subsriptionId = null, bool refresh = true);
         Task<SpaceResponseDso> GetSpace(string spaceId, string? subscriptionId = null);

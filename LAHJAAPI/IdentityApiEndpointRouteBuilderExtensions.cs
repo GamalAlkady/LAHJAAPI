@@ -19,7 +19,7 @@ using System.Diagnostics;
 using System.Security.Claims;
 using System.Text;
 using System.Text.Encodings.Web;
-namespace Api;
+namespace LAHJAAPI;
 
 /// <summary>
 /// Provides extension methods for <see cref="IEndpointRouteBuilder"/> to add identity endpoints.
@@ -516,7 +516,7 @@ public static class IdentityApiEndpointRouteBuilderExtensions
 
     private static Dictionary<string, Dictionary<string, List<string>>> Validate(object registration)
     {
-        var validationResults = new List<ValidationResult>();
+        var validationResults = new List<System.ComponentModel.DataAnnotations.ValidationResult>();
         var validationContext = new ValidationContext(registration);
         if (!Validator.TryValidateObject(registration, validationContext, validationResults, true))
         {

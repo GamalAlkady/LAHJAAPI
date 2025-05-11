@@ -48,7 +48,7 @@ namespace LAHJAAPI.V1.Controllers.Api
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error while fetching all Plans");
-                return StatusCode(500, HandelResult.Problem(ex));
+                return StatusCode(500, HandleResult.Problem(ex));
             }
         }
 
@@ -72,7 +72,7 @@ namespace LAHJAAPI.V1.Controllers.Api
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error while fetching active Plans");
-                return StatusCode(500, HandelResult.Problem(ex));
+                return StatusCode(500, HandleResult.Problem(ex));
             }
         }
 
@@ -103,7 +103,7 @@ namespace LAHJAAPI.V1.Controllers.Api
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error while fetching Plan with ID: {id}", id);
-                return StatusCode(500, HandelResult.Problem(ex));
+                return StatusCode(500, HandleResult.Problem(ex));
             }
         }
 
@@ -131,7 +131,7 @@ namespace LAHJAAPI.V1.Controllers.Api
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error while fetching Plan with ID: {id}", model.Id);
-                return StatusCode(500, HandelResult.Problem(ex));
+                return StatusCode(500, HandleResult.Problem(ex));
             }
         }
 
@@ -159,7 +159,7 @@ namespace LAHJAAPI.V1.Controllers.Api
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error while fetching Plans with language: {lg}", lg);
-                return StatusCode(500, HandelResult.Problem(ex));
+                return StatusCode(500, HandleResult.Problem(ex));
             }
         }
 
@@ -187,7 +187,7 @@ namespace LAHJAAPI.V1.Controllers.Api
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error while creating new Plan");
-                return StatusCode(500, HandelResult.Problem(ex));
+                return StatusCode(500, HandleResult.Problem(ex));
             }
         }
 
@@ -219,7 +219,7 @@ namespace LAHJAAPI.V1.Controllers.Api
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error while setting new Plan");
-                return StatusCode(500, HandelResult.Problem(ex));
+                return StatusCode(500, HandleResult.Problem(ex));
             }
         }
 
@@ -253,7 +253,7 @@ namespace LAHJAAPI.V1.Controllers.Api
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error while creating multiple Plans");
-                return StatusCode(500, HandelResult.Problem(ex));
+                return StatusCode(500, HandleResult.Problem(ex));
             }
         }
 
@@ -291,7 +291,7 @@ namespace LAHJAAPI.V1.Controllers.Api
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error while updating Plan with ID: {id}", id);
-                return StatusCode(500, HandelResult.Problem(ex));
+                return StatusCode(500, HandleResult.Problem(ex));
             }
         }
 
@@ -318,7 +318,7 @@ namespace LAHJAAPI.V1.Controllers.Api
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error while deleting Plan with ID: {id}", id);
-                return StatusCode(500, HandelResult.Problem(ex));
+                return StatusCode(500, HandleResult.Problem(ex));
             }
         }
 
@@ -337,7 +337,7 @@ namespace LAHJAAPI.V1.Controllers.Api
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error while counting Plans");
-                return StatusCode(500, HandelResult.Problem(ex));
+                return StatusCode(500, HandleResult.Problem(ex));
             }
         }
     }

@@ -1,165 +1,164 @@
-using AutoGenerator.Conditions;
-using LAHJAAPI.Data;
-using LAHJAAPI.Models;
+﻿using LAHJAAPI.Models;
 using LAHJAAPI.V1.Validators.Conditions;
-using V1.DyModels.Dso.Requests;
-using V1.DyModels.VMs;
+using Microsoft.EntityFrameworkCore;
+using WasmAI.ConditionChecker.Base;
 
 namespace LAHJAAPI.V1.Validators
 {
-    public enum SessionValidatorStates
+    public enum AuthorizationSessionValidatorStates
     {
-        IsFound = 6400,
+        ValidateId = 6400,
         IsActive = 6401,
         HasSessionToken,
         HasAuthorizationType,
         HasStartTime,
         HasUserId,
         HasEndTime,
-        IsFull
+        IsFull,
+        HasMatchingSession,
+        IsValidServices,
+        IsServicesAsignedAndModelsToUsers
     }
 
-    public class AuthorizationSessionValidator : ValidatorContext<AuthorizationSession, SessionValidatorStates>
+    public class AuthorizationSessionValidator : ValidatorContext<AuthorizationSession, AuthorizationSessionValidatorStates>
     {
-        DataContext _context;
         private readonly IConditionChecker _checker;
+        AuthorizationSession? Session { get; set; } = null;
 
         public AuthorizationSessionValidator(IConditionChecker checker) : base(checker)
         {
-            _context = checker.Injector.Context;
             _checker = checker;
         }
 
         protected override void InitializeConditions()
         {
-
-
-
-            _provider.Register(
-                SessionValidatorStates.IsFound,
-                new LambdaCondition<AuthorizationSessionFilterVM>(
-                    nameof(SessionValidatorStates.IsFound),
-                    context => IsFound(context.Id),
-                    "Session is not found"
-                )
-            );
-
-            //RegisterCondition<string>(
-            //    SessionValidatorStates.IsActive,
-            //    IsActive,
-            //        "This session has been suspended."
-
-            //);
-
-            _provider.Register(
-                SessionValidatorStates.HasSessionToken,
-                new LambdaCondition<AuthorizationSessionRequestDso>(
-                    nameof(SessionValidatorStates.HasSessionToken),
-                    context => !string.IsNullOrWhiteSpace(context.SessionToken),
-                    "Session Token is required"
-                )
-            );
-
-            _provider.Register(
-                SessionValidatorStates.HasAuthorizationType,
-                new LambdaCondition<AuthorizationSessionRequestDso>(
-                    nameof(SessionValidatorStates.HasAuthorizationType),
-                    context => !string.IsNullOrWhiteSpace(context.AuthorizationType),
-                    "Authorization Type is required"
-                )
-            );
-
-
-            _provider.Register(
-                SessionValidatorStates.HasStartTime,
-                new LambdaCondition<AuthorizationSessionRequestDso>(
-                    nameof(SessionValidatorStates.HasStartTime),
-                    context => context.StartTime != default,
-                    "Start Time is required"
-                )
-            );
-
-            _provider.Register(
-                SessionValidatorStates.IsActive,
-                new LambdaCondition<AuthorizationSessionRequestDso>(
-                    nameof(SessionValidatorStates.IsActive),
-                    context => context.IsActive,
-                    "Session is not active"
-                )
-            );
-
-            _provider.Register(
-                SessionValidatorStates.HasUserId,
-                new LambdaCondition<AuthorizationSessionRequestDso>(
-                    nameof(SessionValidatorStates.HasUserId),
-                    context => !string.IsNullOrWhiteSpace(context.UserId),
-                    "User ID is required"
-                )
-            );
-
-            _provider.Register(
-                SessionValidatorStates.HasEndTime,
-                new LambdaCondition<AuthorizationSessionRequestDso>(
-                    nameof(SessionValidatorStates.HasEndTime),
-                    context => context.EndTime.HasValue,
-                    "End Time is required"
-                )
-            );
-
-            //_provider.Register(
-            //    SessionValidatorStates.IsFull,
-            //    new LambdaCondition<AuthorizationSessionRequestDso>(
-            //        nameof(SessionValidatorStates.IsFull),
-            //        context => IsValidAuthorizationSession(context),
-            //        "Authorization session is incomplete"
-            //    )
-            //);
         }
-        AuthorizationSession? Session { get; set; } = null;
-        private AuthorizationSession? GetSession(string? id)
+
+        protected async Task<List<T>> QueryDbSet<T>(Func<DbSet<T>, IQueryable<T>> query)
+            where T : class
         {
-            if (Session is not null) return Session;
-            if (id == null) id = _checker.Injector.UserClaims.SessionId;
-            if (string.IsNullOrWhiteSpace(id)) return null;
-            return Session = _context.AuthorizationSessions.FirstOrDefault(s => s.Id == id);
+            return await _injector.ContextFactory.ExecuteInScopeAsync(ctx =>
+                query(ctx.Set<T>()).ToListAsync()
+            );
         }
 
-        private bool IsFound(string? id)
+        [RegisterConditionValidator(typeof(AuthorizationSessionValidatorStates), AuthorizationSessionValidatorStates.ValidateId, "Session not found.")]
+        private Task<ConditionResult> ValidateId(DataFilter<string, AuthorizationSession> f)
         {
-            return GetSession(id) is not null;
+            bool valid = !string.IsNullOrWhiteSpace(f.Share?.Id);
+            return valid
+                ? ConditionResult.ToSuccessAsync(f.Share)
+                : ConditionResult.ToFailureAsync("Id is required");
         }
 
-        [RegisterConditionValidator(typeof(SessionValidatorStates), SessionValidatorStates.IsActive, "Session not active.")]
-        private async Task<ConditionResult> IsActive(DataFilter<string, AuthorizationSession> data)
+        [RegisterConditionValidator(typeof(AuthorizationSessionValidatorStates), AuthorizationSessionValidatorStates.IsActive, "Session not active.")]
+        private Task<ConditionResult> IsActive(DataFilter<string, AuthorizationSession> data)
         {
-            if (data.Share == null) return ConditionResult.ToError("Session not found.");
-            return new ConditionResult(data.Share!.IsActive, data.Share, "Session is not active.");
+            if (data.Share == null)
+                return ConditionResult.ToErrorAsync("Session not found.");
+            return Task.FromResult(new ConditionResult(data.Share!.IsActive, data.Share, "Session is not active."));
         }
 
-        private bool CheckCustomerId(string userId)
+        [RegisterConditionValidator(typeof(AuthorizationSessionValidatorStates), AuthorizationSessionValidatorStates.HasMatchingSession, "No session found for the provided user ID and authorization type.")]
+        private async Task<ConditionResult> HasMatchingAuthorizationSession(DataFilter<string, AuthorizationSession> data)
         {
-            return _checker.Check(ApplicationUserValidatorStates.HasCustomerId, userId);
+            try
+            {
+                if (data.Items == null || !data.Items.TryGetValue("userId", out object? userId))
+                    return ConditionResult.ToError("UserId is required.");
+
+                if (!data.Items.TryGetValue("servicesIds", out object? servicesIdsObj))
+                    return ConditionResult.ToError("ServicesIds is required.");
+
+                if (!data.Items.TryGetValue("authorizationType", out object? authorizationTypeObj))
+                    return ConditionResult.ToError("AuthorizationType is required.");
+
+                var servicesIds = servicesIdsObj as List<string>;
+                var authorizationType = authorizationTypeObj?.ToString();
+
+                if (servicesIds == null || servicesIds.Count == 0)
+                    return ConditionResult.ToError("ServicesIds is required.");
+                if (string.IsNullOrWhiteSpace(authorizationType))
+                    return ConditionResult.ToError("AuthorizationType is required.");
+
+                var services = await QueryListAsync<Service>(s => s.Where(sv => servicesIds.Contains(sv.Id)));
+
+                // الخطوة 1: جلب الجلسات المرتبطة بالمستخدم ونوع الصلاحية
+                var candidateSessions = await QueryListAsync<AuthorizationSession>(s =>
+                     //s.Include(sess => sess.Services)
+                     //.ThenInclude(m => m.ModelAi)
+                     s.Where(sess =>
+                         sess.UserId == userId.ToString()
+                         && sess.AuthorizationType == authorizationType
+                     )
+                );
+
+                // الخطوة 2: فلترة الجلسات التي تحتوي على جميع الـ serviceIds المطلوبة
+                var matchingSessions = candidateSessions
+                    .Where(sess =>
+                        sess.AuthorizationSessionServices != null &&
+                        servicesIds.All(requiredId => sess.AuthorizationSessionServices.Any(s => s.ServiceId == requiredId))
+                    )
+                    .ToList();
+
+
+                var session = matchingSessions.FirstOrDefault();
+
+                if (session == null)
+                {
+                    return ConditionResult.ToFailure(new AuthorizationSession
+                    {
+                        //Services = services
+                    }, "No session found for the provided user ID and authorization type.");
+                }
+
+                return ConditionResult.ToSuccess(session, "Matching session found.");
+            }
+            catch (Exception ex)
+            {
+
+                throw;
+            }
         }
 
-
-
-        private bool CheckAuthorizationType(string authorizationType)
+        [RegisterConditionValidator(typeof(AuthorizationSessionValidatorStates), AuthorizationSessionValidatorStates.IsServicesAsignedAndModelsToUsers)]
+        private async Task<ConditionResult> IsServicesAsignedAndModelsToUsers(DataFilter<List<string>> data)
         {
-            return !string.IsNullOrWhiteSpace(authorizationType);
-        }
-        //private bool IsValidAuthorizationSession(AuthorizationSessionRequestDso context)
-        //{
-        //    var conditions = new List<Func<AuthorizationSessionRequestDso, bool>>
-        //    {
-        //        c =>CheckSessionToken(c.SessionToken),
-        //        c =>CheckAuthorizationType(c.AuthorizationType),
-        //        c => c.StartTime != default,
-        //        c => CheckCustomerId(c.UserId),
-        //        c => c.IsActive,
-        //        c => c.EndTime.HasValue,
-        //    };
+            try
+            {
+                if (data.Value == null || data.Value.Count == 0)
+                    return ConditionResult.ToError("You must pass services as list to value.");
+                if (data.Items == null || !data.Items.TryGetValue("userId", out object? userID))
+                    return ConditionResult.ToError("UserId is required.");
 
-        //    return conditions.All(condition => condition(context));
-        //}
+                HashSet<Service> services = [];
+
+                foreach (var serviceId in data.Value)
+                {
+                    var resultService = await _checker.CheckAndResultAsync(ApplicationUserValidatorStates.IsServiceAssigned,
+                        new DataFilter(userID.ToString()) { Value = serviceId });
+
+                    if (!resultService.Success.GetValueOrDefault())
+                        return resultService;
+
+                    services.Add((Service)resultService.Result!);
+                }
+
+                var modelGatewayId = services.First().ModelAi.ModelGatewayId;
+
+                var resultModelGateway = await _checker.CheckAndResultAsync(ModelGatewayValidatorStates.ValidateId, modelGatewayId);
+                if (!resultModelGateway.Success.GetValueOrDefault()) return resultModelGateway;
+
+                ModelGateway modelGateway = (ModelGateway)resultModelGateway.Result!;
+                services.First().ModelAi.ModelGateway = modelGateway;
+
+                return ConditionResult.ToSuccess(services.ToList(), "All services are assigned to the user.");
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
+        }
     }
 }

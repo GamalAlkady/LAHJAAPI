@@ -30,7 +30,7 @@ namespace V1.DyModels.Dto.Build.Requests
         /// <summary>
         /// Active property for DTO.
         /// </summary>
-        public Boolean Active { get; set; }
+        public Boolean Active { get; set; } = true;
         /// <summary>
         /// UpdatedAt property for DTO.
         /// </summary>

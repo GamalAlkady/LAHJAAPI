@@ -10,7 +10,7 @@ using V1.Services.Services;
 
 namespace LAHJAAPI.V1.Controllers.Api
 {
-    [ApiExplorerSettings(GroupName = "User")]
+    //[ApiExplorerSettings(GroupName = "User")]
     [Route("api/v1/user/[controller]")]
     [ApiController]
     public class TypeModelController : ControllerBase
@@ -49,7 +49,7 @@ namespace LAHJAAPI.V1.Controllers.Api
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error while fetching all TypeModels");
-                return StatusCode(500, HandelResult.Problem(ex));
+                return StatusCode(500, HandleResult.Problem(ex));
             }
         }
 
@@ -80,7 +80,7 @@ namespace LAHJAAPI.V1.Controllers.Api
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error while fetching TypeModel with ID: {id}", id);
-                return StatusCode(500, HandelResult.Problem(ex));
+                return StatusCode(500, HandleResult.Problem(ex));
             }
         }
 
@@ -120,7 +120,7 @@ namespace LAHJAAPI.V1.Controllers.Api
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error while fetching TypeModel with name: {name}", name);
-                return StatusCode(500, HandelResult.Problem(ex));
+                return StatusCode(500, HandleResult.Problem(ex));
             }
         }
 
@@ -158,7 +158,7 @@ namespace LAHJAAPI.V1.Controllers.Api
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error while fetching active TypeModels");
-                return StatusCode(500, HandelResult.Problem(ex));
+                return StatusCode(500, HandleResult.Problem(ex));
             }
         }
 
@@ -186,7 +186,7 @@ namespace LAHJAAPI.V1.Controllers.Api
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error while fetching TypeModel with ID: {id}", model.Id);
-                return StatusCode(500, HandelResult.Problem(ex));
+                return StatusCode(500, HandleResult.Problem(ex));
             }
         }
 
@@ -214,7 +214,7 @@ namespace LAHJAAPI.V1.Controllers.Api
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error while fetching TypeModels with language: {lg}", lg);
-                return StatusCode(500, HandelResult.Problem(ex));
+                return StatusCode(500, HandleResult.Problem(ex));
             }
         }
 
@@ -242,7 +242,7 @@ namespace LAHJAAPI.V1.Controllers.Api
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error while creating new TypeModel");
-                return StatusCode(500, HandelResult.Problem(ex));
+                return StatusCode(500, HandleResult.Problem(ex));
             }
         }
 
@@ -276,7 +276,7 @@ namespace LAHJAAPI.V1.Controllers.Api
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error while creating multiple TypeModels");
-                return StatusCode(500, HandelResult.Problem(ex));
+                return StatusCode(500, HandleResult.Problem(ex));
             }
         }
 
@@ -314,7 +314,7 @@ namespace LAHJAAPI.V1.Controllers.Api
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error while updating TypeModel with ID: {id}", id);
-                return StatusCode(500, HandelResult.Problem(ex));
+                return StatusCode(500, HandleResult.Problem(ex));
             }
         }
 
@@ -341,7 +341,7 @@ namespace LAHJAAPI.V1.Controllers.Api
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error while deleting TypeModel with ID: {id}", id);
-                return StatusCode(500, HandelResult.Problem(ex));
+                return StatusCode(500, HandleResult.Problem(ex));
             }
         }
 
@@ -360,7 +360,7 @@ namespace LAHJAAPI.V1.Controllers.Api
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error while counting TypeModels");
-                return StatusCode(500, HandelResult.Problem(ex));
+                return StatusCode(500, HandleResult.Problem(ex));
             }
         }
     }

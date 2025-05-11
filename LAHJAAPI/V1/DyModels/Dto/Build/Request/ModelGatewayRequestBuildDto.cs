@@ -24,5 +24,9 @@ namespace V1.DyModels.Dto.Build.Requests
         /// IsDefault property for DTO.
         /// </summary>
         public Boolean IsDefault { get; set; }
+
+        public ICollection<ModelAiRequestBuildDto>? ModelAis { get; set; }
+        public ICollection<ApplicationUserRequestBuildDto>? Users { get; set; }
+
     }
 }

@@ -12,7 +12,7 @@ using V1.Services.Services;
 namespace LAHJAAPI.V1.Controllers.Api
 {
 
-    [ApiExplorerSettings(GroupName = "User")]
+    //[ApiExplorerSettings(GroupName = "User")]
     [Route("api/v1/user/[controller]")]
     [ApiController]
     public class ProfileController(
@@ -51,7 +51,7 @@ namespace LAHJAAPI.V1.Controllers.Api
             }
             catch (Exception ex)
             {
-                return BadRequest(HandelResult.Problem(ex));
+                return BadRequest(HandleResult.Problem(ex));
             }
         }
 
@@ -67,7 +67,7 @@ namespace LAHJAAPI.V1.Controllers.Api
                 var user = await userService.GetByIdAsync(userClaims.UserId);
 
                 if (user.CustomerId == null)
-                    return NotFound(HandelResult.NotFound("You are not stripe customer yet!", "user", "No customer id found"));
+                    return NotFound(HandleResult.NotFound("You are not stripe customer yet!", "user", "No customer id found"));
 
 
                 var response = await subscriptionService.GetAllByAsync([
@@ -83,7 +83,7 @@ namespace LAHJAAPI.V1.Controllers.Api
             }
             catch (Exception ex)
             {
-                return BadRequest(HandelResult.Problem(ex));
+                return BadRequest(HandleResult.Problem(ex));
             }
         }
 
@@ -115,7 +115,7 @@ namespace LAHJAAPI.V1.Controllers.Api
             }
             catch (Exception ex)
             {
-                return BadRequest(HandelResult.Problem(ex));
+                return BadRequest(HandleResult.Problem(ex));
             }
         }
         //TODO: Cause looping
@@ -147,7 +147,7 @@ namespace LAHJAAPI.V1.Controllers.Api
             {
 
                 if (!await checker.CheckAsync(SubscriptionValidatorStates.IsBelongToUser, subscriptionId))
-                    return BadRequest(HandelResult.Problem("Subscription not belong to you!", $"Subscription with Id: {subscriptionId} not belong to you!", "Subscription"));
+                    return BadRequest(HandleResult.Problem("Subscription not belong to you!", $"Subscription with Id: {subscriptionId} not belong to you!", "Subscription"));
             }
             //var subscription = await subscriptionService.GetCustomerSubscription(subscriptionId);
 

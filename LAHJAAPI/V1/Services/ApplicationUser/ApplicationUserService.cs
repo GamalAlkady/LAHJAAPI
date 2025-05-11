@@ -14,13 +14,20 @@ namespace V1.Services.Services
     {
         private readonly IApplicationUserShareRepository _share;
         private readonly IUserClaimsHelper _userClaims;
-
-        public ApplicationUserService(IApplicationUserShareRepository buildApplicationUserShareRepository,
+        private readonly IUseUserServiceService _userServiceService;
+        private readonly IUseUserModelAiService _userModelAiService;
+        public ApplicationUserService(
+            IApplicationUserShareRepository buildApplicationUserShareRepository,
             IUserClaimsHelper userClaims,
-            IMapper mapper, ILoggerFactory logger) : base(mapper, logger)
+            IMapper mapper,
+            ILoggerFactory logger,
+            IUseUserServiceService userServiceService,
+            IUseUserModelAiService userModelAiService) : base(mapper, logger)
         {
             _share = buildApplicationUserShareRepository;
             _userClaims = userClaims;
+            _userServiceService = userServiceService;
+            _userModelAiService = userModelAiService;
         }
 
         public async Task<ApplicationUserResponseDso> GetUser()
@@ -126,6 +133,57 @@ namespace V1.Services.Services
             }
         }
 
+        public async Task<UserModelAiResponseDso?> AssignModelAi(string modelAiId, string? userId = null)
+        {
+            try
+            {
+                _logger.LogInformation("Assigning ModelAi to user...");
+                userId ??= _userClaims.UserId;
+                var userModel = await _userModelAiService.CreateAsync(new UserModelAiRequestDso
+                {
+                    ModelAiId = modelAiId,
+                    UserId = userId
+                });
+                _logger.LogInformation("ModelAi assigned successfully.");
+                return GetMapper().Map<UserModelAiResponseDso>(userModel);
+            }
+            catch (ArgumentNullException ex)
+            {
+                _logger.LogError(ex, "ModelAi ID or User ID is null.");
+                return null;
+            }
+            catch (Exception)
+            {
+                _logger.LogError("Error while assigning ModelAi to user.");
+                throw;
+            }
+        }
+
+        public async Task<UserServiceResponseDso?> AssignService(string serviceId, string? userId = null)
+        {
+            try
+            {
+                _logger.LogInformation("Assigning Service to user...");
+                userId ??= _userClaims.UserId;
+                var userService = await _userServiceService.CreateAsync(new UserServiceRequestDso
+                {
+                    ServiceId = serviceId,
+                    UserId = userId
+                });
+                _logger.LogInformation("Service assigned successfully.");
+                return GetMapper().Map<UserServiceResponseDso>(userService);
+            }
+            catch (ArgumentNullException ex)
+            {
+                _logger.LogError(ex, "Service ID or User ID is null.");
+                return null;
+            }
+            catch (Exception)
+            {
+                _logger.LogError("Error while assigning Service to user.");
+                throw;
+            }
+        }
         public override async Task<ApplicationUserResponseDso> CreateAsync(ApplicationUserRequestDso entity)
         {
             try

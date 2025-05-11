@@ -1,6 +1,7 @@
 using AutoGenerator.Conditions;
 using LAHJAAPI.Models;
 using LAHJAAPI.V1.Validators.Conditions;
+using WasmAI.ConditionChecker.Base;
 
 namespace LAHJAAPI.V1.Validators
 {
@@ -10,7 +11,7 @@ namespace LAHJAAPI.V1.Validators
         HasLanguage,
         IsStandardModel,
         HasDialect,
-        HasService,
+        IsHasModelGateway,
         IsFound,
     }
 
@@ -74,7 +75,7 @@ namespace LAHJAAPI.V1.Validators
                 : ConditionResult.ToFailureAsync("Dialect mismatch.");
         }
 
-        [RegisterConditionValidator(typeof(ModelValidatorStates), ModelValidatorStates.HasService, "Model service is missing")]
+        [RegisterConditionValidator(typeof(ModelValidatorStates), ModelValidatorStates.IsHasModelGateway, "Model service is missing")]
         private async Task<ConditionResult> CheckHasModel(DataFilter<string, ModelAi> f)
         {
             if (f.Share != null)

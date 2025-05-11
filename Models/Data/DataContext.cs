@@ -50,6 +50,10 @@ public class DataContext : AutoIdentityDataContext<ApplicationUser, IdentityRole
         modelBuilder.Entity<Request>().Navigation(e => e.Events).AutoInclude();
 
         //modelBuilder.Entity<AuthorizationSession>()
+        //    .HasMany(s => s.Services)
+        //    .WithMany(s => s.AuthorizationSessions);
+
+        //modelBuilder.Entity<AuthorizationSession>()
         // .Property(u => u.ServicesId)
         // .HasConversion(
         //     v => JsonSerializer.Serialize(v, null as JsonSerializerOptions),  // تحويل القائمة إلى JSON عند الحفظ

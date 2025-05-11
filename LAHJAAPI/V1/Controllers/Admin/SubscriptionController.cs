@@ -6,7 +6,7 @@ using V1.Services.Services;
 
 namespace LAHJAAPI.V1.Controllers.Admin;
 
-[ApiExplorerSettings(GroupName = "Admin")]
+//[ApiExplorerSettings(GroupName = "Admin")]
 [ServiceFilter(typeof(SubscriptionCheckFilter))]
 [Route("api/v1/admin/[controller]")]
 [ApiController]
@@ -121,7 +121,7 @@ public class SubscriptionController : ControllerBase
         }
         catch (Exception ex)
         {
-            return BadRequest(HandelResult.Problem(ex));
+            return BadRequest(HandleResult.Problem(ex));
         }
     }
 
@@ -143,11 +143,11 @@ public class SubscriptionController : ControllerBase
         }
         catch (Stripe.StripeException ex)
         {
-            return BadRequest(HandelResult.Problem(ex));
+            return BadRequest(HandleResult.Problem(ex));
         }
         catch (Exception ex)
         {
-            return BadRequest(HandelResult.Problem(ex));
+            return BadRequest(HandleResult.Problem(ex));
         }
     }
 
@@ -166,7 +166,7 @@ public class SubscriptionController : ControllerBase
         }
         catch (Exception ex)
         {
-            return BadRequest(HandelResult.Problem(ex));
+            return BadRequest(HandleResult.Problem(ex));
         }
     }
 
@@ -186,7 +186,7 @@ public class SubscriptionController : ControllerBase
         }
         catch (Exception ex)
         {
-            return BadRequest(HandelResult.Problem(ex));
+            return BadRequest(HandleResult.Problem(ex));
         }
     }
 
@@ -206,7 +206,7 @@ public class SubscriptionController : ControllerBase
         }
         catch (Exception ex)
         {
-            return BadRequest(HandelResult.Problem(ex));
+            return BadRequest(HandleResult.Problem(ex));
         }
     }
 
@@ -228,11 +228,11 @@ public class SubscriptionController : ControllerBase
         }
         catch (Stripe.StripeException ex)
         {
-            return BadRequest(HandelResult.Problem(ex));
+            return BadRequest(HandleResult.Problem(ex));
         }
         catch (Exception ex)
         {
-            return BadRequest(HandelResult.Problem(ex));
+            return BadRequest(HandleResult.Problem(ex));
         }
     }
 

@@ -1,4 +1,5 @@
 using AutoGenerator;
+using System.Text.Json.Serialization;
 
 namespace V1.DyModels.VMs
 {
@@ -29,10 +30,11 @@ namespace V1.DyModels.VMs
         public String? Type { get; set; }
         ///
         public String? ModelGatewayId { get; set; }
-        public ModelGatewayOutputVM? ModelGateway { get; set; }
+
         //
         public List<ServiceOutputVM>? Services { get; set; }
-        //
+
+        [JsonIgnore]
         public List<UserModelAiOutputVM>? UserModelAis { get; set; }
     }
 }

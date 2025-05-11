@@ -12,9 +12,9 @@ namespace LAHJAAPI.Models
         public DateTime StartDate { get; set; }
         public DateTime CurrentPeriodStart { get; set; }
         public DateTime CurrentPeriodEnd { get; set; }
-
+        public bool IsFree { get; set; } = false;
         public required string Status { get; set; }
-        //public required string BillingPeriod { get; set; } // interval of price like (day,week,month,year)
+        public string? BillingPeriod { get; set; } // interval of price like (day,week,month,year)
         public bool CancelAtPeriodEnd { get; set; } = false;
         public int NumberRequests { get; set; } = 0;
         public int AllowedRequests { get; set; } = 0;

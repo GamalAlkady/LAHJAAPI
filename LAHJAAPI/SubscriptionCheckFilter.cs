@@ -1,10 +1,11 @@
-﻿using LAHJAAPI.Attributes;
+﻿using APILAHJA.Utilities;
+using LAHJAAPI.Attributes;
 using LAHJAAPI.V1.Validators;
 using LAHJAAPI.V1.Validators.Conditions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 
-public class SubscriptionCheckFilter(IConditionChecker checker) : IAsyncActionFilter
+public class SubscriptionCheckFilter(IConditionChecker checker, IUserClaimsHelper userClaims) : IAsyncActionFilter
 {
 
     public async Task OnActionExecutionAsync(ActionExecutingContext context, ActionExecutionDelegate next)
@@ -16,7 +17,7 @@ public class SubscriptionCheckFilter(IConditionChecker checker) : IAsyncActionFi
          .Any();
             if (!skip)
             {
-                var result = await checker.CheckAndResultAsync(SubscriptionValidatorStates.IsNotSubscribe);
+                var result = await checker.CheckAndResultAsync(SubscriptionValidatorStates.IsNotSubscribe, userClaims.SubscriptionId);
                 if (result.Success == true)
                 {
                     context.Result = new ObjectResult(result.Result ?? result.Message)

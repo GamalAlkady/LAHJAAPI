@@ -30,7 +30,7 @@ namespace LAHJAAPI.Models
 
         public string? ModelGatewayId { get; set; }
         public ModelGateway ModelGateway { get; set; }
-        public ICollection<Service> Services { get; set; }
+        public ICollection<Service>? Services { get; set; } = [];
         public ICollection<UserModelAi> UserModelAis { get; set; } = [];
     }
 }

@@ -16,7 +16,6 @@ public static class DefaultPlansAndFeatures
         var planFeatureService = scope.ServiceProvider.GetService<IUsePlanFeatureService>();
         var mapper = scope.ServiceProvider.GetService<IMapper>();
 
-        //await context.Plans.ExecuteDeleteAsync();
         //await context.SaveChangesAsync();
         var plan = await planService.GetOneByAsync([new FilterCondition("Id", "price_1Qn3ypKMQ7LabgRTSuyGIBVH")], new ParamOptions(["PlanFeatures"]));
 

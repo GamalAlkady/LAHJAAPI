@@ -1,13 +1,11 @@
-﻿using Api;
-using ApiCore.Schedulers;
-using AutoGenerator;
+﻿using AutoGenerator;
 using AutoGenerator.Notifications.Config;
-using AutoGenerator.Schedulers;
 using LAHJAAPI;
 using LAHJAAPI.CustomPolicy;
 using LAHJAAPI.Data;
 using LAHJAAPI.Middlewares;
 using LAHJAAPI.Models;
+using LAHJAAPI.Seeds;
 using LAHJAAPI.Utilities;
 using LAHJAAPI.V1.Validators.Conditions;
 using Microsoft.AspNetCore.Authentication;
@@ -55,7 +53,7 @@ builder.Services
 
        })
     .AddAutoValidator()
-    .AddAutoConfigScheduler()
+    //.AddAutoConfigScheduler()
 
     .AddAutoNotifier(new()
     {
@@ -158,9 +156,9 @@ builder.Services.AddSwaggerGen(c =>
 {
     //c.EnableAnnotations();
     //c.SchemaFilter<NullDefaultsSchemaFilter>();
-    c.SwaggerDoc("User", new OpenApiInfo { Title = "User API", Version = "v1" });
-    c.SwaggerDoc("V1", new OpenApiInfo { Title = "Public Api", Version = "v1" });
-    c.SwaggerDoc("Admin", new OpenApiInfo { Title = "Admin API", Version = "v1" });
+    //c.SwaggerDoc("User", new OpenApiInfo { Title = "User API", Version = "v1" });
+    //c.SwaggerDoc("V1", new OpenApiInfo { Title = "Public Api", Version = "v1" });
+    //c.SwaggerDoc("Admin", new OpenApiInfo { Title = "Admin API", Version = "v1" });
 
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
@@ -189,10 +187,13 @@ builder.Services.AddSwaggerGen(c =>
 
 
 var app = builder.Build();
-app.UseSchedulerDashboard();
+if (app.Environment.IsDevelopment())
+{
+    SeedData.EnsureSeedData(app);
+}
+//app.UseSchedulerDashboard();
 app.UseCors("wasm");
 app.UseMiddleware<ProblemDetailsMiddleware>();
-//SeedData.EnsureSeedData(app);
 
 // Configure the HTTP request pipeline.
 
@@ -209,10 +210,10 @@ app.UseMiddleware<ProblemDetailsMiddleware>();
 app.UseSwagger();
 app.UseSwaggerUI(o =>
 {
-    o.SwaggerEndpoint("/swagger/User/swagger.json", "User API v1");
-    o.SwaggerEndpoint("/swagger/Admin/swagger.json", "Admin API v1");
-    o.SwaggerEndpoint("/swagger/V1/swagger.json", "My API v1");
-    //o.SwaggerEndpoint("/swagger/v1/swagger.json", "API v1");
+    //o.SwaggerEndpoint("/swagger/User/swagger.json", "User API v1");
+    //o.SwaggerEndpoint("/swagger/Admin/swagger.json", "Admin API v1");
+    //o.SwaggerEndpoint("/swagger/V1/swagger.json", "My API v1");
+    o.SwaggerEndpoint("/swagger/v1/swagger.json", "API v1");
     //o.RoutePrefix = string.Empty;
     // collapse endpoints 
     o.DocExpansion(Swashbuckle.AspNetCore.SwaggerUI.DocExpansion.None);

@@ -15,11 +15,12 @@ public interface IUserClaimsHelper
     //long NumberRequests { get; }
     List<string>? ServicesIds { get; }
     string? SessionId { get; }
+    HttpContext? HttpContext { get; }
 }
 
 public class UserClaimsHelper(IHttpContextAccessor httpContext) : IUserClaimsHelper
 {
-    private HttpContext? HttpContext => httpContext?.HttpContext;
+    public HttpContext? HttpContext => httpContext?.HttpContext;
     public ClaimsPrincipal? User => HttpContext?.User;
     public string UserId => (HttpContext?.User?.FindFirstValue(ClaimTypes.NameIdentifier))!;
     public string? UserRole => HttpContext?.User?.FindFirstValue(ClaimTypes.Role);

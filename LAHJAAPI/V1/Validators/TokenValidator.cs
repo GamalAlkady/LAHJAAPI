@@ -1,21 +1,15 @@
-using AutoGenerator.Conditions;
 using LAHJAAPI.Utilities;
 using LAHJAAPI.V1.Validators.Conditions;
 using System.Security.Claims;
 using System.Text.Json;
 using V1.DyModels.Dso.Requests;
 using V1.DyModels.VMs;
+using WasmAI.ConditionChecker.Base;
 
 namespace LAHJAAPI.V1.Validators
 {
-
-
-
-
     public enum TokenValidatorStates
     {
-        IsServiceIdFound = 6100,
-        IsServiceIdsEmpty = 6101,
         HasName,
         ValidatePlatformToken,
         ValidateCoreToken,
@@ -42,22 +36,16 @@ namespace LAHJAAPI.V1.Validators
             );
 
 
-            _provider.Register(TokenValidatorStates.IsServiceIdFound,
-                new LambdaCondition<string>(
-                    nameof(TokenValidatorStates.IsServiceIdFound),
-                    context => IsServiceIdFound(context),
-                    "No service found in this token."
-                )
-            );
-
-            RegisterCondition<string>(TokenValidatorStates.IsServiceIdsEmpty, IsServiceIdsEmpty, "Service Ids is not empty.");
-            //_provider.Register(TokenValidatorStates.IsServiceIdsEmpty,
-            //    new LambdaCondition<bool?>(
-            //        nameof(TokenValidatorStates.IsServiceIdsEmpty),
-            //        context => IsServiceIdsEmpty(),
-            //        "Service Ids is not empty."
+            //_provider.Register(TokenValidatorStates.IsServiceIdFound,
+            //    new LambdaCondition<string>(
+            //        nameof(TokenValidatorStates.IsServiceIdFound),
+            //        context => IsServiceIdFound(context),
+            //        "No service found in this token."
             //    )
             //);
+
+            //RegisterCondition<string>(TokenValidatorStates.IsServiceIdsEmpty, IsServiceIdsEmpty, "Service Ids is not empty.");
+
 
 
             _provider.Register(TokenValidatorStates.ValidatePlatformToken,
@@ -86,29 +74,30 @@ namespace LAHJAAPI.V1.Validators
             );
 
         }
-        ConditionResult IsServiceIdFound(string idServ)
-        {
-            if (!string.IsNullOrWhiteSpace(idServ))
-            {
-                var result = _checker.Injector.UserClaims.ServicesIds?.Any(x => x == idServ);
-                return new ConditionResult(result ?? false, null, "No service found in this token.");
-            }
-            return ConditionResult.ToError("No service found in this token.");
-        }
+        //ConditionResult IsServiceIdFound(string idServ)
+        //{
+        //    if (!string.IsNullOrWhiteSpace(idServ))
+        //    {
+        //        var result = _checker.Injector.UserClaims.ServicesIds?.Any(x => x == idServ);
+        //        return new ConditionResult(result ?? false, null, "No service found in this token.");
+        //    }
+        //    return ConditionResult.ToError("No service found in this token.");
+        //}
 
-        async Task<ConditionResult> IsServiceIdsEmpty(DataFilter<string, ServiceRequestDso> d)
-        {
-            if (_checker.Injector.UserClaims.ServicesIds?.Count > 0)
-                return ConditionResult.ToError("Service Ids is not empty.");
-            return ConditionResult.ToSuccess(null);
-        }
+        //async Task<ConditionResult> IsServiceIdsEmpty(DataFilter<string, ServiceRequestDso> d)
+        //{
+        //    if (_checker.Injector.UserClaims.ServicesIds?.Count > 0)
+        //        return ConditionResult.ToError("Service Ids is not empty.");
+        //    return ConditionResult.ToSuccess(null);
+        //}
 
         private ConditionResult ValidatePlatformToken(string token)
         {
             if (string.IsNullOrWhiteSpace(token)) return ConditionResult.ToError("Token can not be null.");
             string secret = _checker.Injector.AppSettings.Jwt.WebSecret;
             var result = _checker.Injector.TokenService.ValidateToken(token, secret);
-            if (result.IsFailed) return ConditionResult.ToError(result.Errors?.FirstOrDefault()?.Message);
+            if (result.IsFailed)
+                return ConditionResult.ToError(result.Errors?.FirstOrDefault()?.Message);
             var claims = result.Value;
 
             var data = claims.FindFirstValue(ClaimTypes2.Data);

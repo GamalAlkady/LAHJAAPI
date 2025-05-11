@@ -36,6 +36,8 @@ namespace LAHJAAPI.Models
         [Column(TypeName = "nvarchar(max)")]
         public string ServicesIds { get; set; }
 
+        public ICollection<AuthorizationSessionService>? AuthorizationSessionServices { get; set; }
+
 
 
         public AuthorizationSession()

@@ -17,6 +17,8 @@ namespace LAHJAAPI.Models
         public ICollection<UserService> UserServices { get; set; } = [];
         public ICollection<Request> Requests { get; set; } = [];
         public ICollection<PlanServices> PlanServices { get; set; } = new List<PlanServices>();
+        public ICollection<AuthorizationSessionService>? AuthorizationSessionServices { get; set; }
+
     }
 
 

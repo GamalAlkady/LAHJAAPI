@@ -15,12 +15,14 @@ public static class SeedData
             var mapper = scope.ServiceProvider.GetService<IMapper>();
             //await context.AuthorizationSessions.ExecuteDeleteAsync();
             //await context.Requests.ExecuteDeleteAsync();
+            //await context.Plans.ExecuteDeleteAsync();
 
             //await context.Database.EnsureDeletedAsync();
             await context.Database.MigrateAsync();
             //await context.Database.EnsureCreatedAsync();
             /**/
 
+            await DefaultModals.SeedAsync(scope, context);
             await DefaultRoles.SeedAsync(scope);
             await DefaultUsers.SeedAdminAsync(scope);
 
@@ -31,5 +33,9 @@ public static class SeedData
 
 
         }
+
+
     }
+
+
 }

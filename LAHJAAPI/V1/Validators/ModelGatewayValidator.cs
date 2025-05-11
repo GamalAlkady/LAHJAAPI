@@ -1,6 +1,6 @@
-using AutoGenerator.Conditions;
 using LAHJAAPI.Models;
 using LAHJAAPI.V1.Validators.Conditions;
+using WasmAI.ConditionChecker.Base;
 
 namespace LAHJAAPI.V1.Validators
 {
@@ -13,7 +13,7 @@ namespace LAHJAAPI.V1.Validators
 
     public enum ModelGatewayValidatorStates
     {
-        HasId,
+        ValidateId,
         HasName,
         HasValidUrl,
         HasTokenIfExists,
@@ -37,7 +37,7 @@ namespace LAHJAAPI.V1.Validators
 
         #region Validation Functions
 
-        [RegisterConditionValidator(typeof(ModelGatewayValidatorStates), ModelGatewayValidatorStates.HasId, "Id is required")]
+        [RegisterConditionValidator(typeof(ModelGatewayValidatorStates), ModelGatewayValidatorStates.ValidateId, "Id is required")]
         private Task<ConditionResult> ValidateId(DataFilter<string, ModelGateway> f)
         {
             bool valid = !string.IsNullOrWhiteSpace(f.Share?.Id);

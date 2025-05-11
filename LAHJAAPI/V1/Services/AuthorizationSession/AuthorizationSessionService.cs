@@ -4,12 +4,22 @@ using AutoGenerator.Helper;
 using AutoGenerator.Services.Base;
 using AutoMapper;
 using FluentResults;
+using LAHJAAPI.Exceptions;
+using LAHJAAPI.Models;
+using LAHJAAPI.Services2;
+using LAHJAAPI.Utilities;
+using LAHJAAPI.V1.Validators;
 using LAHJAAPI.V1.Validators.Conditions;
+using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
+using System.Security.Claims;
 using V1.DyModels.Dso.Requests;
 using V1.DyModels.Dso.Responses;
+using V1.DyModels.Dto.Build.Requests;
 using V1.DyModels.Dto.Share.Requests;
+using V1.DyModels.VMs;
 using V1.Repositories.Share;
+using WasmAI.ConditionChecker.Base;
 
 namespace V1.Services.Services
 {
@@ -18,17 +28,25 @@ namespace V1.Services.Services
         private readonly IAuthorizationSessionShareRepository _share;
         private readonly IUserClaimsHelper _userClaims;
         private readonly IConditionChecker _checker;
-
+        private readonly LinkGenerator _linkGenerator;
+        private readonly TokenService _tokenService;
+        private readonly AppSettings _appSettings;
         public AuthorizationSessionService(
             IAuthorizationSessionShareRepository buildAuthorizationSessionShareRepository,
             IUserClaimsHelper userClaims,
             IConditionChecker checker,
+            IOptions<AppSettings> options,
             IMapper mapper,
-            ILoggerFactory logger) : base(mapper, logger)
+            ILoggerFactory logger,
+            LinkGenerator linkGenerator,
+            TokenService tokenService) : base(mapper, logger)
         {
             _share = buildAuthorizationSessionShareRepository;
             _userClaims = userClaims;
             _checker = checker;
+            _linkGenerator = linkGenerator;
+            _tokenService = tokenService;
+            _appSettings = options.Value;
         }
 
         public async Task<Result<AuthorizationSessionResponseDso>> GetSessionByServices(string userId, List<string> servicesIds, string authorizationType)
@@ -46,13 +64,15 @@ namespace V1.Services.Services
              .Select(s => new AuthorizationSessionResponseDso
              {
                  Id = s.Id,
-                 Services = JsonConvert.DeserializeObject<List<string>>(s.ServicesIds),
+                 //Services = JsonConvert.DeserializeObject<List<string>>(s.ServicesIds),
                  EndTime = s.EndTime,
                  IsActive = s.IsActive,
                  SessionToken = s.SessionToken,
+                 UserId = s.UserId,
+                 AuthorizationType = s.AuthorizationType
              })
              .AsEnumerable()
-             .LastOrDefault(s => s.Services.Count() == servicesIds.Count() && s.Services.SequenceEqual(servicesIds));
+             .LastOrDefault(s => s.Services.Count() == servicesIds.Count() && s.Services.All(s => servicesIds.Contains(s.Id)));
 
 
             if (session == null)
@@ -61,7 +81,406 @@ namespace V1.Services.Services
             return Result.Ok(session);
         }
 
+        public async Task<AuthorizationSessionResponseDso> GetOrCreateSession(List<string> servicesIds, string type, DateTime? expire, string modelAiId)
+        {
+            //var resultSession = await _authorizationsessionService.GetSessionByServices(_userClaims.UserId, servicesIds, type);
+            var result = await _checker.CheckAndResultAsync(AuthorizationSessionValidatorStates.HasMatchingSession, new DataFilter
+            {
+                Items = new Dictionary<string, object>
+                {
+                    {"userId" ,_userClaims.UserId},
+                    { "ServicesIds", servicesIds },
+                    { "AuthorizationType", type }
+                }
+            });
 
+            if (result.Success == true)
+            {
+                return GetMapper().Map<AuthorizationSessionResponseDso>(result.Result);
+            }
+            else
+            {
+                var services = GetMapper().Map<List<ServiceRequestBuildDto>>(result.Result);
+
+                expire ??= DateTime.UtcNow.AddDays(30);
+                string? ipAddress = _userClaims.HttpContext?.Connection?.RemoteIpAddress?.ToString();
+
+
+                var newSession = new AuthorizationSessionRequestDso
+                {
+                    UserId = _userClaims.UserId,
+                    EndTime = expire,
+                    SessionToken = _checker.Injector.TokenService.GenerateTemporary(expires: expire),
+                    AuthorizationType = type,
+                    IpAddress = ipAddress,
+                    DeviceInfo = "",
+                    ServicesIds = JsonConvert.SerializeObject(servicesIds),
+                    Services = services
+                };
+
+
+                return await CreateAsync(newSession);
+            }
+        }
+
+
+        private async Task<AuthorizationSessionResponseDso> PrepareCreateSession(List<ServiceResponseDso> services, string token, List<string> servicesIds, string ApiUrl, string? spaceId, bool isSpaceRequired = true)
+        {
+            try
+            {
+                // check if platform token is validate 
+                var resultToken = _checker.CheckAndResult(TokenValidatorStates.ValidatePlatformToken, token);
+                if (resultToken.Success == false) throw new Exception(resultToken.Message);
+                var dataTokenRequest = (DataTokenRequest?)resultToken.Result;
+
+                List<Claim> claims = [];
+
+                var sessionData = new Dictionary<string, object>
+                {
+                    { "Services", services.Select(s => new { s.Id, s.AbsolutePath }).ToList() },
+                };
+
+                // check if service is createspace and spaces are available 
+                //var serviceCreateSpace = services.FirstOrDefault(s => s.AbsolutePath == ServiceType.Space);
+                if (services.Exists(s => s.AbsolutePath == ServiceType.Space))
+                {
+                    if (await _checker.CheckAndResultAsync(SubscriptionValidatorStates.IsAvailableSpaces, _userClaims.SubscriptionId)
+                    is { Success: false } resultSpaces)
+                        throw new ProblemDetailsException(resultSpaces.Result ?? resultSpaces.Message!);
+                }
+                else
+                {
+
+                    //check if services is not dashboard and check if requests allowed
+                    //if (services.Count > 1 && serviceCreateSpace == null)
+                    {
+                        if (!services.Exists(s => s.AbsolutePath == ServiceType.Dash)
+                            && !await _checker.CheckAsync(SubscriptionValidatorStates.IsAllowedRequests, _userClaims.SubscriptionId))
+                        {
+                            throw new ProblemDetailsException("You have exhausted all allowed subscription requests.");
+                            //return ConditionResult.ToError("You have exhausted all allowed subscription requests.");
+                        }
+
+                        //if (isSpaceRequired)
+                        {
+                            if (string.IsNullOrWhiteSpace(spaceId)) throw new ProblemDetailsException("Space Id is required.");
+                            var resultSpace = await _checker.CheckAndResultAsync(SpaceValidatorStates.HasSubscriptionId,
+                                new DataFilter(spaceId)
+                                {
+                                    Value = _userClaims.SubscriptionId
+                                });
+
+                            if (resultSpace.Success == false)
+                                throw new ProblemDetailsException(resultSpace.Result ?? resultSpace.Message!);
+
+                            var space = (SpaceResponseDso)resultSpace.Result!;
+                            sessionData["Space"] = new { space.Id, space.Name };
+                        }
+                    }
+                }
+
+                var modelAiId = services[0].ModelAiId;
+                var result = await _checker.CheckAndResultAsync(ModelValidatorStates.IsHasModelGateway, modelAiId);
+                if (result.Success == false) throw new ProblemDetailsException(result.Result ?? result.Message);
+
+
+                //var modelAi = await _modelAiRepository.GetOneByAsync([new FilterCondition("Id", services[0].ModelAiId)], new ParamOptions(["ModelGateway"]));
+                var modelAi = GetMapper().Map<ModelAiResponseDso>(result.Result);
+
+                var modelCore = modelAi.ModelGateway;
+                //if (modelCore == null) throw new Exception("This model ai not belong to model gateway.");
+
+
+                //AuthorizationSessionResponseDso session = await GetOrCreateSession(servicesIds, dataTokenRequest.AuthorizationType, dataTokenRequest.Expires, modelAiId);
+                var session = await GetOrCreateSession(servicesIds, dataTokenRequest.AuthorizationType, dataTokenRequest.Expires, modelAiId);
+                sessionData["SessionId"] = session.Id;
+                claims.AddRange([new Claim(ClaimTypes2.SessionToken, session.SessionToken),
+                    new Claim(ClaimTypes2.ApiUrl, ApiUrl),
+                    new Claim(ClaimTypes2.WebToken, dataTokenRequest.Token),
+                    new Claim(ClaimTypes2.Data,JsonConvert.SerializeObject(sessionData))]);
+
+                var encrptedToken = _checker.Injector.TokenService.GenerateToken(claims, modelCore.Token, session.EndTime);
+
+                string urlCore = $"{modelCore.Url}";
+                if (services.Count == 1) urlCore += $"/{services[0].AbsolutePath}";
+                //string urlCore = $"{modelCore.Url}/{services.AbsolutePath}";
+                return new AuthorizationSessionResponseDso()
+                {
+                    SessionToken = encrptedToken,
+                    URLCore = urlCore
+                };
+            }
+            catch
+            {
+                throw;
+            }
+        }
+
+        public async Task<AuthorizationSessionResponseDso> CreateGeneralSession(DataAuthSession dataAuthSession)
+        {
+            try
+            {
+                // check if platform token is validate 
+                DataTokenRequest? dataTokenRequest = ValidatePlatform(dataAuthSession.Token);
+
+                List<Claim> claims = [];
+
+
+                // check if service is createspace and spaces are available 
+                await CheckCreateSpace(dataAuthSession.ServicesIds);
+
+                var resultSession = await _checker.CheckAndResultAsync(AuthorizationSessionValidatorStates.HasMatchingSession, new DataFilter
+                {
+                    Items = new Dictionary<string, object>
+                {
+                        { "userId", _userClaims.UserId },
+                    { "servicesIds", dataAuthSession.ServicesIds },
+                    { "authorizationType", dataTokenRequest.AuthorizationType }
+                }
+                });
+
+                var session = GetMapper().Map<AuthorizationSessionResponseDso>(resultSession.Result);
+                if (resultSession.Success == true)
+                {
+                    //var services = GetMapper().Map<List<ServiceResponseDso>>(session.Services);
+                    //var modelCore = services[0].ModelAi.ModelGateway;
+                    return PreapareSessionToken(GetMapper().Map<List<ServiceResponseDso>>(session.Services), GetApiUrl(), dataTokenRequest, claims, null, session);
+                }
+
+
+                var resultServices = await _checker.CheckAndResultAsync(AuthorizationSessionValidatorStates.IsServicesAsignedAndModelsToUsers, new DataFilter
+                {
+                    Value = dataAuthSession.ServicesIds,
+                    Items = new Dictionary<string, object> { { "userId", _userClaims.UserId } }
+                });
+
+                if (resultServices.Success == false)
+                    throw new ProblemDetailsException(resultServices.Result ?? resultServices.Message!);
+
+                // get model gateway
+                var services = GetMapper().Map<List<ServiceResponseDso>>(resultServices.Result);
+                //AuthorizationSessionResponseDso session = await GetOrCreateSession(servicesIds, dataTokenRequest.AuthorizationType, dataTokenRequest.Expires, modelAiId);
+                var newSession = await CreateSession(services, dataTokenRequest.AuthorizationType, dataTokenRequest.Expires);
+                return PreapareSessionToken(services, GetApiUrl(), dataTokenRequest, claims, null, newSession);
+            }
+            catch
+            {
+                throw;
+            }
+        }
+
+        public async Task<AuthorizationSessionResponseDso> CreateForDashboard(DataAuthSession dataAuthSession)
+        {
+
+            // check if platform token is validate 
+            DataTokenRequest? dataTokenRequest = ValidatePlatform(dataAuthSession.Token);
+            List<Claim> claims = [];
+
+            return await PrepareCreateSession([], dataTokenRequest.Token, dataAuthSession.ServicesIds, GetApiUrl(), dataAuthSession.SpaceId);
+        }
+
+        public async Task<AuthorizationSessionResponseDso> CreateForAllServices(DataAuthSession dataAuthSession)
+        {
+
+            // check if platform token is validate 
+            DataTokenRequest? dataTokenRequest = ValidatePlatform(dataAuthSession.Token);
+            List<Claim> claims = [];
+
+            return await PrepareCreateSession([], dataTokenRequest.Token, dataAuthSession.ServicesIds, GetApiUrl(), dataAuthSession.SpaceId);
+        }
+
+        public async Task<AuthorizationSessionResponseDso> CreateSecretSession(DataAuthSession dataAuthSession)
+        {
+            try
+            {
+                // check if platform token is validate 
+                DataTokenRequest? dataTokenRequest = ValidatePlatform(dataAuthSession.Token);
+
+                List<Claim> claims = [];
+
+
+                // check if service is createspace and spaces are available 
+                await CheckCreateSpace(dataAuthSession.ServicesIds);
+
+                var resultSession = await _checker.CheckAndResultAsync(AuthorizationSessionValidatorStates.HasMatchingSession, new DataFilter
+                {
+                    Items = new Dictionary<string, object>
+                {
+                        {"userId",_userClaims.UserId },
+                    { "ServicesIds", dataAuthSession.ServicesIds },
+                    { "AuthorizationType", dataTokenRequest.AuthorizationType }
+                }
+                });
+
+                var session = GetMapper().Map<AuthorizationSessionResponseDso>(resultSession.Result);
+                if (resultSession.Success == true)
+                {
+                    //var services = GetMapper().Map<List<ServiceResponseDso>>(session.Services);
+                    //var modelCore = services[0].ModelAi.ModelGateway;
+                    return PreapareSessionToken(GetMapper().Map<List<ServiceResponseDso>>(session.Services), GetApiUrl(), dataTokenRequest, claims, null, session);
+                }
+
+
+                var resultServices = await _checker.CheckAndResultAsync(AuthorizationSessionValidatorStates.IsServicesAsignedAndModelsToUsers, new DataFilter
+                {
+                    Value = dataAuthSession.ServicesIds,
+                    Items = new Dictionary<string, object> { { "userId", _userClaims.UserId } }
+                });
+
+                if (resultServices.Success == false)
+                    throw new ProblemDetailsException(resultServices.Result ?? resultServices.Message);
+
+                // get model gateway
+                var services = GetMapper().Map<List<ServiceResponseDso>>(resultServices.Result);
+                //AuthorizationSessionResponseDso session = await GetOrCreateSession(servicesIds, dataTokenRequest.AuthorizationType, dataTokenRequest.Expires, modelAiId);
+                var newSession = await CreateSession(services, dataTokenRequest.AuthorizationType, dataTokenRequest.Expires);
+                return PreapareSessionToken(services, GetApiUrl(), dataTokenRequest, claims, null, newSession);
+            }
+            catch
+            {
+                throw;
+            }
+        }
+
+        public async Task<AuthorizationSessionResponseDso> CreateSession(List<ServiceResponseDso> services, string type, DateTime? expire)
+        {
+            try
+            {
+                expire ??= DateTime.UtcNow.AddDays(30);
+                string? ipAddress = _userClaims.HttpContext?.Connection?.RemoteIpAddress?.ToString();
+
+
+                List<ServiceRequestDso> servicesReq = [];
+                foreach (var service in services)
+                {
+                    service.ModelAi = null;
+                    servicesReq.Add(GetMapper().Map<ServiceRequestDso>(service));
+                }
+                var newSession = new AuthorizationSessionRequestDso
+                {
+                    UserId = _userClaims.UserId,
+                    EndTime = expire,
+                    SessionToken = _checker.Injector.TokenService.GenerateTemporary(expires: expire),
+                    AuthorizationType = type,
+                    IpAddress = ipAddress,
+                    DeviceInfo = "",
+                    ServicesIds = JsonConvert.SerializeObject(services.Select(s => s.Id).ToList()),
+                    Services = GetMapper().Map<ServiceRequestBuildDto[]>(servicesReq)
+                };
+                var s1 = GetMapper().Map<AuthorizationSession>(newSession);
+                await _checker.Injector.ContextFactory.ExecuteInScopeAsync(async ctx =>
+                {
+                    ctx.AuthorizationSessions.Attach(s1);
+                    await ctx.SaveChangesAsync();
+                    return s1;
+                });
+
+                return GetMapper().Map<AuthorizationSessionResponseDso>(newSession);
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
+
+            //return await CreateAsync(newSession);
+        }
+
+        private async Task CheckCreateSpace(List<string> servicesIds)
+        {
+            if (await _checker.CheckAsync(ServiceValidatorStates.IsCreateSpaceIn, new DataFilter { Value = servicesIds }))
+            {
+                if (await _checker.CheckAndResultAsync(SubscriptionValidatorStates.IsAvailableSpaces, _userClaims.SubscriptionId)
+                is { Success: false } resultSpaces)
+                    throw new ProblemDetailsException(resultSpaces.Result ?? resultSpaces.Message!);
+            }
+        }
+
+        private DataTokenRequest? ValidatePlatform(string token)
+        {
+            var resultToken = _checker.CheckAndResult(TokenValidatorStates.ValidatePlatformToken, token);
+            if (resultToken.Success == false) throw new Exception(resultToken.Message);
+            var dataTokenRequest = (DataTokenRequest?)resultToken.Result;
+            return dataTokenRequest;
+        }
+
+        private AuthorizationSessionResponseDso PreapareSessionToken(List<ServiceResponseDso> services, string ApiUrl, DataTokenRequest dataTokenRequest, List<Claim> claims, Dictionary<string, object>? sessionData, AuthorizationSessionResponseDso newSession)
+        {
+            sessionData ??= new Dictionary<string, object>();
+
+            sessionData["SessionId"] = newSession.Id;
+            claims.AddRange([
+                new Claim(ClaimTypes2.SessionToken, newSession.SessionToken),
+                    new Claim(ClaimTypes2.ApiUrl, ApiUrl),
+                    new Claim(ClaimTypes2.WebToken, dataTokenRequest.Token),
+                    new Claim(ClaimTypes2.Data,JsonConvert.SerializeObject(sessionData))]);
+
+            var modelCore = services[0].ModelAi.ModelGateway;
+            var encrptedToken = _checker.Injector.TokenService.GenerateToken(claims, modelCore.Token, newSession.EndTime);
+
+            var urlCore = $"{modelCore.Url}";
+            foreach (var service in services)
+            {
+                if (service.AbsolutePath == ServiceType.Space)
+                {
+                    urlCore += $"/{service.AbsolutePath}";
+                }
+            }
+            sessionData["Services"] = services.Select(s => new
+            {
+                s.Id,
+                s.AbsolutePath,
+                modelAi = s.ModelAi.AbsolutePath,
+                UrlCore = $"{urlCore}/{s.AbsolutePath}"
+            }).ToList();
+
+            //string urlCore = $"{modelCore.Url}/{services.AbsolutePath}";
+            return new AuthorizationSessionResponseDso()
+            {
+                SessionToken = encrptedToken,
+                URLCore = $"{urlCore}/{services[0].AbsolutePath}"
+            };
+        }
+
+        public string SimulationCore(string encrptedToken, string coreToken)
+        {
+            _logger.LogInformation("Creating core token with data: {@encrptedToken}", encrptedToken);
+            var decrptedToken = _tokenService.ValidateToken(encrptedToken, coreToken);
+            if (decrptedToken.IsFailed)
+                throw new Exception(decrptedToken.Errors.FirstOrDefault().Message);
+            var claims = decrptedToken.ValueOrDefault;
+            var sessionToken = claims.FindFirstValue(ClaimTypes2.SessionToken);
+            var data = claims.FindFirstValue(ClaimTypes2.Data);
+            var webToken = claims.FindFirstValue(ClaimTypes2.WebToken);
+
+            var token = _tokenService.GenerateToken([new Claim(ClaimTypes2.SessionToken, sessionToken)], webToken);
+
+            return token;
+
+        }
+        public string SimulationPlatForm(EncryptTokenRequest encryptToken)
+        {
+            _logger.LogInformation("Creating platform token with data: {@encryptToken}", encryptToken);
+
+            var webToken = _appSettings.Jwt.WebSecret;
+            List<Claim> claims = [new Claim(ClaimTypes2.Data, JsonConvert.SerializeObject(encryptToken))];
+            //if (encryptToken.Expires != null) claims.Add(new Claim("Expires", encryptToken!.Expires!.ToString()!));
+            var encrptedToken = _tokenService.GenerateToken(claims, webToken!, encryptToken.Expires);
+            return encrptedToken;
+        }
+        public string? GetApiUrl()
+        {
+            var request = _userClaims.HttpContext?.Request;
+            if (request == null)
+                return null;
+
+            return _linkGenerator.GetUriByAction(
+                action: "Validate",
+                controller: "AuthorizationSession",
+                values: null,
+                scheme: request.Scheme,
+                host: request.Host);
+        }
 
 
 

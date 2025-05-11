@@ -13,5 +13,6 @@ namespace LAHJAAPI.Models
         public bool IsDefault { get; set; }
 
         public ICollection<ApplicationUser> Users { get; set; } = new List<ApplicationUser>();
+        public ICollection<ModelAi>? ModelAis { get; set; }
     }
 }

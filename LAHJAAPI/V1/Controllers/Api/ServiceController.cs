@@ -10,7 +10,7 @@ using V1.Services.Services;
 
 namespace LAHJAAPI.V1.Controllers.Api
 {
-    [ApiExplorerSettings(GroupName = "User")]
+    //[ApiExplorerSettings(GroupName = "User")]
     [Route("api/v1/user/[controller]")]
     [ApiController]
     public class ServiceController : ControllerBase
@@ -187,7 +187,7 @@ namespace LAHJAAPI.V1.Controllers.Api
                 var service = await _serviceService.GetOneByAsync(
                     [new FilterCondition(nameof(ServiceRequestDso.Id), serviceId)], new ParamOptions([nameof(ServiceRequestDso.ModelAi)]));
 
-                if (service == null) return NotFound(HandelResult.Text("Service not found."));
+                if (service == null) return NotFound(HandleResult.Text("Service not found."));
                 if (lg.IsNullOrWhiteSpace())
                 {
                     return Ok(_mapper.Map<ModelAiOutputVM>(service.ModelAi));
@@ -296,7 +296,7 @@ namespace LAHJAAPI.V1.Controllers.Api
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error while updating Service with ID: {id}", id);
-                return StatusCode(500, HandelResult.Problem(ex));
+                return StatusCode(500, HandleResult.Problem(ex));
             }
         }
 

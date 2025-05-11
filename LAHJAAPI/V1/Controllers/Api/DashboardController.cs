@@ -6,7 +6,7 @@ using V1.DyModels.VM;
 
 namespace Api.Controllers
 {
-    [ApiExplorerSettings(GroupName = "User")]
+    //[ApiExplorerSettings(GroupName = "User")]
     [ServiceFilter(typeof(SubscriptionCheckFilter))]
     [ApiController]
     [Route("api/v1/user/[controller]")]

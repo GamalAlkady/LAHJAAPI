@@ -86,14 +86,17 @@ namespace V1.Services.Services
                 {
                     throw new ArgumentException("Amount must be greater than zero.");
                 }
-                var price = await _stripePrice!.CreateAsync(new()
+                if (string.IsNullOrWhiteSpace(entity.Id))
                 {
-                    Currency = entity.Currency,
-                    UnitAmount = Convert.ToInt64(entity.Amount) * 100,
-                    Recurring = new Stripe.PriceRecurringOptions { Interval = entity.BillingPeriod },
-                    Product = product.Id
-                });
-                entity.Id = price.Id;
+                    var price = await _stripePrice!.CreateAsync(new()
+                    {
+                        Currency = entity.Currency,
+                        UnitAmount = Convert.ToInt64(entity.Amount) * 100,
+                        Recurring = new Stripe.PriceRecurringOptions { Interval = entity.BillingPeriod },
+                        Product = product.Id
+                    });
+                    entity.Id = price.Id;
+                }
 
                 var result = await _share.CreateAsync(entity);
                 var output = GetMapper().Map<PlanResponseDso>(result);

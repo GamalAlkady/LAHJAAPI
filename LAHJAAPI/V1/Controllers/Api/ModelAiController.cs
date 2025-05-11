@@ -10,7 +10,7 @@ using V1.Services.Services;
 
 namespace LAHJAAPI.V1.Controllers.Api
 {
-    [ApiExplorerSettings(GroupName = "User")]
+    //[ApiExplorerSettings(GroupName = "User")]
     [Route("api/v1/user/[controller]")]
     [ApiController]
     public class ModelAiController : ControllerBase
@@ -49,7 +49,7 @@ namespace LAHJAAPI.V1.Controllers.Api
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error while fetching all ModelAis");
-                return StatusCode(500, HandelResult.Problem(ex));
+                return StatusCode(500, HandleResult.Problem(ex));
             }
         }
 
@@ -81,7 +81,7 @@ namespace LAHJAAPI.V1.Controllers.Api
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error while fetching ModelAi with ID: {id}", id);
-                return StatusCode(500, HandelResult.Problem(ex));
+                return StatusCode(500, HandleResult.Problem(ex));
             }
         }
 
@@ -174,7 +174,7 @@ namespace LAHJAAPI.V1.Controllers.Api
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error while fetching ModelAis with language: {lg}", lg);
-                return StatusCode(500, HandelResult.Problem(ex));
+                return StatusCode(500, HandleResult.Problem(ex));
             }
         }
 
@@ -202,7 +202,7 @@ namespace LAHJAAPI.V1.Controllers.Api
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error while creating new ModelAi");
-                return StatusCode(500, HandelResult.Problem(ex));
+                return StatusCode(500, HandleResult.Problem(ex));
             }
         }
 
@@ -236,7 +236,7 @@ namespace LAHJAAPI.V1.Controllers.Api
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error while creating multiple ModelAis");
-                return StatusCode(500, HandelResult.Problem(ex));
+                return StatusCode(500, HandleResult.Problem(ex));
             }
         }
 
@@ -275,7 +275,7 @@ namespace LAHJAAPI.V1.Controllers.Api
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error while updating ModelAi with ID: {id}", id);
-                return StatusCode(500, HandelResult.Problem(ex));
+                return StatusCode(500, HandleResult.Problem(ex));
             }
         }
 
@@ -302,7 +302,7 @@ namespace LAHJAAPI.V1.Controllers.Api
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error while deleting ModelAi with ID: {id}", id);
-                return StatusCode(500, HandelResult.Problem(ex));
+                return StatusCode(500, HandleResult.Problem(ex));
             }
         }
 
@@ -321,7 +321,7 @@ namespace LAHJAAPI.V1.Controllers.Api
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error while counting ModelAis");
-                return StatusCode(500, HandelResult.Problem(ex));
+                return StatusCode(500, HandleResult.Problem(ex));
             }
         }
     }

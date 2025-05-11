@@ -1,6 +1,7 @@
 ﻿using APILAHJA.Utilities;
 using AutoMapper;
 using LAHJAAPI.Attributes;
+using LAHJAAPI.V1.Validators.Conditions;
 using Microsoft.AspNetCore.Mvc;
 using StripeGateway;
 using V1.DyModels.Dso.Requests;
@@ -9,7 +10,7 @@ using V1.Services.Services;
 
 namespace LAHJAAPI.V1.Controllers.Api
 {
-    [ApiExplorerSettings(GroupName = "User")]
+    //[ApiExplorerSettings(GroupName = "User")]
     [ServiceFilter(typeof(SubscriptionCheckFilter))]
     [Route("api/v1/user/[controller]")]
     [ApiController]
@@ -21,6 +22,7 @@ namespace LAHJAAPI.V1.Controllers.Api
         private readonly IStripeSubscription _stripeSubscription;
         private readonly IUsePlanFeatureService _planFeatureService;
         private readonly IUserClaimsHelper _userClaims;
+        private readonly IConditionChecker _checker;
         private readonly IMapper _mapper;
         private readonly ILogger _logger;
         public SubscriptionController(
@@ -31,6 +33,7 @@ namespace LAHJAAPI.V1.Controllers.Api
             IUsePlanService planService,
             IUsePlanFeatureService planFeatureService,
             IUserClaimsHelper userClaims,
+            IConditionChecker checker,
             IMapper mapper,
             ILoggerFactory logger)
         {
@@ -40,6 +43,7 @@ namespace LAHJAAPI.V1.Controllers.Api
             _stripeSubscription = stripeSubscription;
             _planFeatureService = planFeatureService;
             _userClaims = userClaims;
+            _checker = checker;
             _mapper = mapper;
             _logger = logger.CreateLogger(typeof(SubscriptionController).FullName);
         }
@@ -154,7 +158,7 @@ namespace LAHJAAPI.V1.Controllers.Api
             }
             catch (Exception ex)
             {
-                return BadRequest(HandelResult.Problem(ex));
+                return BadRequest(HandleResult.Problem(ex));
             }
         }
 
@@ -176,11 +180,11 @@ namespace LAHJAAPI.V1.Controllers.Api
             }
             catch (Stripe.StripeException ex)
             {
-                return BadRequest(HandelResult.Problem(ex));
+                return BadRequest(HandleResult.Problem(ex));
             }
             catch (Exception ex)
             {
-                return BadRequest(HandelResult.Problem(ex));
+                return BadRequest(HandleResult.Problem(ex));
             }
         }
 
@@ -199,7 +203,7 @@ namespace LAHJAAPI.V1.Controllers.Api
             }
             catch (Exception ex)
             {
-                return BadRequest(HandelResult.Problem(ex));
+                return BadRequest(HandleResult.Problem(ex));
             }
         }
 
@@ -216,11 +220,11 @@ namespace LAHJAAPI.V1.Controllers.Api
                 {
                     CancelAtPeriodEnd = true
                 });
-                return Ok(HandelResult.Text("Subscription canceled successfully"));
+                return Ok(HandleResult.Text("Subscription canceled successfully"));
             }
             catch (Exception ex)
             {
-                return BadRequest(HandelResult.Problem(ex));
+                return BadRequest(HandleResult.Problem(ex));
             }
         }
 
@@ -241,7 +245,7 @@ namespace LAHJAAPI.V1.Controllers.Api
             }
             catch (Exception ex)
             {
-                return BadRequest(HandelResult.Problem(ex));
+                return BadRequest(HandleResult.Problem(ex));
             }
         }
 
@@ -264,11 +268,11 @@ namespace LAHJAAPI.V1.Controllers.Api
             }
             catch (Stripe.StripeException ex)
             {
-                return BadRequest(HandelResult.Problem(ex));
+                return BadRequest(HandleResult.Problem(ex));
             }
             catch (Exception ex)
             {
-                return BadRequest(HandelResult.Problem(ex));
+                return BadRequest(HandleResult.Problem(ex));
             }
         }
 
@@ -365,6 +369,73 @@ namespace LAHJAAPI.V1.Controllers.Api
                 return StatusCode(500, "Internal Server Error");
             }
         }
+
+
+
+        ////[ApiExplorerSettings(IgnoreApi = true)]
+        //[HttpPut("CheckSubscription", Name = "CheckSubscription")]
+        //[ProducesResponseType(StatusCodes.Status200OK)]
+        //[ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        //[ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+        //[ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+        //[SkipSubscriptionCheck]
+        //public async Task<IActionResult> CheckSubscription()
+        //{
+        //    try
+        //    {
+        //        var customerId = _userClaims.CustomerId;
+        //        var stripeSub = await _stripeSubscription.GetAllAsync(customerId);
+        //        if (stripeSub.Any())
+        //        {
+        //            var sub = stripeSub.FirstOrDefault();
+        //            var subscription = await _subscriptionService.GetUserSubscription();
+        //            if (subscription == null)
+        //            {
+        //                var subscriptionCreate = new SubscriptionRequestDso
+        //                {
+        //                    Id = sub.Id,
+        //                    PlanId = sub.Items.First().Price.Id,
+        //                    CustomerId = customerId,
+        //                    StartDate = sub.StartDate,
+        //                    Status = sub.Status,
+        //                    CancelAtPeriodEnd = sub.CancelAtPeriodEnd,
+        //                    CancelAt = sub.CancelAt,
+        //                    CanceledAt = sub.CanceledAt
+        //                };
+        //                await _checker.Injector.ContextFactory.GetDbSet<Subscription>().AddAsync(new Models.Subscription
+        //                {
+        //                    Id = sub.Id,
+        //                    PlanId = sub.Items.First().Price.Id,
+        //                    CustomerId = customerId,
+        //                    StartDate = sub.StartDate,
+        //                    Status = sub.Status,
+        //                    CancelAtPeriodEnd = sub.CancelAtPeriodEnd,
+        //                    CancelAt = sub.CancelAt,
+        //                    CanceledAt = sub.CanceledAt
+        //                });
+        //                await _checker.Injector.ContextFactory..SaveChangesAsync();
+        //                //await _subscriptionService.CreateAsync(subscriptionCreate);
+        //            }
+
+
+
+        //            var user = await _userService.GetUser();
+        //            user.SubscriptionId = sub.Id;
+        //            await _userService.UpdateAsync(_mapper.Map<ApplicationUserRequestDso>(user));
+        //            return Ok();
+        //        }
+        //        return NotFound(HandelResult.NotFound("User doesn't has subscription in stripe"));
+        //    }
+        //    catch (Exception e)
+        //    {
+        //        return BadRequest(new ProblemDetails
+        //        {
+        //            Title = e.Message,
+        //            Detail = e.InnerException?.Message
+        //        });
+        //    }
+        //}
+
 
     }
 }

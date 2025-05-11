@@ -68,22 +68,23 @@ namespace V1.Services.Services
                 Subscription = GetMapper().Map<SubscriptionResponseDso>(subscription);
                 return Subscription;
             }
+            catch (ArgumentNullException) { return null; }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error while creating Subscription entity.");
                 throw;
             }
         }
-        public async Task<SubscriptionResponseDso> GetCustomerSubscription(string subscriptionId)
+        public async Task<SubscriptionResponseDso> GetSubscriptionByCustomer(string subscriptionId, string? customerId = null)
         {
-            var customerId = _userClaims.CustomerId ?? (await GetUserSubscription()).CustomerId
-                ?? throw new ArgumentException("Customer id is null.");
+            customerId ??= _userClaims.CustomerId ?? (await GetUserSubscription()).CustomerId
+               ?? throw new ArgumentException("Customer id is null.");
 
-            var customer = await GetOneByAsync([
+            var subscription = await GetOneByAsync([
                 new FilterCondition { PropertyName = "CustomerId",Value = customerId},
                 new FilterCondition { PropertyName = "Id",Value = subscriptionId},
             ]);
-            return GetMapper().Map<SubscriptionResponseDso>(customer);
+            return GetMapper().Map<SubscriptionResponseDso>(subscription);
         }
 
         public async Task<PagedResponse<SubscriptionResponseDso>> GetCustomerSubscriptions()

@@ -1,8 +1,5 @@
 using AutoGenerator;
-using AutoGenerator.Helper.Translation;
-using LAHJAAPI.Models;
-using AutoGenerator.Config;
-using System;
+using V1.DyModels.Dto.Build.Requests;
 
 namespace V1.DyModels.Dto.Build.Responses
 {
@@ -56,14 +53,17 @@ namespace V1.DyModels.Dto.Build.Responses
         /// UpdatedAt property for DTO.
         /// </summary>
         public DateTime UpdatedAt { get; set; }
+        public string? ModelGatewayId { get; set; }
+        public string? SubscriptionId { get; set; }
         public SubscriptionResponseBuildDto? Subscription { get; set; }
         public ICollection<UserModelAiResponseBuildDto>? UserModelAis { get; set; }
         public ICollection<UserServiceResponseBuildDto>? UserServices { get; set; }
         public ICollection<RequestResponseBuildDto>? Requests { get; set; }
-        
-        
-        
-        
+
+        public ICollection<ModelGatewayRequestBuildDto>? ModelGateways { get; set; }
+
+
+
         /// <summary>
         /// Id property for DTO.
         /// </summary>
