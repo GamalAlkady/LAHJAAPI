@@ -1,6 +1,6 @@
 ﻿using AutoGenerator.Conditions; // Assuming this is part of your base validation framework
 using Microsoft.EntityFrameworkCore;
-using System.Linq.Expressions; // For DbSet, IQueryable, Async methods
+using System.Linq.Expressions;
 
 // Assuming ITValidator interface is defined elsewhere and implies certain capabilities
 
@@ -124,10 +124,8 @@ namespace LAHJAAPI.V1.Validators.Conditions
         /// </summary>
         /// <param name="id">The ID of the entity to find.</param>
         /// <returns>A task representing the asynchronous operation, returning the entity or null.</returns>
-        protected virtual Task<TContext?> FindContextEntityAsync(string? id) // Renamed from FindModel
+        protected virtual Task<TContext?> FindContextEntityAsync(params string[]? id) // Renamed from FindModel
         {
-            if (string.IsNullOrWhiteSpace(id)) return Task.FromResult<TContext?>(null);
-
             return _injector.ContextFactory.ExecuteInScopeAsync(ctx =>
                 // FindAsync is suitable for finding by primary key directly
                 ctx.Set<TContext>().FindAsync(id).AsTask()

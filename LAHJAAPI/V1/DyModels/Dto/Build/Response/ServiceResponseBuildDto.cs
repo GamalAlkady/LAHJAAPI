@@ -1,8 +1,4 @@
 using AutoGenerator;
-using AutoGenerator.Helper.Translation;
-using LAHJAAPI.Models;
-using AutoGenerator.Config;
-using System;
 
 namespace V1.DyModels.Dto.Build.Responses
 {
@@ -32,5 +28,7 @@ namespace V1.DyModels.Dto.Build.Responses
         public ICollection<ServiceMethodResponseBuildDto>? ServiceMethods { get; set; }
         public ICollection<UserServiceResponseBuildDto>? UserServices { get; set; }
         public ICollection<RequestResponseBuildDto>? Requests { get; set; }
+        public List<AuthorizationSessionServiceResponseBuildDto> AuthorizationSessionServices { get; set; } = [];
+
     }
 }

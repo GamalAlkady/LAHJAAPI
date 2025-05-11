@@ -5,7 +5,6 @@ using AutoGenerator.Services.Base;
 using AutoMapper;
 using FluentResults;
 using LAHJAAPI.Exceptions;
-using LAHJAAPI.Models;
 using LAHJAAPI.Services2;
 using LAHJAAPI.Utilities;
 using LAHJAAPI.V1.Validators;
@@ -27,6 +26,7 @@ namespace V1.Services.Services
     {
         private readonly IAuthorizationSessionShareRepository _share;
         private readonly IUserClaimsHelper _userClaims;
+        private readonly IUseServiceService _serviceShare;
         private readonly IConditionChecker _checker;
         private readonly LinkGenerator _linkGenerator;
         private readonly TokenService _tokenService;
@@ -34,6 +34,7 @@ namespace V1.Services.Services
         public AuthorizationSessionService(
             IAuthorizationSessionShareRepository buildAuthorizationSessionShareRepository,
             IUserClaimsHelper userClaims,
+            IUseServiceService serviceShare,
             IConditionChecker checker,
             IOptions<AppSettings> options,
             IMapper mapper,
@@ -43,6 +44,7 @@ namespace V1.Services.Services
         {
             _share = buildAuthorizationSessionShareRepository;
             _userClaims = userClaims;
+            _serviceShare = serviceShare;
             _checker = checker;
             _linkGenerator = linkGenerator;
             _tokenService = tokenService;
@@ -72,7 +74,7 @@ namespace V1.Services.Services
                  AuthorizationType = s.AuthorizationType
              })
              .AsEnumerable()
-             .LastOrDefault(s => s.Services.Count() == servicesIds.Count() && s.Services.All(s => servicesIds.Contains(s.Id)));
+             .LastOrDefault(s => s.AuthorizationSessionServices.Count() == servicesIds.Count() && s.AuthorizationSessionServices.All(s => servicesIds.Contains(s.ServiceId)));
 
 
             if (session == null)
@@ -115,7 +117,7 @@ namespace V1.Services.Services
                     IpAddress = ipAddress,
                     DeviceInfo = "",
                     ServicesIds = JsonConvert.SerializeObject(servicesIds),
-                    Services = services
+                    //Services = services
                 };
 
 
@@ -242,13 +244,13 @@ namespace V1.Services.Services
                 var session = GetMapper().Map<AuthorizationSessionResponseDso>(resultSession.Result);
                 if (resultSession.Success == true)
                 {
-                    //var services = GetMapper().Map<List<ServiceResponseDso>>(session.Services);
+                    //var services = GetMapper().Map<List<ServiceResponseDso>>(session.AuthorizationSessionServices);
                     //var modelCore = services[0].ModelAi.ModelGateway;
-                    return PreapareSessionToken(GetMapper().Map<List<ServiceResponseDso>>(session.Services), GetApiUrl(), dataTokenRequest, claims, null, session);
+                    return PreapareSessionToken(GetMapper().Map<List<ServiceResponseDso>>(session.AuthorizationSessionServices.Select(s => s.Service)), GetApiUrl(), dataTokenRequest, claims, null, session);
                 }
 
 
-                var resultServices = await _checker.CheckAndResultAsync(AuthorizationSessionValidatorStates.IsServicesAsignedAndModelsToUsers, new DataFilter
+                var resultServices = await _checker.CheckAndResultAsync(AuthorizationSessionValidatorStates.IsServicesAsignedToUser, new DataFilter
                 {
                     Value = dataAuthSession.ServicesIds,
                     Items = new Dictionary<string, object> { { "userId", _userClaims.UserId } }
@@ -260,7 +262,7 @@ namespace V1.Services.Services
                 // get model gateway
                 var services = GetMapper().Map<List<ServiceResponseDso>>(resultServices.Result);
                 //AuthorizationSessionResponseDso session = await GetOrCreateSession(servicesIds, dataTokenRequest.AuthorizationType, dataTokenRequest.Expires, modelAiId);
-                var newSession = await CreateSession(services, dataTokenRequest.AuthorizationType, dataTokenRequest.Expires);
+                var newSession = await PrepareCreateSession(dataAuthSession.ServicesIds, dataTokenRequest.AuthorizationType, dataTokenRequest.Expires);
                 return PreapareSessionToken(services, GetApiUrl(), dataTokenRequest, claims, null, newSession);
             }
             catch
@@ -269,24 +271,30 @@ namespace V1.Services.Services
             }
         }
 
-        public async Task<AuthorizationSessionResponseDso> CreateForDashboard(DataAuthSession dataAuthSession)
+        public async Task<AuthorizationSessionResponseDso?> CreateForDashboard(DataAuthSession dataAuthSession)
         {
-
-            // check if platform token is validate 
-            DataTokenRequest? dataTokenRequest = ValidatePlatform(dataAuthSession.Token);
-            List<Claim> claims = [];
-
-            return await PrepareCreateSession([], dataTokenRequest.Token, dataAuthSession.ServicesIds, GetApiUrl(), dataAuthSession.SpaceId);
+            var service = await _serviceShare.GetOneByAsync(new List<FilterCondition>
+            {
+                new FilterCondition(nameof(ServiceRequestBuildDto.AbsolutePath),ServiceType.Dash)
+            });
+            if (service == null) return null;
+            dataAuthSession.ServicesIds = [service.Id];
+            return await CreateGeneralSession(dataAuthSession);
         }
 
         public async Task<AuthorizationSessionResponseDso> CreateForAllServices(DataAuthSession dataAuthSession)
         {
-
-            // check if platform token is validate 
             DataTokenRequest? dataTokenRequest = ValidatePlatform(dataAuthSession.Token);
-            List<Claim> claims = [];
 
-            return await PrepareCreateSession([], dataTokenRequest.Token, dataAuthSession.ServicesIds, GetApiUrl(), dataAuthSession.SpaceId);
+            if (!await _checker.CheckAsync(SubscriptionValidatorStates.IsAllowedRequests, _userClaims.SubscriptionId))
+            {
+                throw new ProblemDetailsException("You have exhausted all allowed subscription requests.");
+                //return ConditionResult.ToError("You have exhausted all allowed subscription requests.");
+            }
+
+            var services = await _serviceShare.GetListWithoutSome();
+            dataAuthSession.ServicesIds = services.Select(s => s.Id).ToList();
+            return await CreateGeneralSession(dataAuthSession);
         }
 
         public async Task<AuthorizationSessionResponseDso> CreateSecretSession(DataAuthSession dataAuthSession)
@@ -317,11 +325,11 @@ namespace V1.Services.Services
                 {
                     //var services = GetMapper().Map<List<ServiceResponseDso>>(session.Services);
                     //var modelCore = services[0].ModelAi.ModelGateway;
-                    return PreapareSessionToken(GetMapper().Map<List<ServiceResponseDso>>(session.Services), GetApiUrl(), dataTokenRequest, claims, null, session);
+                    return PreapareSessionToken(GetMapper().Map<List<ServiceResponseDso>>(session.AuthorizationSessionServices.Select(s => s.Service)), GetApiUrl(), dataTokenRequest, claims, null, session);
                 }
 
 
-                var resultServices = await _checker.CheckAndResultAsync(AuthorizationSessionValidatorStates.IsServicesAsignedAndModelsToUsers, new DataFilter
+                var resultServices = await _checker.CheckAndResultAsync(AuthorizationSessionValidatorStates.IsServicesAsignedToUser, new DataFilter
                 {
                     Value = dataAuthSession.ServicesIds,
                     Items = new Dictionary<string, object> { { "userId", _userClaims.UserId } }
@@ -333,7 +341,7 @@ namespace V1.Services.Services
                 // get model gateway
                 var services = GetMapper().Map<List<ServiceResponseDso>>(resultServices.Result);
                 //AuthorizationSessionResponseDso session = await GetOrCreateSession(servicesIds, dataTokenRequest.AuthorizationType, dataTokenRequest.Expires, modelAiId);
-                var newSession = await CreateSession(services, dataTokenRequest.AuthorizationType, dataTokenRequest.Expires);
+                var newSession = await PrepareCreateSession(dataAuthSession.ServicesIds, dataTokenRequest.AuthorizationType, dataTokenRequest.Expires);
                 return PreapareSessionToken(services, GetApiUrl(), dataTokenRequest, claims, null, newSession);
             }
             catch
@@ -342,7 +350,7 @@ namespace V1.Services.Services
             }
         }
 
-        public async Task<AuthorizationSessionResponseDso> CreateSession(List<ServiceResponseDso> services, string type, DateTime? expire)
+        public async Task<AuthorizationSessionResponseDso> PrepareCreateSession(List<string> servicesIds, string type, DateTime? expire)
         {
             try
             {
@@ -350,12 +358,7 @@ namespace V1.Services.Services
                 string? ipAddress = _userClaims.HttpContext?.Connection?.RemoteIpAddress?.ToString();
 
 
-                List<ServiceRequestDso> servicesReq = [];
-                foreach (var service in services)
-                {
-                    service.ModelAi = null;
-                    servicesReq.Add(GetMapper().Map<ServiceRequestDso>(service));
-                }
+
                 var newSession = new AuthorizationSessionRequestDso
                 {
                     UserId = _userClaims.UserId,
@@ -364,18 +367,28 @@ namespace V1.Services.Services
                     AuthorizationType = type,
                     IpAddress = ipAddress,
                     DeviceInfo = "",
-                    ServicesIds = JsonConvert.SerializeObject(services.Select(s => s.Id).ToList()),
-                    Services = GetMapper().Map<ServiceRequestBuildDto[]>(servicesReq)
+                    ServicesIds = JsonConvert.SerializeObject(servicesIds),
                 };
-                var s1 = GetMapper().Map<AuthorizationSession>(newSession);
-                await _checker.Injector.ContextFactory.ExecuteInScopeAsync(async ctx =>
-                {
-                    ctx.AuthorizationSessions.Attach(s1);
-                    await ctx.SaveChangesAsync();
-                    return s1;
-                });
 
-                return GetMapper().Map<AuthorizationSessionResponseDso>(newSession);
+                foreach (var serviceId in servicesIds)
+                {
+                    newSession.AuthorizationSessionServices.Add(new AuthorizationSessionServiceRequestBuildDto
+                    {
+                        ServiceId = serviceId,
+
+                    });
+                }
+
+                return await CreateAsync(newSession);
+                //var s1 = GetMapper().Map<AuthorizationSession>(newSession);
+                //await _checker.Injector.ContextFactory.ExecuteInScopeAsync(async ctx =>
+                //{
+                //    ctx.AuthorizationSessions.Attach(s1);
+                //    await ctx.SaveChangesAsync();
+                //    return s1;
+                //});
+
+                //return GetMapper().Map<AuthorizationSessionResponseDso>(newSession);
             }
             catch (Exception)
             {

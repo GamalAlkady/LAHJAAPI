@@ -1,6 +1,7 @@
 ﻿using LAHJAAPI.Models;
 using LAHJAAPI.V1.Validators.Conditions;
 using Microsoft.EntityFrameworkCore;
+using V1.Validators;
 using WasmAI.ConditionChecker.Base;
 
 namespace LAHJAAPI.V1.Validators
@@ -17,7 +18,7 @@ namespace LAHJAAPI.V1.Validators
         IsFull,
         HasMatchingSession,
         IsValidServices,
-        IsServicesAsignedAndModelsToUsers
+        IsServicesAsignedToUser
     }
 
     public class AuthorizationSessionValidator : ValidatorContext<AuthorizationSession, AuthorizationSessionValidatorStates>
@@ -81,13 +82,13 @@ namespace LAHJAAPI.V1.Validators
                 if (string.IsNullOrWhiteSpace(authorizationType))
                     return ConditionResult.ToError("AuthorizationType is required.");
 
-                var services = await QueryListAsync<Service>(s => s.Where(sv => servicesIds.Contains(sv.Id)));
 
                 // الخطوة 1: جلب الجلسات المرتبطة بالمستخدم ونوع الصلاحية
                 var candidateSessions = await QueryListAsync<AuthorizationSession>(s =>
-                     //s.Include(sess => sess.Services)
-                     //.ThenInclude(m => m.ModelAi)
-                     s.Where(sess =>
+                     s.Include(sess => sess.AuthorizationSessionServices)
+                     .ThenInclude(s => s.Service)
+                     .ThenInclude(s => s.ModelAi)
+                     .Where(sess =>
                          sess.UserId == userId.ToString()
                          && sess.AuthorizationType == authorizationType
                      )
@@ -112,6 +113,13 @@ namespace LAHJAAPI.V1.Validators
                     }, "No session found for the provided user ID and authorization type.");
                 }
 
+                var modelAi = session.AuthorizationSessionServices.First().Service.ModelAi;
+                //var services = await QueryListAsync<Service>(s => s.Include(s => s.ModelAi).ThenInclude(m => m.ModelGateway).Where(sv => servicesIds.Contains(sv.Id)));
+                var resultModelGateway = await _checker.CheckAndResultAsync(ModelGatewayValidatorStates.ValidateId, modelAi.ModelGatewayId);
+                if (!resultModelGateway.Success.GetValueOrDefault()) return resultModelGateway;
+
+                ModelGateway modelGateway = (ModelGateway)resultModelGateway.Result!;
+                modelAi.ModelGateway = modelGateway;
                 return ConditionResult.ToSuccess(session, "Matching session found.");
             }
             catch (Exception ex)
@@ -121,28 +129,32 @@ namespace LAHJAAPI.V1.Validators
             }
         }
 
-        [RegisterConditionValidator(typeof(AuthorizationSessionValidatorStates), AuthorizationSessionValidatorStates.IsServicesAsignedAndModelsToUsers)]
-        private async Task<ConditionResult> IsServicesAsignedAndModelsToUsers(DataFilter<List<string>> data)
+        [RegisterConditionValidator(typeof(AuthorizationSessionValidatorStates), AuthorizationSessionValidatorStates.IsServicesAsignedToUser)]
+        private async Task<ConditionResult> IsServicesAsignedToUser(DataFilter<List<string>> data)
         {
             try
             {
                 if (data.Value == null || data.Value.Count == 0)
                     return ConditionResult.ToError("You must pass services as list to value.");
-                if (data.Items == null || !data.Items.TryGetValue("userId", out object? userID))
+                if (data.Items == null || !data.Items.TryGetValue("userId", out object? userId))
                     return ConditionResult.ToError("UserId is required.");
 
-                HashSet<Service> services = [];
+                var servicesIds = data.Value;
+
+                //HashSet<UserService> services = [];
 
                 foreach (var serviceId in data.Value)
                 {
-                    var resultService = await _checker.CheckAndResultAsync(ApplicationUserValidatorStates.IsServiceAssigned,
-                        new DataFilter(userID.ToString()) { Value = serviceId });
+                    var resultService = await _checker.CheckAndResultAsync(UserServiceValidatorStates.IsServiceAssigned,
+                        new DataFilter(userId.ToString()) { Value = serviceId });
 
                     if (!resultService.Success.GetValueOrDefault())
                         return resultService;
 
-                    services.Add((Service)resultService.Result!);
+                    //services.Add((Service)resultService.Result!);
                 }
+
+                var services = await QueryListAsync<Service>(s => s.Include(s => s.ModelAi).Where(sv => servicesIds.Contains(sv.Id)));
 
                 var modelGatewayId = services.First().ModelAi.ModelGatewayId;
 

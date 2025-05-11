@@ -121,7 +121,7 @@ namespace LAHJAAPI.V1.Controllers.Api
             try
             {
                 _logger.LogInformation("Assigning service to user with ID: {id}", assignService.ServiceId);
-                if (await _checker.CheckAndResultAsync(ApplicationUserValidatorStates.IsServiceAssigned, assignService.ServiceId) is { Success: true } res)
+                if (await _checker.CheckAndResultAsync(ApplicationUserValidatorStates.CanAssignService, assignService.ServiceId) is { Success: true } res)
                 {
                     return BadRequest(HandleResult.Text(res.Message ?? "Service already assigned."));
                 }

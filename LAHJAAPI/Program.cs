@@ -21,6 +21,8 @@ using System.Text.Json.Serialization;
 var builder = WebApplication.CreateBuilder(args);
 
 
+// Some problems 
+//1. when run generate make it run with endpoint api/v1/user/ insteadof api/v1/api
 
 #region External Services
 //Log.Logger = new LoggerConfiguration().MinimumLevel.Information()
@@ -42,7 +44,6 @@ builder.Services
 builder.Services
        .AddAutoBuilderApiCore<DataContext, ApplicationUser>(new()
        {
-
            Arags = args,
            NameRootApi = "V1",
            IsMapper = true,
@@ -50,6 +51,8 @@ builder.Services
            Assembly = Assembly.GetExecutingAssembly(),
            AssemblyModels = typeof(LAHJAAPI.Models.Advertisement).Assembly,
            DbConnectionString = builder.Configuration.GetConnectionString("DefaultConnection"),
+           ProjectName = "LAHJAAPI",
+           //ProjectPath = typeof(Program).Assembly.FullName,
 
        })
     .AddAutoValidator()

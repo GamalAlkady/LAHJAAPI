@@ -49,7 +49,7 @@ namespace V1.DyModels.Dto.Build.Requests
         /// ServicesIds property for DTO.
         /// </summary>
         public String? ServicesIds { get; set; }
+        public ICollection<AuthorizationSessionServiceRequestBuildDto>? AuthorizationSessionServices { get; set; } = [];
 
-        public ICollection<ServiceRequestBuildDto>? Services { get; set; } = [];
     }
 }

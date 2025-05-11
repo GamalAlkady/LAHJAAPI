@@ -3,6 +3,7 @@ using LAHJAAPI.V1.Validators.Conditions;
 using Microsoft.EntityFrameworkCore;
 using Quartz.Util;
 using V1.DyModels.Dso.Requests;
+using V1.Validators;
 using WasmAI.ConditionChecker.Base;
 
 namespace LAHJAAPI.V1.Validators
@@ -12,7 +13,6 @@ namespace LAHJAAPI.V1.Validators
         IsActive = 6500,
         IsFull,
         HasCustomerId,
-        IsHasService,
         HasFirstName,
         HasLastName,
         HasDisplayName,
@@ -26,7 +26,6 @@ namespace LAHJAAPI.V1.Validators
         HasLastLoginDate,
         IsHasModelAi,
         IsModelAssigned,
-        IsServiceAssigned,
         CanAssignService
     }
 
@@ -95,35 +94,10 @@ namespace LAHJAAPI.V1.Validators
                 )
             );
 
-            //RegisterCondition<string>(
-            //    ApplicationUserValidatorStates.IsServiceAssigned,
-            //    IsServiceAssigned,
-            //    "Service not belong to user."
-            //);
+
         }
 
-        [RegisterConditionValidator(typeof(ApplicationUserValidatorStates), ApplicationUserValidatorStates.IsHasService)]
-        async Task<ConditionResult> IsHasService(DataFilter<string, ApplicationUser> data)
-        {
-            try
-            {
-                if (data.Id.IsNullOrWhiteSpace()) return ConditionResult.ToError("Id is null.");
-                if (data.Value.IsNullOrWhiteSpace()) return ConditionResult.ToError("Value is null.");
 
-                var result = await _injector.ContextFactory.ExecuteInScopeAsync(async ctx =>
-                    await ctx.Set<UserService>().FindAsync(data.Id, data.Value)
-                );
-
-                return result != null
-                    ? ConditionResult.ToSuccess(result, "Service is assigned to user.")
-                    : ConditionResult.ToError($"Service with ID: ({data.Value}) not assigned to user.");
-            }
-            catch (Exception)
-            {
-
-                throw;
-            }
-        }
 
         [RegisterConditionValidator(typeof(ApplicationUserValidatorStates), ApplicationUserValidatorStates.IsModelAssigned, "Model AI not belong to user.")]
         async Task<ConditionResult> IsModelAssigned(DataFilter<string> data)
@@ -140,32 +114,33 @@ namespace LAHJAAPI.V1.Validators
                 : ConditionResult.ToError($"Model AI with ID: ({data.Value}) not assigned to user.");
         }
 
-        [RegisterConditionValidator(typeof(ApplicationUserValidatorStates), ApplicationUserValidatorStates.IsServiceAssigned)]
-        async Task<ConditionResult> IsServiceAssigned(DataFilter<string, ApplicationUser> data)
+        [RegisterConditionValidator(typeof(ApplicationUserValidatorStates), ApplicationUserValidatorStates.CanAssignService)]
+        async Task<ConditionResult> CanAssignService(DataFilter<string> data)
         {
             if (data.Id.IsNullOrWhiteSpace()) return ConditionResult.ToError("Id is null.");
             if (data.Value.IsNullOrWhiteSpace()) return ConditionResult.ToError("Value is null.");
 
-            var result = await IsHasService(data);
-            if (result.Success.GetValueOrDefault())
+            if (await _checker.CheckAndResultAsync(UserServiceValidatorStates.IsServiceAssigned, new DataFilter(data.Id) { Value = data.Value }) is { Success: true } res1)
             {
-                var resultService = await _checker.CheckAndResultAsync(ServiceValidatorStates.IsFound, data.Value);
-                if (resultService.Success.GetValueOrDefault())
-                {
-                    var service = (Service)resultService.Result!;
-                    var res = await IsModelAssigned(new DataFilter<string> { Id = data.Id, Value = service.ModelAiId });
-                    if (res.Success.GetValueOrDefault())
-                    {
-                        service.ModelAi = ((UserModelAi?)res.Result).ModelAi;
-                        return result.Success.GetValueOrDefault()
-                            ? ConditionResult.ToSuccess(service, "Service Already assigned to user.")
-                            : ConditionResult.ToError($"Service with ID: ({data.Value}) not assigned to user.");
-                    }
-                    return res;
-                }
-                return ConditionResult.ToError(resultService.Message ?? "Service not found!.");
+                return ConditionResult.ToFailure(res1.Result, res1.Message);
             }
-            return result;
+
+            var resultService = await _checker.CheckAndResultAsync(ServiceValidatorStates.IsFound, data.Value);
+            if (resultService.Success.GetValueOrDefault())
+            {
+                var service = (Service)resultService.Result!;
+                var res = await IsModelAssigned(new DataFilter<string> { Id = data.Id, Value = service.ModelAiId });
+                //if (res.Success.GetValueOrDefault())
+                //{
+                //    service.ModelAi = ((UserModelAi?)res.Result).ModelAi;
+                //    return result.Success.GetValueOrDefault()
+                //        ? ConditionResult.ToSuccess(service, "Service Already assigned to user.")
+                //        : ConditionResult.ToError($"Service with ID: ({data.Value}) not assigned to user.");
+                //}
+                return res;
+            }
+            return ConditionResult.ToError(resultService.Message ?? "Service not found!.");
+
         }
 
         private async Task<bool> IsActive(string id)

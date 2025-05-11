@@ -32,7 +32,7 @@ namespace V1.Services.Services
             return MapToResponse(service);
         }
 
-        private readonly HashSet<string> withoutServices = ["createspace", "dashboard"];
+        private readonly HashSet<string> withoutServices = ["createspace"];
         public async Task<List<ServiceResponseDso>> GetListWithoutSome(List<string>? servicesId = null, string? modelId = null)
         {
             List<FilterCondition> filterConditions = new List<FilterCondition>() {

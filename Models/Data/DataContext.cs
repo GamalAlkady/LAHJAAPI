@@ -12,6 +12,7 @@ public class DataContext : AutoIdentityDataContext<ApplicationUser, IdentityRole
     //public override DatabaseFacade? Database { get;}
     public DbSet<ApplicationUser> ApplicationUsers { get; set; }
     public DbSet<AuthorizationSession> AuthorizationSessions { get; set; }
+    public DbSet<AuthorizationSessionService> AuthorizationSessionServices { get; set; }
     public DbSet<Plan> Plans { get; set; }
     public DbSet<PlanFeature> PlanFeatures { get; set; }
     public DbSet<Subscription> Subscriptions { get; set; }

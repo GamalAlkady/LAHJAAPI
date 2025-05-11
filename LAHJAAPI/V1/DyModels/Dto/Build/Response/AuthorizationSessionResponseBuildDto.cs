@@ -49,6 +49,6 @@ namespace V1.DyModels.Dto.Build.Responses
         /// ServicesIds property for DTO.
         /// </summary>
         public String? ServicesIds { get; set; }
-        public List<ServiceResponseBuildDto>? Services { get; set; }
+        public ICollection<AuthorizationSessionServiceResponseBuildDto> AuthorizationSessionServices { get; set; } = [];
     }
 }
