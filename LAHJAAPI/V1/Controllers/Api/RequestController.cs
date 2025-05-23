@@ -1,7 +1,5 @@
-using APILAHJA.Utilities;
 using AutoMapper;
 using LAHJAAPI.Exceptions;
-using LAHJAAPI.V1.Validators.Conditions;
 using Microsoft.AspNetCore.Mvc;
 using V1.BPR.Layers.Base;
 using V1.DyModels.Dso.Requests;
@@ -14,19 +12,18 @@ namespace LAHJAAPI.V1.Controllers.Api
     //[ApiExplorerSettings(GroupName = "User")]
     [Route("api/v1/user/[controller]")]
     [ApiController]
-    public class RequestController : BaseBPRControllerLayer<RequestRequestDso, RequestResponseDso, RequestCreateVM, RequestOutputVM, RequestUpdateVM, RequestInfoVM, RequestDeleteVM>
+    public class RequestController : BaseBPRControllerLayer<RequestRequestDso, RequestResponseDso, RequestCreateVM, RequestOutputVM, RequestInfoVM, RequestDeleteVM>
     {
 
         private readonly ILogger _logger;
+        private readonly IUseRequestService _requestService;
+
         public RequestController(
             IUseRequestService requestService,
-            IUseEventRequestService eventRequestService,
-            IConditionChecker checker,
-            IUseServiceService serviceService,
-            IUserClaimsHelper userClaims,
             IMapper mapper, ILoggerFactory logger) : base(mapper, logger, requestService)
         {
             _logger = logger.CreateLogger(typeof(RequestController).FullName);
+            _requestService = requestService;
         }
 
 

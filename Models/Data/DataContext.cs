@@ -50,9 +50,14 @@ public class DataContext : AutoIdentityDataContext<ApplicationUser, IdentityRole
 
         modelBuilder.Entity<Request>().Navigation(e => e.Events).AutoInclude();
 
-        //modelBuilder.Entity<AuthorizationSession>()
-        //    .HasMany(s => s.Services)
-        //    .WithMany(s => s.AuthorizationSessions);
+
+        modelBuilder.Entity<ModelGateway>()
+            .HasIndex(m => m.Name)
+            .IsUnique();
+
+        modelBuilder.Entity<ModelGateway>()
+            .HasIndex(m => m.Url)
+            .IsUnique();
 
         //modelBuilder.Entity<AuthorizationSession>()
         // .Property(u => u.ServicesId)

@@ -12,11 +12,6 @@ namespace Models.Data.Configurations
                 .HasMany(s => s.ServiceMethods)
                 .WithOne(c => c.Service)
                 .HasForeignKey(c => c.ServiceId);
-
-            builder
-           .HasMany(u => u.Requests)
-           .WithOne(u => u.Service)
-           .IsRequired();
         }
     }
 }

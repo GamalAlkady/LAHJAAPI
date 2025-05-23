@@ -1,9 +1,6 @@
 
 using AutoGenerator;
-using AutoGenerator.Controllers.Base;
-using AutoGenerator.Repositories.Base;
 using AutoMapper;
-using Microsoft.Extensions.Logging;
 
 namespace V1.BPR.Layers.Base
 {
@@ -13,7 +10,7 @@ namespace V1.BPR.Layers.Base
     {
     }
 
-    public abstract class BaseBPRShareLayer<TRequest, TResponse, ERequest, EResponse> 
+    public abstract class BaseBPRShareLayer<TRequest, TResponse, ERequest, EResponse>
         : BaseBPRLayer<TRequest, TResponse, ERequest, EResponse, ITBase, ITBase>, IBaseBPRShareLayer<TRequest, TResponse>
         where TRequest : class
         where TResponse : class
@@ -24,6 +21,11 @@ namespace V1.BPR.Layers.Base
         protected BaseBPRShareLayer(IMapper mapper, ILoggerFactory logger, IBPRLayer<ERequest, EResponse> bpr) : base(mapper, logger, bpr)
         {
             _bpr = bpr;
+        }
+
+        public async Task<IEnumerable<TResponse>> GetAllAsync(string propertyName, object value, string[]? includes = null)
+        {
+            return Map<EResponse, TResponse>(await _bpr.GetAllAsync(propertyName, value, includes));
         }
     }
 }

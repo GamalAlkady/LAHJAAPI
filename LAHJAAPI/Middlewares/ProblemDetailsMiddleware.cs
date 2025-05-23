@@ -1,4 +1,5 @@
-﻿using LAHJAAPI.Exceptions;
+﻿using AutoGenerator.Repositories.Base;
+using LAHJAAPI.Exceptions;
 using Microsoft.AspNetCore.Mvc;
 
 namespace LAHJAAPI.Middlewares
@@ -26,15 +27,34 @@ namespace LAHJAAPI.Middlewares
                 context.Response.ContentType = "application/problem+json";
                 await context.Response.WriteAsJsonAsync(ex.Problem);
             }
+            catch (RepositoryException ex)
+            {
+                _logger.LogError(ex, "Unhandled RepositoryException");
+
+                var problem = new ProblemDetails
+                {
+                    Title = ex.Message,
+                    Status = 500,
+                    Type = ex.Source,
+                    Detail = ex.InnerException?.InnerException?.Message,
+                    Instance = context.Request.Path
+                };
+
+                context.Response.StatusCode = 500;
+                context.Response.ContentType = "application/problem+json";
+                await context.Response.WriteAsJsonAsync(problem);
+            }
+
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Unhandled exception");
+                _logger.LogError(ex, "Unhandled Exception");
 
                 var problem = new ProblemDetails
                 {
                     Title = ex.Message,
                     Status = 500,
                     Detail = ex.InnerException?.Message,
+                    Type = ex.Source,
                     Instance = context.Request.Path
                 };
 

@@ -27,7 +27,9 @@ namespace V1.Repositories.Base
             return await _baseRepository.ExecuteTransactionAsync(operation);
         }
 
-
-
+        public async Task<IEnumerable<TBuildResponseDto>> GetAllAsync(string propertyName, object value, string[]? includes = null)
+        {
+            return Map<TModel, TBuildResponseDto>(await _baseRepository.GetAllAsync(propertyName, value, includes));
+        }
     }
 }

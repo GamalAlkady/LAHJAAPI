@@ -1,4 +1,5 @@
 ﻿using AutoGenerator;
+using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using System.ComponentModel.DataAnnotations;
 
 namespace LAHJAAPI.Models

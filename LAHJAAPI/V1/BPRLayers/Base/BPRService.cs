@@ -6,7 +6,7 @@ namespace V1.BPR.Layers.Base
         where TRequest : class
         where TResponse : class
     {
-        Task<TResponse> UpdateAsync(string id, TRequest entity);
+        //Task<TResponse> UpdateAsync(string id, TRequest entity);
     }
 
 
@@ -28,23 +28,23 @@ namespace V1.BPR.Layers.Base
         //{
         //    return _bpr.ExistsAsync(value, name);
         //}
-        public virtual async Task<TResponse> UpdateAsync(string id, TRequest entity)
-        {
-            try
-            {
-                var model = await GetByIdAsync(id);
-                if (model == null)
-                {
-                    throw new Exception("Record not found. make sure that id is correct.");
-                }
+        //public virtual async Task<TResponse> UpdateAsync(string id, TRequest entity)
+        //{
+        //    try
+        //    {
+        //        var model = await GetByIdAsync(id);
+        //        if (model == null)
+        //        {
+        //            throw new Exception("Record not found. make sure that id is correct.");
+        //        }
 
-                return await base.UpdateAsync(entity);
-            }
-            catch (Exception)
-            {
-                throw;
-            }
-        }
+        //        return await base.UpdateAsync(entity);
+        //    }
+        //    catch (Exception)
+        //    {
+        //        throw;
+        //    }
+        //}
         protected TResponse MapToResponse(object request)
         {
             return _mapper.Map<TResponse>(request);

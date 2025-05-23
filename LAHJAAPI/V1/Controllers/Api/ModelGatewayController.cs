@@ -12,7 +12,7 @@ namespace LAHJAAPI.V1.Controllers.Api
     //[ApiExplorerSettings(GroupName = "User")]
     [Route("api/v1/user/[controller]")]
     [ApiController]
-    public class ModelGatewayController : BaseBPRControllerLayer<ModelGatewayRequestDso, ModelGatewayResponseDso, ModelGatewayCreateVM, ModelGatewayOutputVM, ModelGatewayUpdateVM, ModelGatewayInfoVM, ModelGatewayDeleteVM, ModelGatewayFilterVM>
+    public class ModelGatewayController : BaseBPRControllerLayer<ModelGatewayRequestDso, ModelGatewayResponseDso, ModelGatewayCreateVM, ModelGatewayOutputVM, ModelGatewayUpdateVM, ModelGatewayInfoVM, ModelGatewayDeleteVM>
     {
         private readonly IUseModelGatewayService _modelgatewayService;
         private readonly IMapper _mapper;

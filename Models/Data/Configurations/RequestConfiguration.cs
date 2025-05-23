@@ -22,9 +22,10 @@ namespace Models.Data.Configurations
             .OnDelete(DeleteBehavior.SetNull);
 
             builder
-            .HasOne(s => s.Service)
-            .WithOne()
-            .OnDelete(DeleteBehavior.NoAction);
+            .HasOne(r => r.Service)
+            .WithMany(s => s.Requests)
+            .HasForeignKey(r => r.ServiceId)
+            .OnDelete(DeleteBehavior.Cascade);
 
             builder
            .HasOne(s => s.Space)

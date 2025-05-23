@@ -9,6 +9,7 @@ namespace V1.BPR.Layers.Base
         where TRequest : class
         where TResponse : class
     {
+        Task<IEnumerable<TResponse>> GetAllAsync(string propertyName, object value, string[]? includes = null);
     }
 
     public abstract class BaseBPRLayer<TRequest, TResponse, ERequest, EResponse, IT, IE>

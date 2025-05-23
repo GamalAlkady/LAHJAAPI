@@ -17,10 +17,26 @@ namespace V1.Repositories.Base
         {
         }
 
-        //public async Task<bool> ExistsAsync(object value, string name = "Id")
-        // {
-        //     return await base.ExistsAsync(value, name);
-        // }   
+
+        public override async Task<T?> CreateAsync(T entity)
+        {
+            try
+            {
+                T item = (await DbSet.AddAsync(entity)).Entity;
+                await SaveAsync();
+                return item;
+            }
+            catch (RepositoryException exception)
+            {
+                _logger.LogError(exception, "Error creating entity");
+                throw;
+            }
+            catch (Exception exception)
+            {
+                _logger.LogError(exception, "Error creating entity");
+                throw;
+            }
+        }
         public async Task<bool> ExecuteTransactionAsync(Func<Task<bool>> operation)
         {
             return await base.ExecuteTransactionAsync(operation);
@@ -37,6 +53,13 @@ namespace V1.Repositories.Base
             return await query.ToPagedResponseAsync(pageNumber, pageSize);
         }
 
+        public async Task<IEnumerable<T>> GetAllAsync(string propertyName, object value, string[]? includes = null)
+        {
+            var query = GetQueryable(includes, false);
+            query = query.Where(e => EF.Property<object>(e, propertyName) == value);
+            return await query.ToListAsync();
+            //return await base.GetAllAsync(e=>EF.Property<object>(e,propertyName)==value,s=>s.Include());
+        }
         public Task<IEnumerable<T>> GetByName(string name)
         {
             throw new NotImplementedException();

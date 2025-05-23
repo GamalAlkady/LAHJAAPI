@@ -1,4 +1,3 @@
-using AutoGenerator;
 using AutoGenerator.Helper;
 using AutoGenerator.Helper.Translation;
 using AutoMapper;
@@ -124,16 +123,27 @@ namespace LAHJAAPI.V1.Controllers.Api
             return Ok(result);
         }
 
+
+        [EndpointSummary("GetAllByModelGateway")]
+        [HttpGet("GetAllByModelGateway", Name = "GetAllByModelGateway")]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        public async Task<ActionResult<IEnumerable<string>>> GetAllByModelGateway(string modelGatewayId, string? lg = "en")
+        {
+            var items = await _modelAiService.GetAllAsync(nameof(ModelAiCreateVM.ModelGatewayId), modelGatewayId);
+            var result = _mapper.Map<IEnumerable<ModelAiOutputVM>>(items, opts => opts.Items[HelperTranslation.KEYLG] = lg);
+            return Ok(result);
+        }
+
         [EndpointSummary("Get Models By Category")]
         [HttpGet("category/{category}", Name = "GetModelsByCategory")]
 
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        public async Task<ActionResult<IEnumerable<ModelAiOutputVM>>> GetByCategoryAsync(string category)
+        public async Task<ActionResult<IEnumerable<ModelAiOutputVM>>> GetByCategoryAsync(string category, string? lg = "en")
         {
-            var items = await _modelAiService.GetAllByAsync([new FilterCondition("Category", category)]);
-            if (items.TotalRecords == 0) return NoContent();
-            var result = _mapper.Map<IEnumerable<ModelAiOutputVM>>(items);
+            var items = await _modelAiService.GetAllAsync("Category", category);
+            var result = _mapper.Map<IEnumerable<ModelAiOutputVM>>(items, opts => opts.Items[HelperTranslation.KEYLG] = lg);
             return Ok(result);
         }
 
@@ -142,13 +152,13 @@ namespace LAHJAAPI.V1.Controllers.Api
         [HttpPost("GetFilterModel", Name = "FilterMaodelAi")]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        public async Task<ActionResult<PagedResponse<ModelAiOutputVM>>> GetFilterModel([FromBody] ModelAiFilterVM serchModelAI, string lg = "en")
+        public async Task<ActionResult<ModelAiOutputVM>> GetFilterModel([FromBody] ModelAiFilterVM serchModelAI, string lg = "en")
         {
 
             var response = await _modelAiService.FilterMaodelAi(serchModelAI);
             var result = response.ToResponse(_mapper.Map<IEnumerable<ModelAiOutputVM>>(response.Data, opts => opts.Items[HelperTranslation.KEYLG] = lg));
 
-            return Ok(result);
+            return Ok(result.Data);
         }
 
 

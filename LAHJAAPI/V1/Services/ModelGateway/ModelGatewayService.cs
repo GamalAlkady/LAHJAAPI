@@ -1,4 +1,6 @@
 using AutoMapper;
+using LAHJAAPI.Services2;
+using LAHJAAPI.V1.Validators.Conditions;
 using V1.BPR.Layers.Base;
 using V1.DyModels.Dso.Requests;
 using V1.DyModels.Dso.Responses;
@@ -10,12 +12,23 @@ namespace V1.Services.Services
 {
     public class ModelGatewayService : BaseBPRServiceLayer<ModelGatewayRequestDso, ModelGatewayResponseDso, ModelGatewayRequestShareDto, ModelGatewayResponseShareDto>, IUseModelGatewayService
     {
+        private readonly IConditionChecker _checker;
         private readonly IModelGatewayShareRepository _share;
-        public ModelGatewayService(IMapper mapper, ILoggerFactory logger, IModelGatewayShareRepository bpr) : base(mapper, logger, bpr)
+        public ModelGatewayService(
+            IMapper mapper,
+            ILoggerFactory logger,
+            IConditionChecker checker,
+            IModelGatewayShareRepository bpr) : base(mapper, logger, bpr)
         {
+            _checker = checker;
             _share = bpr;
         }
 
+        public override Task<ModelGatewayResponseDso> CreateAsync(ModelGatewayRequestDso entity)
+        {
+            entity.Token = TokenService.GenerateSecureToken();
+            return base.CreateAsync(entity);
+        }
         //public override async Task<ModelGatewayResponseDso> UpdateAsync(string id, ModelGatewayRequestDso entity)
         //{
         //    var modelGateway = await GetByIdAsync(id);
