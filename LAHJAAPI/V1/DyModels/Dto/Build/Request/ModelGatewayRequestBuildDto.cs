@@ -1,8 +1,9 @@
 using AutoGenerator;
+using LAHJAAPI.V1.DyModels.Dto;
 
 namespace V1.DyModels.Dto.Build.Requests
 {
-    public class ModelGatewayRequestBuildDto : ITBuildDto
+    public class ModelGatewayRequestBuildDto : ITBuildDto, IHaveId<string>
     {
         /// <summary>
         /// Id property for DTO.

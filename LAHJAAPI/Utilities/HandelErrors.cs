@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using WasmAI.ConditionChecker.Base;
 
 
 public class HandleResult
@@ -46,9 +47,26 @@ public class HandleResult
         return str;
     }
 
+    public static ProblemDetails Error(string str)
+    {
+        return Problem("An error occurred.", str);
+    }
+
     public static ProblemDetails Problem(ProblemDetails problem)
     {
         return problem;
+    }
+
+
+    public static ProblemDetails Problem(ConditionResult result)
+    {
+        if (result.Result is ProblemDetails problem)
+            return problem;
+        return new ProblemDetails
+        {
+            Title = "An error occurred",
+            Detail = result.Message
+        };
     }
 
     public static ProblemDetails Problem(Exception ex)

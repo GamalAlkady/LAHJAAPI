@@ -1,7 +1,4 @@
 using AutoGenerator;
-using AutoGenerator.Helper.Translation;
-using LAHJAAPI.Models;
-using System;
 
 namespace V1.DyModels.VMs
 {
@@ -11,6 +8,14 @@ namespace V1.DyModels.VMs
     public class ModelGatewayInfoVM : ITVM
     {
         ///
-        public string? Id { get; set; }
+        public String? Id { get; set; }
+        ///
+        public String? Name { get; set; }
+        ///
+        public String? Url { get; set; }
+        ///
+        public String? Token { get; set; }
+        ///
+        public Boolean IsDefault { get; set; }
     }
 }

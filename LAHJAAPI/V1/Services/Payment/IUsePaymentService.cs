@@ -14,12 +14,11 @@ using V1.Repositories.Builder;
 using AutoGenerator.Repositories.Base;
 using AutoGenerator.Helper;
 using System;
+using V1.BPR.Layers.Base;
 
 namespace V1.Services.Services
 {
-    public interface IUsePaymentService : IPaymentService<PaymentRequestDso, PaymentResponseDso>, IBaseService//يمكنك  التزويد بكل  دوال   طبقة Builder   ببوابات  الطبقة   هذه نفسها
-    //, IPaymentBuilderRepository<PaymentRequestDso, PaymentResponseDso>
-    , IBasePublicRepository<PaymentRequestDso, PaymentResponseDso>
+    public interface IUsePaymentService : IPaymentService<PaymentRequestDso, PaymentResponseDso>, IBaseService, IBaseBPRServiceLayer<PaymentRequestDso, PaymentResponseDso>
     {
     }
 }

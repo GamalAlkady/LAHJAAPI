@@ -1,7 +1,4 @@
 using AutoGenerator;
-using AutoGenerator.Helper.Translation;
-using LAHJAAPI.Models;
-using System;
 
 namespace V1.DyModels.VMs
 {
@@ -10,7 +7,10 @@ namespace V1.DyModels.VMs
     /// </summary>
     public class AuthorizationSessionServiceInfoVM : ITVM
     {
+        public String? AuthorizationSessionId { get; set; }
+        public AuthorizationSessionOutputVM? AuthorizationSession { get; set; }
         ///
-        public string? Id { get; set; }
+        public String? ServiceId { get; set; }
+        public ServiceOutputVM? Service { get; set; }
     }
 }

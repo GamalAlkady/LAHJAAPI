@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 using V1.DyModels.Dso.Requests;
 using V1.DyModels.VMs;
 using V1.Services.Services;
+using WasmAI.ConditionChecker.Base;
 
 namespace LAHJAAPI.V1.Controllers.Api
 {
@@ -134,7 +135,7 @@ namespace LAHJAAPI.V1.Controllers.Api
         [HttpGet("spaces-subscription", Name = "SpacesSubscription")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-        public async Task<ActionResult<IEnumerable<SpaceOutputVM>>> SpacesSubscription(string? subscriptionId)
+        public async Task<ActionResult<IEnumerable<SpaceOutputVM>>> SpacesSubscription(string? subscriptionId = null)
         {
             if (string.IsNullOrWhiteSpace(subscriptionId))
             {
@@ -146,8 +147,11 @@ namespace LAHJAAPI.V1.Controllers.Api
             else
             {
 
-                if (!await checker.CheckAsync(SubscriptionValidatorStates.IsBelongToUser, subscriptionId))
-                    return BadRequest(HandleResult.Problem("Subscription not belong to you!", $"Subscription with Id: {subscriptionId} not belong to you!", "Subscription"));
+                if (await checker.CheckAndResultAsync(SubscriptionValidatorStates.IsBelongToUser, new DataFilter(subscriptionId)
+                {
+                    Items = new Dictionary<string, object> { { "customerId", userClaims.CustomerId } }
+                }) is { Success: false } res)
+                    return BadRequest(HandleResult.Problem(res));
             }
             //var subscription = await subscriptionService.GetCustomerSubscription(subscriptionId);
 

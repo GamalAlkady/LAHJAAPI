@@ -16,11 +16,11 @@ namespace V1.DyModels.VMs
         ///
         public String? AuthorizationType { get; set; }
         ///
-        public DateTime StartTime { get; set; }
+        public DateTime? StartTime { get; set; }
         ///
         public Nullable<DateTime> EndTime { get; set; }
         ///
-        public Boolean IsActive { get; set; }
+        public Boolean? IsActive { get; set; }
         ///
         public String? UserId { get; set; }
         //public ApplicationUserOutputVM? User { get; set; }
@@ -30,5 +30,6 @@ namespace V1.DyModels.VMs
         public String? DeviceInfo { get; set; }
         ///
         public String? ServicesIds { get; set; }
+        public string? URLCore { get; set; }
     }
 }

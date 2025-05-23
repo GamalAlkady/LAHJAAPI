@@ -2,7 +2,7 @@
 {
     public enum GeneralServices
     {
-        Dashboard = 7001,
+        V1board = 7001,
         CreateSpace = 7002
     }
 }

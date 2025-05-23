@@ -14,12 +14,11 @@ using V1.Repositories.Builder;
 using AutoGenerator.Repositories.Base;
 using AutoGenerator.Helper;
 using System;
+using V1.BPR.Layers.Base;
 
 namespace V1.Services.Services
 {
-    public interface IUseCategoryTabService : ICategoryTabService<CategoryTabRequestDso, CategoryTabResponseDso>, IBaseService//يمكنك  التزويد بكل  دوال   طبقة Builder   ببوابات  الطبقة   هذه نفسها
-    //, ICategoryTabBuilderRepository<CategoryTabRequestDso, CategoryTabResponseDso>
-    , IBasePublicRepository<CategoryTabRequestDso, CategoryTabResponseDso>
+    public interface IUseCategoryTabService : ICategoryTabService<CategoryTabRequestDso, CategoryTabResponseDso>, IBaseService, IBaseBPRServiceLayer<CategoryTabRequestDso, CategoryTabResponseDso>
     {
     }
 }

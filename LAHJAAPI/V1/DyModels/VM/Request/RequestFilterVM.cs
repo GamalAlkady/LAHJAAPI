@@ -1,5 +1,4 @@
 using AutoGenerator;
-using V1.DyModels.Dso.Responses;
 
 namespace V1.DyModels.VMs
 {
@@ -8,15 +7,12 @@ namespace V1.DyModels.VMs
     /// </summary>
     public class RequestFilterVM : ITVM
     {
-        ///
-        public string? Id { get; set; }
-
-        public SubscriptionResponseDso? Subscription { get; set; }
-
-        public string? ServiceId { get; set; }
-
-        public AuthorizationSessionFilterVM? AuthorizationSession { get; set; }
-
-        public SpaceFilterVM? Space { get; set; }
+        public string? ModelGateway { get; set; }
+        public string? ModelAi { get; set; }
+        public string? Service { get; set; }
+        public string? Token { get; set; }
+        public string? EventId { get; set; }
+        public string? AllowedRequests { get; set; }
+        public int NumberRequests { get; internal set; }
     }
 }

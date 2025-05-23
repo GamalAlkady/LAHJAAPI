@@ -112,7 +112,7 @@ namespace LAHJAAPI.V1.Validators
             // filter.Value holds the required number of requests
             return allowedValue >= filter.Value
                 ? ConditionResult.ToSuccess(planFeature, "Allowed requests count is sufficient.")
-                : ConditionResult.ToFailure("The number of requests required exceeds the limit allowed by the plan.");
+                : ConditionResult.ToFailure(planFeature, "You have exhausted all allowed subscription requests.");
         }
 
         [RegisterConditionValidator(typeof(PlanValidatorStates), PlanValidatorStates.HasAllowedSpaces, "The required space exceeds the limit allowed by the plan.")]

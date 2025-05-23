@@ -1,7 +1,6 @@
-using AutoGenerator;
 using AutoGenerator.Helper;
-using AutoGenerator.Services.Base;
 using AutoMapper;
+using V1.BPR.Layers.Base;
 using V1.DyModels.Dso.Requests;
 using V1.DyModels.Dso.Responses;
 using V1.DyModels.Dto.Share.Requests;
@@ -10,7 +9,7 @@ using V1.Repositories.Share;
 
 namespace V1.Services.Services
 {
-    public class ServiceService : BaseService<ServiceRequestDso, ServiceResponseDso>, IUseServiceService
+    public class ServiceService : BaseBPRServiceLayer<ServiceRequestDso, ServiceResponseDso, ServiceRequestShareDto, ServiceResponseShareDto>, IUseServiceService
     {
         private readonly IServiceShareRepository _share;
         private readonly IUserServiceShareRepository _userServiceShare;
@@ -19,7 +18,7 @@ namespace V1.Services.Services
             IServiceShareRepository buildServiceShareRepository,
             IUserServiceShareRepository userServiceShare,
             IMapper mapper,
-            ILoggerFactory logger) : base(mapper, logger)
+            ILoggerFactory logger) : base(mapper, logger, buildServiceShareRepository)
         {
             _share = buildServiceShareRepository;
             _userServiceShare = userServiceShare;
@@ -33,7 +32,7 @@ namespace V1.Services.Services
         }
 
         private readonly HashSet<string> withoutServices = ["createspace"];
-        public async Task<List<ServiceResponseDso>> GetListWithoutSome(List<string>? servicesId = null, string? modelId = null)
+        public async Task<IEnumerable<ServiceResponseDso>> GetListWithoutSome(List<string>? servicesId = null, string? modelId = null)
         {
             List<FilterCondition> filterConditions = new List<FilterCondition>() {
                 new FilterCondition("AbsolutePath", withoutServices, FilterOperator.NotIn)
@@ -42,10 +41,10 @@ namespace V1.Services.Services
             if (modelId != null) filterConditions.Add(new FilterCondition("ModelAiId", modelId));
 
             var response = await _share.GetAllByAsync(filterConditions);
-            return MapToResponse(response.Data).ToList();
+            return MapToResponses(response.Data);
         }
 
-        public async Task<List<ServiceResponseDso>> GetUserServices(string userId)
+        public async Task<IEnumerable<ServiceResponseDso>> GetUserServices(string userId)
         {
             try
             {
@@ -57,7 +56,7 @@ namespace V1.Services.Services
                 var services = result.Data.Select(s => s.Service);
 
                 _logger.LogInformation("User fetched successfully.");
-                return GetMapper().Map<List<ServiceResponseDso>>(services);
+                return MapToResponses(services);
             }
             catch (Exception ex)
             {
@@ -66,257 +65,12 @@ namespace V1.Services.Services
             }
         }
 
-        public async Task<ServiceResponseDso> GetByName(string name)
+        public new async Task<ServiceResponseDso> GetByName(string name)
         {
             var service = await _share.GetOneByAsync([new FilterCondition("Name", name)]);
             return MapToResponse(service);
         }
 
-        private ServiceResponseDso MapToResponse(object requestDso)
-        {
-            return GetMapper().Map<ServiceResponseDso>(requestDso);
-        }
 
-        private IEnumerable<ServiceResponseDso> MapToResponse(IEnumerable<ServiceResponseShareDto> requestDso)
-        {
-            return GetMapper().Map<IEnumerable<ServiceResponseDso>>(requestDso);
-        }
-
-        public override Task<int> CountAsync()
-        {
-            try
-            {
-                _logger.LogInformation("Counting Service entities...");
-                return _share.CountAsync();
-            }
-            catch (ArgumentNullException)
-            {
-                return null;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error in CountAsync for Service entities.");
-                throw;
-            }
-        }
-
-        public override async Task<ServiceResponseDso> CreateAsync(ServiceRequestDso entity)
-        {
-            try
-            {
-                _logger.LogInformation("Creating new Service entity...");
-                var result = await _share.CreateAsync(entity);
-                var output = GetMapper().Map<ServiceResponseDso>(result);
-                _logger.LogInformation("Created Service entity successfully.");
-                return output;
-            }
-            catch (ArgumentNullException)
-            {
-                return null;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error while creating Service entity.");
-                throw;
-            }
-        }
-
-        public override Task DeleteAsync(string id)
-        {
-            try
-            {
-                _logger.LogInformation($"Deleting Service entity with ID: {id}...");
-                return _share.DeleteAsync(id);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, $"Error while deleting Service entity with ID: {id}.");
-                return Task.CompletedTask;
-            }
-        }
-
-        public override async Task<IEnumerable<ServiceResponseDso>> GetAllAsync()
-        {
-            try
-            {
-                _logger.LogInformation("Retrieving all Service entities...");
-                var results = await _share.GetAllAsync();
-                return GetMapper().Map<IEnumerable<ServiceResponseDso>>(results);
-            }
-            catch (ArgumentNullException)
-            {
-                return null;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error in GetAllAsync for Service entities.");
-                throw;
-            }
-        }
-
-        public override async Task<ServiceResponseDso?> GetByIdAsync(string id)
-        {
-            try
-            {
-                _logger.LogInformation($"Retrieving Service entity with ID: {id}...");
-                var result = await _share.GetByIdAsync(id);
-                var item = GetMapper().Map<ServiceResponseDso>(result);
-                _logger.LogInformation("Retrieved Service entity successfully.");
-                return item;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, $"Error in GetByIdAsync for Service entity with ID: {id}.");
-                return null;
-            }
-        }
-
-        public override IQueryable<ServiceResponseDso> GetQueryable()
-        {
-            try
-            {
-                _logger.LogInformation("Retrieving IQueryable<ServiceResponseDso> for Service entities...");
-                var queryable = _share.GetQueryable();
-                var result = GetMapper().ProjectTo<ServiceResponseDso>(queryable);
-                return result;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error in GetQueryable for Service entities.");
-                return null;
-            }
-        }
-
-        public override async Task<ServiceResponseDso> UpdateAsync(ServiceRequestDso entity)
-        {
-            try
-            {
-                _logger.LogInformation("Updating Service entity...");
-                var result = await _share.UpdateAsync(entity);
-                return GetMapper().Map<ServiceResponseDso>(result);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error in UpdateAsync for Service entity.");
-                throw;
-            }
-        }
-
-        public override async Task<bool> ExistsAsync(object value, string name = "Id")
-        {
-            try
-            {
-                _logger.LogInformation("Checking if Service exists with {Key}: {Value}", name, value);
-                var exists = await _share.ExistsAsync(value, name);
-                if (!exists)
-                {
-                    _logger.LogWarning("Service not found with {Key}: {Value}", name, value);
-                }
-
-                return exists;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error while checking existence of Service with {Key}: {Value}", name, value);
-                return false;
-            }
-        }
-
-        public override async Task<PagedResponse<ServiceResponseDso>> GetAllAsync(string[]? includes = null, int pageNumber = 1, int pageSize = 10)
-        {
-            try
-            {
-                _logger.LogInformation("Fetching all Services with pagination: Page {PageNumber}, Size {PageSize}", pageNumber, pageSize);
-                var results = (await _share.GetAllAsync(includes, pageNumber, pageSize));
-                var items = GetMapper().Map<List<ServiceResponseDso>>(results.Data);
-                return new PagedResponse<ServiceResponseDso>(items, results.PageNumber, results.PageSize, results.TotalPages);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error while fetching all Services.");
-                return new PagedResponse<ServiceResponseDso>(new List<ServiceResponseDso>(), pageNumber, pageSize, 0);
-            }
-        }
-
-        public override async Task<ServiceResponseDso?> GetByIdAsync(object id)
-        {
-            try
-            {
-                _logger.LogInformation("Fetching Service by ID: {Id}", id);
-                var result = await _share.GetByIdAsync(id);
-                if (result == null)
-                {
-                    _logger.LogWarning("Service not found with ID: {Id}", id);
-                    return null;
-                }
-
-                _logger.LogInformation("Retrieved Service successfully.");
-                return GetMapper().Map<ServiceResponseDso>(result);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error while retrieving Service by ID: {Id}", id);
-                return null;
-            }
-        }
-
-        public override async Task DeleteAsync(object value, string key = "Id")
-        {
-            try
-            {
-                _logger.LogInformation("Deleting Service with {Key}: {Value}", key, value);
-                await _share.DeleteAsync(value, key);
-                _logger.LogInformation("Service with {Key}: {Value} deleted successfully.", key, value);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error while deleting Service with {Key}: {Value}", key, value);
-            }
-        }
-
-        public override async Task DeleteRange(List<ServiceRequestDso> entities)
-        {
-            try
-            {
-                var builddtos = entities.OfType<ServiceRequestShareDto>().ToList();
-                _logger.LogInformation("Deleting {Count} Services...", 201);
-                await _share.DeleteRange(builddtos);
-                _logger.LogInformation("{Count} Services deleted successfully.", 202);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error while deleting multiple Services.");
-            }
-        }
-
-        public override async Task<PagedResponse<ServiceResponseDso>> GetAllByAsync(List<FilterCondition> conditions, ParamOptions? options = null)
-        {
-            try
-            {
-                _logger.LogInformation("Retrieving all Service entities...");
-                var results = await _share.GetAllAsync();
-                var response = await _share.GetAllByAsync(conditions, options);
-                return response.ToResponse(GetMapper().Map<IEnumerable<ServiceResponseDso>>(response.Data));
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error in GetAllAsync for Service entities.");
-                return null;
-            }
-        }
-
-        public override async Task<ServiceResponseDso?> GetOneByAsync(List<FilterCondition> conditions, ParamOptions? options = null)
-        {
-            try
-            {
-                _logger.LogInformation("Retrieving Service entity...");
-                return GetMapper().Map<ServiceResponseDso>(await _share.GetOneByAsync(conditions, options));
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error in GetOneByAsync  for Service entity.");
-                return null;
-            }
-        }
     }
 }

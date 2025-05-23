@@ -14,12 +14,11 @@ using V1.Repositories.Builder;
 using AutoGenerator.Repositories.Base;
 using AutoGenerator.Helper;
 using System;
+using V1.BPR.Layers.Base;
 
 namespace V1.Services.Services
 {
-    public interface IUseLanguageService : ILanguageService<LanguageRequestDso, LanguageResponseDso>, IBaseService//يمكنك  التزويد بكل  دوال   طبقة Builder   ببوابات  الطبقة   هذه نفسها
-    //, ILanguageBuilderRepository<LanguageRequestDso, LanguageResponseDso>
-    , IBasePublicRepository<LanguageRequestDso, LanguageResponseDso>
+    public interface IUseLanguageService : ILanguageService<LanguageRequestDso, LanguageResponseDso>, IBaseService, IBaseBPRServiceLayer<LanguageRequestDso, LanguageResponseDso>
     {
     }
 }

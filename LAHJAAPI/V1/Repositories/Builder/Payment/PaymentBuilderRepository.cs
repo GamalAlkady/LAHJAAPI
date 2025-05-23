@@ -5,7 +5,10 @@ using V1.Repositories.Base;
 using AutoGenerator.Repositories.Builder;
 using V1.DyModels.Dto.Build.Requests;
 using V1.DyModels.Dto.Build.Responses;
+using AutoGenerator;
+using AutoGenerator.Repositories.Base;
 using System;
+using V1.BPR.Layers.Base;
 
 namespace V1.Repositories.Builder
 {
@@ -13,12 +16,12 @@ namespace V1.Repositories.Builder
     /// Payment class property for BuilderRepository.
     /// </summary>
      //
-    public class PaymentBuilderRepository : BaseBuilderRepository<Payment, PaymentRequestBuildDto, PaymentResponseBuildDto>, IPaymentBuilderRepository<PaymentRequestBuildDto, PaymentResponseBuildDto>
+    public class PaymentBuilderRepository : BaseBuilderRepository<Payment, PaymentRequestBuildDto, PaymentResponseBuildDto>, IPaymentBuilderRepository<PaymentRequestBuildDto, PaymentResponseBuildDto>, ITBuilder
     {
         /// <summary>
         /// Constructor for PaymentBuilderRepository.
         /// </summary>
-        public PaymentBuilderRepository(DataContext dbContext, IMapper mapper, ILogger logger) : base(dbContext, mapper, logger) // Initialize  constructor.
+        public PaymentBuilderRepository(DataContext dbContext, IMapper mapper, ILoggerFactory logger) : base(dbContext, mapper, logger) // Initialize  constructor.
         {
         // Initialize necessary fields or call base constructor.
         ///

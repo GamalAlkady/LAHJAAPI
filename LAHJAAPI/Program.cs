@@ -5,7 +5,6 @@ using LAHJAAPI.CustomPolicy;
 using LAHJAAPI.Data;
 using LAHJAAPI.Middlewares;
 using LAHJAAPI.Models;
-using LAHJAAPI.Seeds;
 using LAHJAAPI.Utilities;
 using LAHJAAPI.V1.Validators.Conditions;
 using Microsoft.AspNetCore.Authentication;
@@ -20,40 +19,27 @@ using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
 
-
-// Some problems 
-//1. when run generate make it run with endpoint api/v1/user/ insteadof api/v1/api
-
 #region External Services
-//Log.Logger = new LoggerConfiguration().MinimumLevel.Information()
-//    .WriteTo.Console()
-//    .WriteTo.File("logs/myLog-.txt", rollingInterval: RollingInterval.Day)
-//    .CreateLogger();
-//builder.Logging.ClearProviders();
-//builder.Logging.AddConsole();
-
-//builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(Program).Assembly));
-
 builder.Services
     .AddStripeGateway(builder.Configuration)
     .AddDataContext(builder.Configuration)
-    //.AddSubPayServicer(IConditionChecker)
     ;
 #endregion
 
+var arrlist = args.ToList();
+//arrlist.Add("generate");
+//arrlist.Add("/bpr");
 builder.Services
        .AddAutoBuilderApiCore<DataContext, ApplicationUser>(new()
        {
+           //Arags = arrlist.ToArray(),
            Arags = args,
            NameRootApi = "V1",
            IsMapper = true,
-           TypeContext = typeof(DataContext),
            Assembly = Assembly.GetExecutingAssembly(),
            AssemblyModels = typeof(LAHJAAPI.Models.Advertisement).Assembly,
-           DbConnectionString = builder.Configuration.GetConnectionString("DefaultConnection"),
            ProjectName = "LAHJAAPI",
-           //ProjectPath = typeof(Program).Assembly.FullName,
-
+           PathModels = "G:\\ProgramOfStudy\\VisaulPrograming\\web\\LAHJAAPI\\Models\\Models\\"
        })
     .AddAutoValidator()
     //.AddAutoConfigScheduler()
@@ -192,9 +178,9 @@ builder.Services.AddSwaggerGen(c =>
 var app = builder.Build();
 if (app.Environment.IsDevelopment())
 {
-    SeedData.EnsureSeedData(app);
+    //SeedData.EnsureSeedData(app);
 }
-//app.UseSchedulerDashboard();
+//app.UseSchedulerV1board();
 app.UseCors("wasm");
 app.UseMiddleware<ProblemDetailsMiddleware>();
 
@@ -233,6 +219,19 @@ app.UseAuthorization();
 
 app.MapControllers().RequireAuthorization();
 
+app.UseAutoGeneratorCustomApi(new()
+{
+    LoginRequest = new()
+    {
+        Username = "anas",
+        Password = "Anas$123",
+        ProjectId = "899"
+
+    },
+    PathDataContext = "G:\\ProgramOfStudy\\VisaulPrograming\\web\\LAHJAAPI\\LAHJAAPI\\V1\\Data\\",
+    PathModels = "G:\\ProgramOfStudy\\VisaulPrograming\\web\\LAHJAAPI\\LAHJAAPI\\V1\\Models\\"
+});
+
 // protection from cross-site request forgery (CSRF/XSRF) attacks with empty body
 // form can't post anything useful so the body is null, the JSON call can pass
 // an empty object {} but doesn't allow cross-site due to CORS.
@@ -247,5 +246,6 @@ app.MapPost("/api/logout", async (
     }
     return Results.NotFound();
 }).RequireAuthorization().WithTags("Auth");
+
 
 app.Run();

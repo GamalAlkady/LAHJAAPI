@@ -14,6 +14,7 @@ public static class SeedData
             var context = scope.ServiceProvider.GetService<DataContext>();
             var mapper = scope.ServiceProvider.GetService<IMapper>();
             //await context.AuthorizationSessions.ExecuteDeleteAsync();
+            //await context.EventRequests.ExecuteDeleteAsync();
             //await context.Requests.ExecuteDeleteAsync();
             //await context.Plans.ExecuteDeleteAsync();
 

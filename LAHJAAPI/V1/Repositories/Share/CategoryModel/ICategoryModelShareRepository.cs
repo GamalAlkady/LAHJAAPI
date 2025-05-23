@@ -6,6 +6,8 @@ using AutoGenerator.Repositories.Builder;
 using V1.DyModels.Dto.Build.Requests;
 using V1.DyModels.Dto.Build.Responses;
 using AutoGenerator;
+using AutoGenerator.Repositories.Base;
+using AutoGenerator;
 using V1.Repositories.Builder;
 using AutoGenerator.Repositories.Share;
 using System.Linq.Expressions;
@@ -14,6 +16,7 @@ using AutoGenerator.Helper;
 using V1.DyModels.Dto.Share.Requests;
 using V1.DyModels.Dto.Share.Responses;
 using System;
+using V1.BPR.Layers.Base;
 
 namespace V1.Repositories.Share
 {
@@ -21,7 +24,7 @@ namespace V1.Repositories.Share
     /// CategoryModel interface for RepositoriesRepository.
     /// </summary>
     public interface ICategoryModelShareRepository : IBaseShareRepository<CategoryModelRequestShareDto, CategoryModelResponseShareDto> //
-    , IBasePublicRepository<CategoryModelRequestShareDto, CategoryModelResponseShareDto>
+    , IBaseBPRShareLayer<CategoryModelRequestShareDto, CategoryModelResponseShareDto>
     //  يمكنك  التزويد بكل  دوال   طبقة Builder   ببوابات  الطبقة   هذه نفسها      
     //,ICategoryModelBuilderRepository<CategoryModelRequestShareDto, CategoryModelResponseShareDto>
     {

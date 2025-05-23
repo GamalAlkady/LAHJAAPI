@@ -1,7 +1,4 @@
 using AutoGenerator;
-using AutoGenerator.Helper.Translation;
-using LAHJAAPI.Models;
-using System;
 
 namespace V1.DyModels.VMs
 {
@@ -11,6 +8,16 @@ namespace V1.DyModels.VMs
     public class AdvertisementInfoVM : ITVM
     {
         ///
-        public string? Id { get; set; }
+        public String? Id { get; set; }
+        //
+        public string? Title { get; set; }
+        //
+        public string? Description { get; set; }
+        ///
+        public String? Image { get; set; }
+        ///
+        public Boolean Active { get; set; }
+        ///
+        public String? Url { get; set; }
     }
 }

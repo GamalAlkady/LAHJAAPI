@@ -18,7 +18,7 @@ namespace V1.DyModels.VMs
     {
         public string AuthorizationType { get; set; }
 
-        public string? SpaceId { get; set; }
+        //public string? SpaceId { get; set; }
         public DateTime? Expires { get; set; }
         public string Token { get; set; }
     }

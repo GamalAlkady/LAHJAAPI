@@ -5,7 +5,10 @@ using V1.Repositories.Base;
 using AutoGenerator.Repositories.Builder;
 using V1.DyModels.Dto.Build.Requests;
 using V1.DyModels.Dto.Build.Responses;
+using AutoGenerator;
+using AutoGenerator.Repositories.Base;
 using System;
+using V1.BPR.Layers.Base;
 
 namespace V1.Repositories.Builder
 {
@@ -13,12 +16,12 @@ namespace V1.Repositories.Builder
     /// ModelGateway class property for BuilderRepository.
     /// </summary>
      //
-    public class ModelGatewayBuilderRepository : BaseBuilderRepository<ModelGateway, ModelGatewayRequestBuildDto, ModelGatewayResponseBuildDto>, IModelGatewayBuilderRepository<ModelGatewayRequestBuildDto, ModelGatewayResponseBuildDto>
+    public class ModelGatewayBuilderRepository : BaseBuilderRepository<ModelGateway, ModelGatewayRequestBuildDto, ModelGatewayResponseBuildDto>, IModelGatewayBuilderRepository<ModelGatewayRequestBuildDto, ModelGatewayResponseBuildDto>, ITBuilder
     {
         /// <summary>
         /// Constructor for ModelGatewayBuilderRepository.
         /// </summary>
-        public ModelGatewayBuilderRepository(DataContext dbContext, IMapper mapper, ILogger logger) : base(dbContext, mapper, logger) // Initialize  constructor.
+        public ModelGatewayBuilderRepository(DataContext dbContext, IMapper mapper, ILoggerFactory logger) : base(dbContext, mapper, logger) // Initialize  constructor.
         {
         // Initialize necessary fields or call base constructor.
         ///

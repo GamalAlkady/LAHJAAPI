@@ -1,5 +1,4 @@
 using AutoGenerator;
-using System.ComponentModel.DataAnnotations;
 
 namespace V1.DyModels.VMs
 {
@@ -8,9 +7,35 @@ namespace V1.DyModels.VMs
     /// </summary>
     public class SubscriptionInfoVM : ITVM
     {
-        [Required]
-        public string SubscriptionId { get; set; }
-        [Required]
-        public string ClientSecret { get; set; }
+        public String? Id { get; set; }
+        ///
+        public String? CustomerId { get; set; }
+        ///
+        public DateTime StartDate { get; set; }
+        ///
+        public DateTime CurrentPeriodStart { get; set; }
+        ///
+        public DateTime CurrentPeriodEnd { get; set; }
+        ///
+        public String? Status { get; set; }
+        ///
+        public Boolean CancelAtPeriodEnd { get; set; }
+        ///
+        public Int32 NumberRequests { get; set; }
+        ///
+        public Int32 AllowedRequests { get; set; }
+        ///
+        public Int32 AllowedSpaces { get; set; }
+        ///
+        public Nullable<DateTime> CancelAt { get; set; }
+        ///
+        public Nullable<DateTime> CanceledAt { get; set; }
+        ///
+        public String? PlanId { get; set; }
+        public PlanOutputVM? Plan { get; set; }
+        ///
+        public String? UserId { get; set; }
+
+        public List<SpaceOutputVM>? Spaces { get; set; }
     }
 }

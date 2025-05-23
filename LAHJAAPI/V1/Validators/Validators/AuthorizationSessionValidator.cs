@@ -85,41 +85,37 @@ namespace LAHJAAPI.V1.Validators
 
                 // الخطوة 1: جلب الجلسات المرتبطة بالمستخدم ونوع الصلاحية
                 var candidateSessions = await QueryListAsync<AuthorizationSession>(s =>
-                     s.Include(sess => sess.AuthorizationSessionServices)
-                     .ThenInclude(s => s.Service)
-                     .ThenInclude(s => s.ModelAi)
-                     .Where(sess =>
-                         sess.UserId == userId.ToString()
-                         && sess.AuthorizationType == authorizationType
+                     s.Include(ss => ss.AuthorizationSessionServices)
+                     .Where(ss =>
+                         ss.UserId == userId.ToString()
+                         && ss.AuthorizationType == authorizationType
+                     && ss.AuthorizationSessionServices.Count() == servicesIds.Count
                      )
                 );
 
                 // الخطوة 2: فلترة الجلسات التي تحتوي على جميع الـ serviceIds المطلوبة
-                var matchingSessions = candidateSessions
+                var session = candidateSessions
                     .Where(sess =>
                         sess.AuthorizationSessionServices != null &&
                         servicesIds.All(requiredId => sess.AuthorizationSessionServices.Any(s => s.ServiceId == requiredId))
                     )
-                    .ToList();
+                    .FirstOrDefault();
 
 
-                var session = matchingSessions.FirstOrDefault();
+                //var session = matchingSessions.FirstOrDefault();
 
                 if (session == null)
                 {
-                    return ConditionResult.ToFailure(new AuthorizationSession
-                    {
-                        //Services = services
-                    }, "No session found for the provided user ID and authorization type.");
+                    return ConditionResult.ToError("No session found for the provided user ID and authorization type.");
                 }
 
-                var modelAi = session.AuthorizationSessionServices.First().Service.ModelAi;
-                //var services = await QueryListAsync<Service>(s => s.Include(s => s.ModelAi).ThenInclude(m => m.ModelGateway).Where(sv => servicesIds.Contains(sv.Id)));
-                var resultModelGateway = await _checker.CheckAndResultAsync(ModelGatewayValidatorStates.ValidateId, modelAi.ModelGatewayId);
-                if (!resultModelGateway.Success.GetValueOrDefault()) return resultModelGateway;
+                //var modelAi = session.AuthorizationSessionServices.First().Service.ModelAi;
+                ////var services = await QueryListAsync<Service>(s => s.Include(s => s.ModelAi).ThenInclude(m => m.ModelGateway).Where(sv => servicesIds.Contains(sv.Id)));
+                //var resultModelGateway = await _checker.CheckAndResultAsync(ModelGatewayValidatorStates.ValidateId, modelAi.ModelGatewayId);
+                //if (!resultModelGateway.Success.GetValueOrDefault()) return resultModelGateway;
 
-                ModelGateway modelGateway = (ModelGateway)resultModelGateway.Result!;
-                modelAi.ModelGateway = modelGateway;
+                //ModelGateway modelGateway = (ModelGateway)resultModelGateway.Result!;
+                //modelAi.ModelGateway = modelGateway;
                 return ConditionResult.ToSuccess(session, "Matching session found.");
             }
             catch (Exception ex)
@@ -154,17 +150,17 @@ namespace LAHJAAPI.V1.Validators
                     //services.Add((Service)resultService.Result!);
                 }
 
-                var services = await QueryListAsync<Service>(s => s.Include(s => s.ModelAi).Where(sv => servicesIds.Contains(sv.Id)));
+                //var services = await QueryListAsync<Service>(s => s.Include(s => s.ModelAi).Where(sv => servicesIds.Contains(sv.Id)));
 
-                var modelGatewayId = services.First().ModelAi.ModelGatewayId;
+                //var modelGatewayId = services.First().ModelAi.ModelGatewayId;
 
-                var resultModelGateway = await _checker.CheckAndResultAsync(ModelGatewayValidatorStates.ValidateId, modelGatewayId);
-                if (!resultModelGateway.Success.GetValueOrDefault()) return resultModelGateway;
+                //var resultModelGateway = await _checker.CheckAndResultAsync(ModelGatewayValidatorStates.ValidateId, modelGatewayId);
+                //if (!resultModelGateway.Success.GetValueOrDefault()) return resultModelGateway;
 
-                ModelGateway modelGateway = (ModelGateway)resultModelGateway.Result!;
-                services.First().ModelAi.ModelGateway = modelGateway;
+                //ModelGateway modelGateway = (ModelGateway)resultModelGateway.Result!;
+                //services.First().ModelAi.ModelGateway = modelGateway;
 
-                return ConditionResult.ToSuccess(services.ToList(), "All services are assigned to the user.");
+                return ConditionResult.ToSuccess(servicesIds, "All services are assigned to the user.");
             }
             catch (Exception)
             {

@@ -1,7 +1,4 @@
 using AutoGenerator;
-using AutoGenerator.Helper.Translation;
-using LAHJAAPI.Models;
-using System;
 
 namespace V1.DyModels.VMs
 {
@@ -24,6 +21,6 @@ namespace V1.DyModels.VMs
         public String? Currency { get; set; }
         ///
         public DateOnly Date { get; set; }
-        public InvoiceOutputVM? Invoice { get; set; }
+        //public InvoiceOutputVM? Invoice { get; set; }
     }
 }

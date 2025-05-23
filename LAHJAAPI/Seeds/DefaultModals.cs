@@ -95,13 +95,13 @@ namespace LAHJAAPI.Seeds
                                 new ()
                                 {
                                     Name = "Create Space",
-                                    AbsolutePath = ServiceType.Space,
+                                    AbsolutePath = ServiceType.CreateSpace,
                                     Token = TokenService.GenerateSecureToken(),
                                 },
                                 new()
                                 {
-                                    Name = "Dashboard",
-                                    AbsolutePath = ServiceType.Dash,
+                                    Name = "V1board",
+                                    AbsolutePath = ServiceType.Dashboard,
                                     Token = TokenService.GenerateSecureToken(),
                                 }
                             }
@@ -119,7 +119,7 @@ namespace LAHJAAPI.Seeds
                 //    new ModelGateway
                 //{
                 //    Name = "huggingface",
-                //    Url = "https://huggingface.co/wasmdashai",
+                //    Url = "https://huggingface.co/wasmV1ai",
                 //    Token = Token,
                 //    IsDefault = false
                 //}

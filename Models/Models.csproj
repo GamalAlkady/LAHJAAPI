@@ -20,7 +20,7 @@
     </PackageReference>
 		
 		
-		<PackageReference Include="WasmAI.AutoGenerator.Config" Version="1.0.0" />
+		<PackageReference Include="WasmAI.AutoGenerator.Config" Version="1.0.1" />
 	</ItemGroup>
 
 

@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using WasmAI.ConditionChecker.Base;
 
 namespace LAHJAAPI.Exceptions
 {
@@ -6,8 +7,25 @@ namespace LAHJAAPI.Exceptions
     {
         public ProblemDetails Problem { get; }
 
+        public ProblemDetailsException(ConditionResult result) : base(result.Message)
+        {
+            if (result.Result is ProblemDetails problem && result.Result != null)
+            {
+                Problem = problem;
+            }
+            else
+            {
+                Problem = new ProblemDetails
+                {
+                    Title = result.Message,
+                    Status = 500,
+                    Detail = result.Message
+                };
+            }
+        }
         public ProblemDetailsException(object obj) : base(obj is ProblemDetails problem1 ? problem1.Title : obj.ToString())
         {
+
             if (obj is ProblemDetails problem)
             {
 

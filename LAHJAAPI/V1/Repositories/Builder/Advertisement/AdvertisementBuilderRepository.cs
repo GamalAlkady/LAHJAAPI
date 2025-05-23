@@ -5,7 +5,10 @@ using V1.Repositories.Base;
 using AutoGenerator.Repositories.Builder;
 using V1.DyModels.Dto.Build.Requests;
 using V1.DyModels.Dto.Build.Responses;
+using AutoGenerator;
+using AutoGenerator.Repositories.Base;
 using System;
+using V1.BPR.Layers.Base;
 
 namespace V1.Repositories.Builder
 {
@@ -13,12 +16,12 @@ namespace V1.Repositories.Builder
     /// Advertisement class property for BuilderRepository.
     /// </summary>
      //
-    public class AdvertisementBuilderRepository : BaseBuilderRepository<Advertisement, AdvertisementRequestBuildDto, AdvertisementResponseBuildDto>, IAdvertisementBuilderRepository<AdvertisementRequestBuildDto, AdvertisementResponseBuildDto>
+    public class AdvertisementBuilderRepository : BaseBuilderRepository<Advertisement, AdvertisementRequestBuildDto, AdvertisementResponseBuildDto>, IAdvertisementBuilderRepository<AdvertisementRequestBuildDto, AdvertisementResponseBuildDto>, ITBuilder
     {
         /// <summary>
         /// Constructor for AdvertisementBuilderRepository.
         /// </summary>
-        public AdvertisementBuilderRepository(DataContext dbContext, IMapper mapper, ILogger logger) : base(dbContext, mapper, logger) // Initialize  constructor.
+        public AdvertisementBuilderRepository(DataContext dbContext, IMapper mapper, ILoggerFactory logger) : base(dbContext, mapper, logger) // Initialize  constructor.
         {
         // Initialize necessary fields or call base constructor.
         ///

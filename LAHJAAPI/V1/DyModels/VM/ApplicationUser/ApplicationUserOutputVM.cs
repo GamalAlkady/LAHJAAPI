@@ -32,23 +32,14 @@ namespace V1.DyModels.VMs
         ///
         public DateTime UpdatedAt { get; set; }
         public string? SubscriptionId { get; set; }
-        public SubscriptionOutputVM? Subscription { get; set; }
-        //
-        public List<UserModelAiOutputVM>? UserModelAis { get; set; }
-        //
-        public List<UserServiceOutputVM>? UserServices { get; set; }
-
 
         ///
         public String? Id { get; set; }
         ///
         public String? UserName { get; set; }
         ///
-        public String? NormalizedUserName { get; set; }
-        ///
         public String? Email { get; set; }
         ///
-        public String? NormalizedEmail { get; set; }
         ///
         public Boolean EmailConfirmed { get; set; }
 

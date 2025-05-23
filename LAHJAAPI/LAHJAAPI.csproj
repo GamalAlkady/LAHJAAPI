@@ -11,6 +11,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="V1\Controllers\Admin\CodeValidatorController.cs.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Content Remove="folderStructure.json" />
   </ItemGroup>
 
@@ -29,7 +33,7 @@
 
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
 	  <PackageReference Include="FluentResults" Version="3.16.0" />
-	  <PackageReference Include="WasmAI.AutoGenerator" Version="1.0.3" />
+	  <PackageReference Include="WasmAI.AutoGenerator" Version="1.0.9" />
   </ItemGroup>
 	
   <ItemGroup>
@@ -40,6 +44,7 @@
 
   <ItemGroup>
     <None Include="folderStructure.json" />
+    <None Include="V1\Controllers\Admin\CodeValidatorController.cs.cs" />
   </ItemGroup>
 
   <ItemGroup>

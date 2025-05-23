@@ -1,7 +1,6 @@
 using LAHJAAPI.Models;
 using LAHJAAPI.V1.Enums;
 using LAHJAAPI.V1.Validators.Conditions;
-using Microsoft.AspNetCore.Mvc;
 using V1.DyModels.Dso.Responses;
 using V1.DyModels.VMs;
 using WasmAI.ConditionChecker.Base;
@@ -86,26 +85,40 @@ namespace LAHJAAPI.V1.Validators
                    )
                );
 
-
-
-            if ((await _checker.CheckAndResultAsync(PlanValidatorStates.HasAllowedRequests, new DataFilter
+            var result = await _checker.CheckAndResultAsync(PlanValidatorStates.HasAllowedRequests, new DataFilter
             {
                 Id = data.Value.PlanId,
                 Value = countRequests
-            })).Result is PlanFeature result)
-            {
-                return ConditionResult.ToSuccess(new RequestInfoVM
-                {
-                    AllowedRequests = result.Value,
-                    NumberRequests = countRequests
-                }); ;
-            }
-            return ConditionResult.ToFailure(new ProblemDetails
-            {
-                Title = "Requests not allowed",
-                Detail = "You have exhausted all allowed subscription requests.",
-                Status = SubscriptionValidatorStates.IsAllowedRequestsForCreate.ToInt()
             });
+
+            if (result.Result is PlanFeature planFeature)
+            {
+                if (result.Success == true)
+                {
+                    return ConditionResult.ToSuccess(new RequestFilterVM
+                    {
+                        AllowedRequests = planFeature.Value,
+                        NumberRequests = countRequests
+                    });
+                }
+                else
+                {
+                    return ConditionResult.ToFailure(new RequestFilterVM
+                    {
+                        AllowedRequests = planFeature.Value,
+                        NumberRequests = countRequests
+                    }, result.Message);
+                }
+            }
+
+            return result;
+
+            //return ConditionResult.ToFailure(new ProblemDetails
+            //{
+            //    Title = "Requests not allowed",
+            //    Detail = "You have exhausted all allowed subscription requests.",
+            //    Status = SubscriptionValidatorStates.IsAllowedRequestsForCreate.ToInt()
+            //});
         }
 
 

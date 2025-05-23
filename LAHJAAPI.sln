@@ -13,8 +13,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Microservices", "Microservi
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StripeGateway", "StripeGateway\StripeGateway.csproj", "{46BD8406-72F3-EC94-41B4-E7F71BE2F745}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Web", "..\Web\Web.csproj", "{BDAAE4BA-8512-F499-7C7F-A68C84A524DB}"
-EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{8AC5E557-45DA-4326-9D60-251B74E4501C}"
 	ProjectSection(SolutionItems) = preProject
 		.editorconfig = .editorconfig
@@ -38,10 +36,6 @@ Global
 		{46BD8406-72F3-EC94-41B4-E7F71BE2F745}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{46BD8406-72F3-EC94-41B4-E7F71BE2F745}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{46BD8406-72F3-EC94-41B4-E7F71BE2F745}.Release|Any CPU.Build.0 = Release|Any CPU
-		{BDAAE4BA-8512-F499-7C7F-A68C84A524DB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{BDAAE4BA-8512-F499-7C7F-A68C84A524DB}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{BDAAE4BA-8512-F499-7C7F-A68C84A524DB}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{BDAAE4BA-8512-F499-7C7F-A68C84A524DB}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

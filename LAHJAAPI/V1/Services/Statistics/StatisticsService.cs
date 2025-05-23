@@ -2,6 +2,7 @@
 using AutoGenerator.Helper;
 using AutoGenerator.Helper.Translation;
 using AutoMapper;
+using LAHJAAPI.Models;
 using LAHJAAPI.V1.Enums;
 using V1.DyModels.Dso.Responses;
 using V1.DyModels.VM;
@@ -55,7 +56,8 @@ namespace LAHJAAPI.V1.Services.Statistics
 
         public async Task<IEnumerable<ServiceUsersCount>> ServiceUsersCount()
         {
-            var items = await _serviceService.GetAllAsync();
+            var response = await _serviceService.GetAllAsync([nameof(Service.UserServices)], pageSize: 100);
+            var items = response.Data;
             var r = items.Select(s => new ServiceUsersCount
             {
                 ServiceType = s.Name,
@@ -77,7 +79,7 @@ namespace LAHJAAPI.V1.Services.Statistics
                 {
                     Name = s.Service.Name,
                     UsageCount = usageCount,
-                    Remaining = numberRequests - usageCount // إعادة استخدام القيمة المحسوبة هنا
+                    Remaining = (numberRequests - usageCount).ToString() // إعادة استخدام القيمة المحسوبة هنا
                 };
             }).ToList();
 
@@ -88,12 +90,17 @@ namespace LAHJAAPI.V1.Services.Statistics
 
         public async Task<UsedRequestsVm> GetUsageAndRemainingRequests()
         {
-            var sub = await _subscriptionService.GetUserSubscription();
             var numberRequests = await _subscriptionService.GetNumberRequests();
+
+            var allowedRequests = await _subscriptionService.AllowedRequests(false);
+            if (int.TryParse(allowedRequests, out var allowed))
+            {
+                allowedRequests = (allowed - numberRequests).ToString();
+            }
             return new UsedRequestsVm
             {
                 UsageCount = numberRequests,
-                Remaining = sub.AllowedRequests - numberRequests
+                Remaining = allowedRequests
             };
         }
 
@@ -133,7 +140,7 @@ namespace LAHJAAPI.V1.Services.Statistics
             if (RequestType.Errors == requestTypes)
                 filterConditions.Add(new FilterCondition("Status", new[] { RequestStatus.Failed.ToString(), RequestStatus.FailedApiCore.ToString() }, FilterOperator.In));
             else if (RequestType.Requests == requestTypes)
-                filterConditions.Add(new FilterCondition("Status", RequestStatus.Success.ToString()));
+                filterConditions.Add(new FilterCondition("Status", new[] { RequestStatus.Success.ToString(), RequestStatus.Processing.ToString() }, FilterOperator.In));
 
             if (StartDate != null)
                 filterConditions.Add(new FilterCondition("UpdatedAt", StartDate, FilterOperator.GreaterThanOrEqual));

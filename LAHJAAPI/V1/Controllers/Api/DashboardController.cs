@@ -16,7 +16,7 @@ namespace Api.Controllers
         ILogger<DashboardController> logger
         ) : ControllerBase
     {
-        [EndpointSummary("Plot Plan Data Services")]
+        [EndpointSummary("Service Usage Data")]
         [HttpGet("ServiceUsageData")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -38,7 +38,7 @@ namespace Api.Controllers
             return Ok(items);
         }
 
-        [EndpointSummary("Plot Plan Data")]
+        [EndpointSummary("Service Usage And Remaining")]
         [HttpGet("ServiceUsageAndRemaining")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -49,7 +49,7 @@ namespace Api.Controllers
             return Ok(items);
         }
 
-        [EndpointSummary("Plot Plan Data")]
+        [EndpointSummary("Usage And Remaining Requests")]
         [HttpGet("UsageAndRemainingRequests")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]

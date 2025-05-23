@@ -4,7 +4,7 @@
     {
         public string? Name { get; set; }
         public int UsageCount { get; set; }
-        public int? Remaining { get; set; }
+        public string? Remaining { get; set; }
     }
     public class ServiceUsersCount
     {

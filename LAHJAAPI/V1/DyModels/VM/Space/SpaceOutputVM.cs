@@ -1,7 +1,4 @@
 using AutoGenerator;
-using AutoGenerator.Helper.Translation;
-using LAHJAAPI.Models;
-using System;
 
 namespace V1.DyModels.VMs
 {
@@ -32,8 +29,8 @@ namespace V1.DyModels.VMs
         public String? Token { get; set; }
         ///
         public String? SubscriptionId { get; set; }
-        public SubscriptionOutputVM? Subscription { get; set; }
+        //public SubscriptionOutputVM? Subscription { get; set; }
         //
-        public List<RequestOutputVM>? Requests { get; set; }
+        //public List<RequestOutputVM>? Requests { get; set; }
     }
 }

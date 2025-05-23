@@ -14,12 +14,11 @@ using V1.Repositories.Builder;
 using AutoGenerator.Repositories.Base;
 using AutoGenerator.Helper;
 using System;
+using V1.BPR.Layers.Base;
 
 namespace V1.Services.Services
 {
-    public interface IUseDialectService : IDialectService<DialectRequestDso, DialectResponseDso>, IBaseService//يمكنك  التزويد بكل  دوال   طبقة Builder   ببوابات  الطبقة   هذه نفسها
-    //, IDialectBuilderRepository<DialectRequestDso, DialectResponseDso>
-    , IBasePublicRepository<DialectRequestDso, DialectResponseDso>
+    public interface IUseDialectService : IDialectService<DialectRequestDso, DialectResponseDso>, IBaseService, IBaseBPRServiceLayer<DialectRequestDso, DialectResponseDso>
     {
     }
 }

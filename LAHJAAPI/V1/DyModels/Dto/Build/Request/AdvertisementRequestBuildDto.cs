@@ -1,9 +1,10 @@
 using AutoGenerator;
 using AutoGenerator.Helper.Translation;
+using LAHJAAPI.V1.DyModels.Dto;
 
 namespace V1.DyModels.Dto.Build.Requests
 {
-    public class AdvertisementRequestBuildDto : ITBuildDto
+    public class AdvertisementRequestBuildDto : ITBuildDto, IHaveId<string>
     {
         /// <summary>
         /// Id property for DTO.

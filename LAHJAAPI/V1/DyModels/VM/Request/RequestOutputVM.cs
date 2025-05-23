@@ -1,7 +1,4 @@
 using AutoGenerator;
-using AutoGenerator.Helper.Translation;
-using LAHJAAPI.Models;
-using System;
 
 namespace V1.DyModels.VMs
 {
@@ -28,17 +25,21 @@ namespace V1.DyModels.VMs
         public DateTime UpdatedAt { get; set; }
         ///
         public String? UserId { get; set; }
-        public ApplicationUserOutputVM? User { get; set; }
+        //public ApplicationUserOutputVM? User { get; set; }
         ///
         public String? SubscriptionId { get; set; }
-        public SubscriptionOutputVM? Subscription { get; set; }
+        //public SubscriptionOutputVM? Subscription { get; set; }
         ///
         public String? ServiceId { get; set; }
-        public ServiceOutputVM? Service { get; set; }
+        //public ServiceOutputVM? Service { get; set; }
         ///
         public String? SpaceId { get; set; }
-        public SpaceOutputVM? Space { get; set; }
+        //public SpaceOutputVM? Space { get; set; }
         //
-        public List<EventRequestOutputVM>? Events { get; set; }
+        //public List<EventRequestOutputVM>? Events { get; set; }
+
+        //public string? EventId { get; set; }
+        //public string? AllowedRequests { get; set; }
+        //public int NumberRequests { get; set; }
     }
 }

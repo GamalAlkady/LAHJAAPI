@@ -172,7 +172,7 @@ public class SubscriptionValidator : ValidatorContext<Subscription, Subscription
     [RegisterConditionValidator(typeof(SubscriptionValidatorStates), SubscriptionValidatorStates.IsActive, "Subscription not active", IsCachability = true)]
     private async Task<ConditionResult> IsActive(DataFilter<string, Subscription> data)
     {
-        data.Share ??= await GetModel(null);
+        //data.Share ??= await GetModel(null);
         if (data.Share == null) return ConditionResult.ToError("You have no subscription.");
 
         if (data.Share.Status!.Equals("active", StringComparison.OrdinalIgnoreCase))
@@ -221,7 +221,6 @@ public class SubscriptionValidator : ValidatorContext<Subscription, Subscription
     private async Task<ConditionResult> IsRequestAllowedForCreate(DataFilter<string, Subscription> data)
     {
         if (data.Items == null || !data.Items.TryGetValue("serviceId", out object? serviceId))
-
             return ConditionResult.ToError("Items must contains serviceId");
 
         if (!data.Items.TryGetValue("sessionId", out object? sessionId))
@@ -230,64 +229,67 @@ public class SubscriptionValidator : ValidatorContext<Subscription, Subscription
         if (!data.Items.TryGetValue("spaceId", out object? spaceId))
             return ConditionResult.ToError("Items must contains spaceId");
 
-        // Check if the service is Createspace or Dashboard
-        if (await _checker.CheckAndResultAsync(ServiceValidatorStates.IsServiceType, new DataFilter(serviceId.ToString())
-        {
-            Value = new List<string> { ServiceType.Space, ServiceType.Dash }
-        }) is { Success: true } res)
+        // Check if the service is Createspace or dashbaord
+        if (await _checker.CheckAndResultAsync(ServiceValidatorStates.IsInAbsolutePath,
+            new DataFilter(serviceId.ToString())
+            {
+                Value = new List<string> { ServiceType.CreateSpace, ServiceType.Dashboard }
+            }) is { Success: false } res3)
         {
             return ConditionResult.ToFailure(new ProblemDetails
             {
                 Title = "Coudn't create request",
-                Detail = "You can't create request with service Createspace or Dashboard",
+                Detail = $"You can't create request with service {res3.Result}",
                 Status = RequestValidatorStates.IsAllowed.ToInt()
-            }, "You can't create request with service Createspace or Dashboard");
+            }, $"You can't create request with service {res3.Result}");
         }
 
         // Check if the session is active
-        if (await _checker.CheckAndResultAsync(AuthorizationSessionValidatorStates.IsActive, new DataFilter(data.Items["sessionId"].ToString())) is { Success: false } result)
+        if (await _checker.CheckAndResultAsync(AuthorizationSessionValidatorStates.IsActive, new DataFilter(sessionId.ToString())) is { Success: false } result)
         {
             return result;
         }
 
-        if (!await _checker.CheckAsync(SpaceValidatorStates.HasSubscriptionId, new DataFilter
+        if (await _checker.CheckAndResultAsync(SpaceValidatorStates.HasSubscriptionId, new DataFilter
         {
             Id = spaceId.ToString(),
             Value = data.Id
-        }))
+        }) is { Success: false } res2)
         {
-            return ConditionResult.ToFailure(new ProblemDetails
-            {
-                Title = "Not found",
-                Detail = "This space is not included in your subscription.",
-                Status = (int)SpaceValidatorStates.IsFound
-            });
+            return res2;
         }
 
-        var resultAllowed = await _checker.CheckAndResultAsync(RequestValidatorStates.IsAllowed,
-            new DataFilter
-            {
-                Value = data.Share
-            });
-
-        if (resultAllowed.Success == false)
-        {
-            return resultAllowed;
-
-        }
-
-        return ConditionResult.ToSuccess(resultAllowed.Result);
+        return await IsAllowedRequests(data);
     }
 
 
     [RegisterConditionValidator(typeof(SubscriptionValidatorStates), SubscriptionValidatorStates.IsAllowedRequests, "You have exhausted all allowed subscription requests.")]
-    private async Task<ConditionResult> IsRequestsAllowed(DataFilter<string, Subscription> filter)
+    private async Task<ConditionResult> IsAllowedRequests(DataFilter<string, Subscription> filter)
     {
         if (filter.Share == null) return ConditionResult.ToError("You don't have subscription!");
-        return await _checker.CheckAndResultAsync(RequestValidatorStates.IsAllowed, new DataFilter
+        var result = await _checker.CheckAndResultAsync(RequestValidatorStates.IsAllowed, new DataFilter
         {
             Value = filter.Share
         });
+
+        var request = (RequestFilterVM)result.Result!;
+
+        if (result.Success == false)
+        {
+            return ConditionResult.ToFailure(new SubscriptionFilterVM
+            {
+                Id = filter.Id,
+                AllowedRequests = request.AllowedRequests,
+                NumberRequests = request.NumberRequests,
+            }, result.Message);
+        }
+
+        return ConditionResult.ToSuccess(new SubscriptionFilterVM
+        {
+            Id = filter.Id,
+            AllowedRequests = request.AllowedRequests,
+            NumberRequests = request.NumberRequests,
+        }, "You have allowed requests.");
     }
 
 

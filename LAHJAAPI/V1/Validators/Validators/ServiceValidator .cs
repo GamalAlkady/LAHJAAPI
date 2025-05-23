@@ -1,5 +1,6 @@
 using LAHJAAPI.Models;
 using LAHJAAPI.V1.Validators.Conditions;
+using Quartz.Util;
 using WasmAI.ConditionChecker.Base;
 
 namespace LAHJAAPI.V1.Validators
@@ -22,15 +23,16 @@ namespace LAHJAAPI.V1.Validators
         HasLinkedUsers,
         IsServiceModel,
         IsServiceIdsEmpty,
-        IsInUserClaims,
-        IsServiceType,
+        IsInAbsolutePath,
+        IsServiceEqual,
         IsCreateSpaceIn,
+        IsInName,
     }
 
     public class ServiceType
     {
-        public const string Dash = "dashboard";
-        public const string Space = "createspace";
+        public const string Dashboard = "dashboard";
+        public const string CreateSpace = "createspace";
         public const string Service = "service";
     }
 
@@ -113,45 +115,52 @@ namespace LAHJAAPI.V1.Validators
                 : ConditionResult.ToFailureAsync(f.Share?.UserServices, "Service is not linked to any user");
         }
 
-        [RegisterConditionValidator(typeof(ServiceValidatorStates), ServiceValidatorStates.IsInUserClaims, "Service is not in user claims")]
-        private Task<ConditionResult> ValidateServiceInUserClaims(DataFilter<string, Service> f)
+        [RegisterConditionValidator(typeof(ServiceValidatorStates), ServiceValidatorStates.IsInAbsolutePath, "Service is in AbsolutePath")]
+        private async Task<ConditionResult> IsInAbsolutePath(DataFilter<List<string>, Service> f)
         {
-            // Replace with appropriate logic to check user claims
-            bool valid = false; // Implement user claims validation logic here
-            return valid
-                ? ConditionResult.ToSuccessAsync(f.Id)
-                : ConditionResult.ToFailureAsync(f.Id, "Service is not in user claims");
+            foreach (var val in f.Value)
+            {
+                if (f.Share.AbsolutePath == val)
+                    return ConditionResult.ToFailure(val, $"Service {val} is in AbsolutePath");
+            }
+            return ConditionResult.ToSuccess(f.Share);
+
         }
 
-        [RegisterConditionValidator(typeof(ServiceValidatorStates), ServiceValidatorStates.IsServiceIdsEmpty, "User has no services")]
-        private Task<ConditionResult> ValidateServiceIdsEmpty(DataFilter<bool> f)
+        [RegisterConditionValidator(typeof(ServiceValidatorStates), ServiceValidatorStates.IsInName, "Service is not in Name")]
+        private async Task<ConditionResult> IsInName(DataFilter<List<string>, Service> f)
         {
-            // Replace with appropriate logic to check if service IDs are empty
-            bool isEmpty = false; // Implement logic here
-            return isEmpty
-                ? ConditionResult.ToSuccessAsync(isEmpty)
-                : ConditionResult.ToFailureAsync(isEmpty, "User has services");
+            return new ConditionResult(f.Value?.Count > 0 && f.Value.Contains(f.Share.Name), f.Share, "Service is not in Name");
+
         }
 
-        [RegisterConditionValidator(typeof(ServiceValidatorStates), ServiceValidatorStates.IsServiceModel, "Not a valid service model")]
-        private async Task<ConditionResult> ValidateIsServiceType(DataFilter<string, Service> f)
+        //[RegisterConditionValidator(typeof(ServiceValidatorStates), ServiceValidatorStates.IsServiceIdsEmpty, "User has no services")]
+        //private Task<ConditionResult> ValidateServiceIdsEmpty(DataFilter<bool> f)
+        //{
+        //    // Replace with appropriate logic to check if service IDs are empty
+        //    bool isEmpty = false; // Implement logic here
+        //    return isEmpty
+        //        ? ConditionResult.ToSuccessAsync(isEmpty)
+        //        : ConditionResult.ToFailureAsync(isEmpty, "User has services");
+        //}
+
+        [RegisterConditionValidator(typeof(ServiceValidatorStates), ServiceValidatorStates.IsServiceEqual, "Not a valid service")]
+        private async Task<ConditionResult> IsServiceEqual(DataFilter<string, Service> f)
         {
-            if (f.Share == null && f.Value == null && f.Name == null)
+            if (f.Share == null || (f.Value == null && f.Name == null))
                 return ConditionResult.ToError("Both Name and Value are null");
 
-            if (f.Share != null)
-            {
+            if (!f.Name.IsNullOrWhiteSpace())
                 return new ConditionResult(
-                    f.Share.AbsolutePath.Equals(f.Name ?? f.Value, StringComparison.OrdinalIgnoreCase),
+                    f.Share.Name.Equals(f.Name, StringComparison.OrdinalIgnoreCase),
                     f.Share,
-                    $"No service found for {f.Name ?? f.Value}.");
-            }
+                    $"Service are not equal {f.Name}.");
 
-            f.Share = await QueryFirstOrDefaultAsync<Service>(x => x.AbsolutePath.Contains(f.Name ?? f.Value!));
-            bool valid = f.Share != null;
-            return valid
-                ? ConditionResult.ToSuccess(f.Share)
-                : ConditionResult.ToError($"No service found for {f.Name ?? f.Value}.");
+
+            return new ConditionResult(
+                f.Share.AbsolutePath.Equals(f.Value, StringComparison.OrdinalIgnoreCase),
+                f.Share,
+                $"Service are not equal {f.Value}.");
         }
 
         [RegisterConditionValidator(typeof(ServiceValidatorStates), ServiceValidatorStates.IsCreateSpaceIn)]
@@ -160,9 +169,9 @@ namespace LAHJAAPI.V1.Validators
             if (f.Value == null || f.Value.Count == 0)
                 return ConditionResult.ToError("Value must contain service IDs");
 
-            var service = await QueryFirstOrDefaultAsync<Service>(x => x.AbsolutePath == ServiceType.Space);
+            var service = await QueryFirstOrDefaultAsync<Service>(x => x.AbsolutePath == ServiceType.CreateSpace);
 
-            return new ConditionResult(f.Value.Contains(service?.Id ?? string.Empty), service, $"Service {ServiceType.Space} {f.Value}.");
+            return new ConditionResult(f.Value.Contains(service?.Id ?? string.Empty), service, $"Service {ServiceType.CreateSpace} {f.Value}.");
         }
 
         protected override async Task<Service?> GetModel(string? id)

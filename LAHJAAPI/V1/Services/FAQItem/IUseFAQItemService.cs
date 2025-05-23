@@ -14,12 +14,11 @@ using V1.Repositories.Builder;
 using AutoGenerator.Repositories.Base;
 using AutoGenerator.Helper;
 using System;
+using V1.BPR.Layers.Base;
 
 namespace V1.Services.Services
 {
-    public interface IUseFAQItemService : IFAQItemService<FAQItemRequestDso, FAQItemResponseDso>, IBaseService//يمكنك  التزويد بكل  دوال   طبقة Builder   ببوابات  الطبقة   هذه نفسها
-    //, IFAQItemBuilderRepository<FAQItemRequestDso, FAQItemResponseDso>
-    , IBasePublicRepository<FAQItemRequestDso, FAQItemResponseDso>
+    public interface IUseFAQItemService : IFAQItemService<FAQItemRequestDso, FAQItemResponseDso>, IBaseService, IBaseBPRServiceLayer<FAQItemRequestDso, FAQItemResponseDso>
     {
     }
 }

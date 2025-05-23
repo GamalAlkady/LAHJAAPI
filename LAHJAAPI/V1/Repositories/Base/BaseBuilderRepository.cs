@@ -2,23 +2,24 @@ using AutoGenerator;
 using AutoGenerator.Repositories.Builder;
 using AutoMapper;
 using LAHJAAPI.Data;
+using V1.BPR.Layers.Base;
 
 namespace V1.Repositories.Base
 {
     /// <summary>
     /// BaseRepository class for ShareRepository.
     /// </summary>
-    public abstract class BaseBuilderRepository<TModel, TBuildRequestDto, TBuildResponseDto> :
-        TBaseBuilderRepository<TModel, TBuildRequestDto, TBuildResponseDto>,
-        IBaseBuilderRepository<TBuildRequestDto, TBuildResponseDto>,
-        ITBuildRepository where TModel : class where TBuildRequestDto : class where TBuildResponseDto : class
+    public abstract class BaseBuilderRepository<TModel, TBuildRequestDto, TBuildResponseDto> : BaseBPRLayer<TBuildRequestDto, TBuildResponseDto, TModel, TModel, ITBase, ITModel>, IBPRLayer<TBuildRequestDto, TBuildResponseDto>, ITBuildRepository, IBaseBuilderRepository<TBuildRequestDto, TBuildResponseDto> where TModel : class where TBuildRequestDto : class where TBuildResponseDto : class
     {
-        private readonly BaseRepository<TModel> _baseRepository;
-
-        public BaseBuilderRepository(DataContext context, IMapper mapper, ILogger logger)
-            : base(new BaseRepository<TModel>(context, logger), mapper, logger)
+        private readonly BaseBPRRepository<TModel> _baseRepository;
+        protected BaseBuilderRepository(DataContext dbContext, IMapper mapper, ILoggerFactory logger) :
+            this(dbContext, mapper, logger, new BaseBPRRepository<TModel>(dbContext, logger))
         {
-            _baseRepository = new BaseRepository<TModel>(context, logger);
+        }
+
+        protected BaseBuilderRepository(DataContext dbContext, IMapper mapper, ILoggerFactory logger, BaseBPRRepository<TModel> bpr) : base(mapper, logger, bpr)
+        {
+            _baseRepository = bpr;
         }
 
         public async Task<bool> ExecuteTransactionAsync(Func<Task<bool>> operation)

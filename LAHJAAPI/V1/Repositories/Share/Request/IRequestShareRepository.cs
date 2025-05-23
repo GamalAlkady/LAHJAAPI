@@ -6,6 +6,8 @@ using AutoGenerator.Repositories.Builder;
 using V1.DyModels.Dto.Build.Requests;
 using V1.DyModels.Dto.Build.Responses;
 using AutoGenerator;
+using AutoGenerator.Repositories.Base;
+using AutoGenerator;
 using V1.Repositories.Builder;
 using AutoGenerator.Repositories.Share;
 using System.Linq.Expressions;
@@ -14,6 +16,7 @@ using AutoGenerator.Helper;
 using V1.DyModels.Dto.Share.Requests;
 using V1.DyModels.Dto.Share.Responses;
 using System;
+using V1.BPR.Layers.Base;
 
 namespace V1.Repositories.Share
 {
@@ -21,13 +24,10 @@ namespace V1.Repositories.Share
     /// Request interface for RepositoriesRepository.
     /// </summary>
     public interface IRequestShareRepository : IBaseShareRepository<RequestRequestShareDto, RequestResponseShareDto> //
-    , IBasePublicRepository<RequestRequestShareDto, RequestResponseShareDto>
+    , IBaseBPRShareLayer<RequestRequestShareDto, RequestResponseShareDto>
     //  يمكنك  التزويد بكل  دوال   طبقة Builder   ببوابات  الطبقة   هذه نفسها      
     //,IRequestBuilderRepository<RequestRequestShareDto, RequestResponseShareDto>
     {
-        Task<bool> ExecuteTransactionAsync(Func<Task<bool>> operation);
-
-        // Define methods or properties specific to the share repository interface.
-        Task<int> GetCount(string subscriptionId, string? serviceId, DateTime start, DateTime end, string status);
+    // Define methods or properties specific to the share repository interface.
     }
 }

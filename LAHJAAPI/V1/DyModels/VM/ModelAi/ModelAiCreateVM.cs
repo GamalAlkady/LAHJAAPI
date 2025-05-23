@@ -1,5 +1,6 @@
 using AutoGenerator;
 using AutoGenerator.Helper.Translation;
+using System.ComponentModel.DataAnnotations;
 
 namespace V1.DyModels.VMs
 {
@@ -8,11 +9,12 @@ namespace V1.DyModels.VMs
     /// </summary>
     public class ModelAiCreateVM : ITVM
     {
-
-        public TranslationData? Name { get; set; }
+        [Required]
+        public TranslationData Name { get; set; }
         ///
         //public String? Token { get; set; }
         ///
+        [Required]
         public String? AbsolutePath { get; set; }
         //
         public TranslationData? Category { get; set; }
@@ -26,7 +28,8 @@ namespace V1.DyModels.VMs
         public TranslationData? Dialect { get; set; }
         ///
         public String? Type { get; set; }
-        ///
-        public String? ModelGatewayId { get; set; }
+
+        [Required]
+        public String ModelGatewayId { get; set; }
     }
 }

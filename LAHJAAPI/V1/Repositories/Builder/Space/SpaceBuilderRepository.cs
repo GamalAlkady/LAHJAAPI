@@ -5,7 +5,10 @@ using V1.Repositories.Base;
 using AutoGenerator.Repositories.Builder;
 using V1.DyModels.Dto.Build.Requests;
 using V1.DyModels.Dto.Build.Responses;
+using AutoGenerator;
+using AutoGenerator.Repositories.Base;
 using System;
+using V1.BPR.Layers.Base;
 
 namespace V1.Repositories.Builder
 {
@@ -13,12 +16,12 @@ namespace V1.Repositories.Builder
     /// Space class property for BuilderRepository.
     /// </summary>
      //
-    public class SpaceBuilderRepository : BaseBuilderRepository<Space, SpaceRequestBuildDto, SpaceResponseBuildDto>, ISpaceBuilderRepository<SpaceRequestBuildDto, SpaceResponseBuildDto>
+    public class SpaceBuilderRepository : BaseBuilderRepository<Space, SpaceRequestBuildDto, SpaceResponseBuildDto>, ISpaceBuilderRepository<SpaceRequestBuildDto, SpaceResponseBuildDto>, ITBuilder
     {
         /// <summary>
         /// Constructor for SpaceBuilderRepository.
         /// </summary>
-        public SpaceBuilderRepository(DataContext dbContext, IMapper mapper, ILogger logger) : base(dbContext, mapper, logger) // Initialize  constructor.
+        public SpaceBuilderRepository(DataContext dbContext, IMapper mapper, ILoggerFactory logger) : base(dbContext, mapper, logger) // Initialize  constructor.
         {
         // Initialize necessary fields or call base constructor.
         ///

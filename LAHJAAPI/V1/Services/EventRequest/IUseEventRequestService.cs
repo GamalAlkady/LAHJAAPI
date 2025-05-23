@@ -14,12 +14,11 @@ using V1.Repositories.Builder;
 using AutoGenerator.Repositories.Base;
 using AutoGenerator.Helper;
 using System;
+using V1.BPR.Layers.Base;
 
 namespace V1.Services.Services
 {
-    public interface IUseEventRequestService : IEventRequestService<EventRequestRequestDso, EventRequestResponseDso>, IBaseService//يمكنك  التزويد بكل  دوال   طبقة Builder   ببوابات  الطبقة   هذه نفسها
-    //, IEventRequestBuilderRepository<EventRequestRequestDso, EventRequestResponseDso>
-    , IBasePublicRepository<EventRequestRequestDso, EventRequestResponseDso>
+    public interface IUseEventRequestService : IEventRequestService<EventRequestRequestDso, EventRequestResponseDso>, IBaseService, IBaseBPRServiceLayer<EventRequestRequestDso, EventRequestResponseDso>
     {
     }
 }

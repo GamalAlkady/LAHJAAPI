@@ -27,7 +27,7 @@ namespace V1.Validators
                 var result = await FindContextEntityAsync(data.Id, data.Value);
 
                 return result != null
-                    ? ConditionResult.ToSuccess(result, "Service is assigned to user.")
+                    ? ConditionResult.ToSuccess(result, "Service is already assigned to user.")
                     : ConditionResult.ToError($"Service with ID: ({data.Value}) not assigned to user.");
             }
             catch (Exception)

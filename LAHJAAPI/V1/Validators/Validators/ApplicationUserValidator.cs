@@ -110,7 +110,7 @@ namespace LAHJAAPI.V1.Validators
             );
 
             return result != null
-                ? ConditionResult.ToSuccess(result, "ModelAi is assigned to user.")
+                ? ConditionResult.ToSuccess(result, "ModelAi allready assigned to user.")
                 : ConditionResult.ToError($"Model AI with ID: ({data.Value}) not assigned to user.");
         }
 

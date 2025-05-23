@@ -5,7 +5,10 @@ using V1.Repositories.Base;
 using AutoGenerator.Repositories.Builder;
 using V1.DyModels.Dto.Build.Requests;
 using V1.DyModels.Dto.Build.Responses;
+using AutoGenerator;
+using AutoGenerator.Repositories.Base;
 using System;
+using V1.BPR.Layers.Base;
 
 namespace V1.Repositories.Builder
 {
@@ -13,12 +16,12 @@ namespace V1.Repositories.Builder
     /// UserService class property for BuilderRepository.
     /// </summary>
      //
-    public class UserServiceBuilderRepository : BaseBuilderRepository<UserService, UserServiceRequestBuildDto, UserServiceResponseBuildDto>, IUserServiceBuilderRepository<UserServiceRequestBuildDto, UserServiceResponseBuildDto>
+    public class UserServiceBuilderRepository : BaseBuilderRepository<UserService, UserServiceRequestBuildDto, UserServiceResponseBuildDto>, IUserServiceBuilderRepository<UserServiceRequestBuildDto, UserServiceResponseBuildDto>, ITBuilder
     {
         /// <summary>
         /// Constructor for UserServiceBuilderRepository.
         /// </summary>
-        public UserServiceBuilderRepository(DataContext dbContext, IMapper mapper, ILogger logger) : base(dbContext, mapper, logger) // Initialize  constructor.
+        public UserServiceBuilderRepository(DataContext dbContext, IMapper mapper, ILoggerFactory logger) : base(dbContext, mapper, logger) // Initialize  constructor.
         {
         // Initialize necessary fields or call base constructor.
         ///

@@ -14,12 +14,11 @@ using V1.Repositories.Builder;
 using AutoGenerator.Repositories.Base;
 using AutoGenerator.Helper;
 using System;
+using V1.BPR.Layers.Base;
 
 namespace V1.Services.Services
 {
-    public interface IUseAuthorizationSessionServiceService : IAuthorizationSessionServiceService<AuthorizationSessionServiceRequestDso, AuthorizationSessionServiceResponseDso>, IBaseService//يمكنك  التزويد بكل  دوال   طبقة Builder   ببوابات  الطبقة   هذه نفسها
-    //, IAuthorizationSessionServiceBuilderRepository<AuthorizationSessionServiceRequestDso, AuthorizationSessionServiceResponseDso>
-    , IBasePublicRepository<AuthorizationSessionServiceRequestDso, AuthorizationSessionServiceResponseDso>
+    public interface IUseAuthorizationSessionServiceService : IAuthorizationSessionServiceService<AuthorizationSessionServiceRequestDso, AuthorizationSessionServiceResponseDso>, IBaseService, IBaseBPRServiceLayer<AuthorizationSessionServiceRequestDso, AuthorizationSessionServiceResponseDso>
     {
     }
 }

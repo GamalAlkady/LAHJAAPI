@@ -6,7 +6,7 @@ using StripeGateway;
 namespace LAHJAAPI.V1.Controllers.Api
 {
 
-    [ApiExplorerSettings(IgnoreApi = true)]
+    //[ApiExplorerSettings(IgnoreApi = true)]
     [Route("api/v1/user/[controller]")]
     [ApiController]
     [OutputCache(PolicyName = "CustomPolicy")]

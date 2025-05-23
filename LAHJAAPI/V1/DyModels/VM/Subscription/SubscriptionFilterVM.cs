@@ -12,7 +12,10 @@ namespace V1.DyModels.VMs
         ///
         public string? Lg { get; set; }
 
-        public int AllowedSpaces { get; set; }
+        public string? AllowedRequests { get; set; }
+        public int NumberRequests { get; set; }
+        public string? AllowedSpaces { get; set; }
+
         public int SpaceCount { get; set; }
     }
 }

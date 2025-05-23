@@ -1,5 +1,4 @@
 using AutoGenerator;
-using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 
 namespace V1.DyModels.VMs
@@ -12,16 +11,21 @@ namespace V1.DyModels.VMs
         [Required]
         public string Token { get; set; }
 
-        [Required]
-        public string ServiceId { get; set; }
+
+        [Required(ErrorMessage = "The ServicesIds field is required.")]
+        [MinLength(1, ErrorMessage = "The ServicesIds field must have at least 1 item.")]
+        public List<string> ServicesIds { get; set; }
 
         public string? SpaceId { get; set; }
     }
 
-    public class CreateAuthorizationForDashboard
+    public class GeneralAuthSessionCreateVM
     {
         [Required]
         public string Token { get; set; }
+
+        [Required(ErrorMessage = "The ServicesIds field is required.")]
+        public List<string> ServicesIds { get; set; }
     }
 
     public class CreateAuthorizationForListServices
@@ -38,19 +42,22 @@ namespace V1.DyModels.VMs
     public class CreateAuthorizationForServices
     {
         [Required]
-        public string? Token { get; set; }
+        public string Token { get; set; }
 
-        [DefaultValue("")]
-        public string? ModelAiId { get; set; }
-        public string SpaceId { get; internal set; }
+        [Required]
+        public string SpaceId { get; set; }
+
+        public List<string>? Except { get; set; }
     }
 
     public class DataAuthSession
     {
         public required string Token { get; set; }
 
-        public string? ModelAiId { get; set; }
         public string? SpaceId { get; set; }
-        public List<string> ServicesIds { get; internal set; }
+        public List<string> ServicesIds { get; internal set; } = [];
+
+        public List<string>? Except { get; set; }
+
     }
 }

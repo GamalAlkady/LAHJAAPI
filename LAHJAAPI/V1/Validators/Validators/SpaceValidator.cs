@@ -59,7 +59,7 @@ namespace LAHJAAPI.V1.Validators
         private async Task<ConditionResult> HasSubscriptionId(DataFilter<string, Space> data)
         {
             if (data.Share == null) return ConditionResult.ToError("Space is not found.");
-            if (data.Value == null) return ConditionResult.ToError("SubscriptionId is not found as value.");
+            if (data.Value == null) return ConditionResult.ToError("Variable value is null, must contains subscriptionId");
             if (data.Value == data.Share.SubscriptionId) return ConditionResult.ToSuccess(data.Share);
             return ConditionResult.ToError("This space is not included in your subscription.");
         }

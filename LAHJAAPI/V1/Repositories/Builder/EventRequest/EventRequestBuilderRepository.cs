@@ -5,7 +5,10 @@ using V1.Repositories.Base;
 using AutoGenerator.Repositories.Builder;
 using V1.DyModels.Dto.Build.Requests;
 using V1.DyModels.Dto.Build.Responses;
+using AutoGenerator;
+using AutoGenerator.Repositories.Base;
 using System;
+using V1.BPR.Layers.Base;
 
 namespace V1.Repositories.Builder
 {
@@ -13,12 +16,12 @@ namespace V1.Repositories.Builder
     /// EventRequest class property for BuilderRepository.
     /// </summary>
      //
-    public class EventRequestBuilderRepository : BaseBuilderRepository<EventRequest, EventRequestRequestBuildDto, EventRequestResponseBuildDto>, IEventRequestBuilderRepository<EventRequestRequestBuildDto, EventRequestResponseBuildDto>
+    public class EventRequestBuilderRepository : BaseBuilderRepository<EventRequest, EventRequestRequestBuildDto, EventRequestResponseBuildDto>, IEventRequestBuilderRepository<EventRequestRequestBuildDto, EventRequestResponseBuildDto>, ITBuilder
     {
         /// <summary>
         /// Constructor for EventRequestBuilderRepository.
         /// </summary>
-        public EventRequestBuilderRepository(DataContext dbContext, IMapper mapper, ILogger logger) : base(dbContext, mapper, logger) // Initialize  constructor.
+        public EventRequestBuilderRepository(DataContext dbContext, IMapper mapper, ILoggerFactory logger) : base(dbContext, mapper, logger) // Initialize  constructor.
         {
         // Initialize necessary fields or call base constructor.
         ///

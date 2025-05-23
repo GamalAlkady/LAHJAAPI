@@ -5,7 +5,10 @@ using V1.Repositories.Base;
 using AutoGenerator.Repositories.Builder;
 using V1.DyModels.Dto.Build.Requests;
 using V1.DyModels.Dto.Build.Responses;
+using AutoGenerator;
+using AutoGenerator.Repositories.Base;
 using System;
+using V1.BPR.Layers.Base;
 
 namespace V1.Repositories.Builder
 {
@@ -13,12 +16,12 @@ namespace V1.Repositories.Builder
     /// PlanFeature class property for BuilderRepository.
     /// </summary>
      //
-    public class PlanFeatureBuilderRepository : BaseBuilderRepository<PlanFeature, PlanFeatureRequestBuildDto, PlanFeatureResponseBuildDto>, IPlanFeatureBuilderRepository<PlanFeatureRequestBuildDto, PlanFeatureResponseBuildDto>
+    public class PlanFeatureBuilderRepository : BaseBuilderRepository<PlanFeature, PlanFeatureRequestBuildDto, PlanFeatureResponseBuildDto>, IPlanFeatureBuilderRepository<PlanFeatureRequestBuildDto, PlanFeatureResponseBuildDto>, ITBuilder
     {
         /// <summary>
         /// Constructor for PlanFeatureBuilderRepository.
         /// </summary>
-        public PlanFeatureBuilderRepository(DataContext dbContext, IMapper mapper, ILogger logger) : base(dbContext, mapper, logger) // Initialize  constructor.
+        public PlanFeatureBuilderRepository(DataContext dbContext, IMapper mapper, ILoggerFactory logger) : base(dbContext, mapper, logger) // Initialize  constructor.
         {
         // Initialize necessary fields or call base constructor.
         ///

@@ -10,8 +10,9 @@ namespace V1.DyModels.VMs
     {
         [Required]
         public String Name { get; set; }
-        ///
-        public String? Url { get; set; }
-        public Boolean IsDefault { get; set; }
+
+        [Required]
+        public String Url { get; set; }
+        public Boolean IsDefault { get; set; } = true;
     }
 }

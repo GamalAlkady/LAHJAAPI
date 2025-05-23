@@ -7,7 +7,9 @@ namespace LAHJAAPI.Models
     {
         [Key]
         public string Id { get; set; } = $"modg_{Guid.NewGuid():N}";
+        //TODO: make name unique
         public required string Name { get; set; }
+        //TODO: make url unique
         public required string Url { get; set; }
         public required string Token { get; set; }
         public bool IsDefault { get; set; }
