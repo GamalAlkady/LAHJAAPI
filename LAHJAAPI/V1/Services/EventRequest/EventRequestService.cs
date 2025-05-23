@@ -27,10 +27,6 @@ namespace V1.Services.Services
 
         public override async Task<EventRequestResponseDso> CreateAsync(EventRequestRequestDso requestDso)
         {
-            //var requestId = "";
-            //try
-            //{
-            //var subscription = await subscriptionRepository.GetSubscription();
 
             var eventRequest = await _share.GetByIdAsync(requestDso.Id);
             if (eventRequest == null) throw new ProblemDetailsException(HandleResult.Problem("Event request not found", "EventId not found."));

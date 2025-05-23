@@ -12,36 +12,31 @@ public enum SubscriptionValidatorStates
 {
     IsSubscribe = 10000,
     IsActive = 10001,
-    IsAllowedRequestsForCreate = 10002,
+    IsFullAllowedRequests = 10002,
     IsBelongToUser = 10003,
     IsNotSubscribe,
     IsCancelAtPeriodEnd,
     IsCanceled,
-    IsNotAllowedRequests,
     IsSubscriptionId,
-    IsCustomerId,
     HasStatus,
-    IsValidStartDate,
-    IsValidPeriodDates,
-    IsAvailableSpaces,
-    IsFull,
-    IsValid,
-    IsActiveAndResult,
-    FindSubscription,
+    HasAllowedSpaces,
     IsExpireAfter,
-    IsAllowedRequests
+    IsAllowedRequests,
+    HasPlanId,
+    HasCanceledAt,
+    HasCancelAt,
+    HasBillingPeriod,
+    IsFree,
+    HasCustomerId,
+    HasId,
 }
 
 
 public class SubscriptionValidator : ValidatorContext<Subscription, SubscriptionValidatorStates>
 {
-    private readonly IConditionChecker _checker;
     private Subscription? Subscription { get; set; }
     public SubscriptionValidator(IConditionChecker checker) : base(checker)
     {
-        _checker = checker;
-        //_dataContext = checker.Injector.DataContext;
-        //checker.Injector.DataContext = this;
     }
 
 
@@ -49,6 +44,73 @@ public class SubscriptionValidator : ValidatorContext<Subscription, Subscription
     {
     }
 
+    [RegisterConditionValidator(typeof(SubscriptionValidatorStates), SubscriptionValidatorStates.HasId, "Subscription ID is required.")]
+    private Task<ConditionResult> ValidateId(DataFilter<string, Subscription> f)
+    {
+        bool valid = !string.IsNullOrWhiteSpace(f.Share?.Id);
+        return valid ? ConditionResult.ToSuccessAsync(f.Share) : ConditionResult.ToFailureAsync("Subscription ID is required.");
+    }
+
+    [RegisterConditionValidator(typeof(SubscriptionValidatorStates), SubscriptionValidatorStates.HasCustomerId, "Customer ID is required.")]
+    private Task<ConditionResult> ValidateCustomerId(DataFilter<string, Subscription> f)
+    {
+        bool valid = !string.IsNullOrWhiteSpace(f.Share?.CustomerId) && f.Share.CustomerId == f.Value;
+        return valid ? ConditionResult.ToSuccessAsync(f.Share) : ConditionResult.ToFailureAsync("Customer ID is required.");
+    }
+
+
+
+
+    [RegisterConditionValidator(typeof(SubscriptionValidatorStates), SubscriptionValidatorStates.IsFree, "Subscription type check failed.")]
+    private Task<ConditionResult> ValidateIsFree(DataFilter<bool, Subscription> f)
+    {
+        bool valid = f.Share?.IsFree == true;
+        return Task.FromResult(valid ? ConditionResult.ToSuccess(f.Share?.IsFree) : ConditionResult.ToFailure("Subscription is not free."));
+    }
+
+    [RegisterConditionValidator(typeof(SubscriptionValidatorStates), SubscriptionValidatorStates.HasStatus, "Status is required.")]
+    private Task<ConditionResult> ValidateStatus(DataFilter<string, Subscription> f)
+    {
+        bool valid = !string.IsNullOrWhiteSpace(f.Share?.Status);
+        return valid ? ConditionResult.ToSuccessAsync(f.Share?.Status) : ConditionResult.ToFailureAsync("Status is required.");
+    }
+
+    [RegisterConditionValidator(typeof(SubscriptionValidatorStates), SubscriptionValidatorStates.HasBillingPeriod, "Billing Period format is invalid.")]
+    private Task<ConditionResult> ValidateBillingPeriod(DataFilter<string, Subscription> f)
+    {
+        var period = f.Share?.BillingPeriod;
+        bool valid = period == null || !string.IsNullOrWhiteSpace(period);
+        return Task.FromResult(valid ? ConditionResult.ToSuccess(period) : ConditionResult.ToFailure("Billing Period cannot be empty if provided."));
+    }
+
+    [RegisterConditionValidator(typeof(SubscriptionValidatorStates), SubscriptionValidatorStates.IsCancelAtPeriodEnd, "Cancel At Period End flag check failed.")]
+    private Task<ConditionResult> ValidateIsCancelAtPeriodEnd(DataFilter<bool, Subscription> f)
+    {
+        bool valid = f.Share?.CancelAtPeriodEnd == true;
+        return Task.FromResult(valid ? ConditionResult.ToSuccess(f.Share?.CancelAtPeriodEnd) : ConditionResult.ToFailure("Subscription is not set to cancel at period end."));
+    }
+
+
+    [RegisterConditionValidator(typeof(SubscriptionValidatorStates), SubscriptionValidatorStates.HasCancelAt, "Cancel At Date is required.")]
+    private Task<ConditionResult> ValidateCancelAt(DataFilter<DateTime?, Subscription> f)
+    {
+        bool valid = f.Share?.CancelAt != null;
+        return Task.FromResult(valid ? ConditionResult.ToSuccess(f.Share?.CancelAt) : ConditionResult.ToFailure("Cancel At Date is required."));
+    }
+
+    [RegisterConditionValidator(typeof(SubscriptionValidatorStates), SubscriptionValidatorStates.HasCanceledAt, "Canceled At Date is required.")]
+    private Task<ConditionResult> ValidateCanceledAt(DataFilter<DateTime?, Subscription> f)
+    {
+        bool valid = f.Share?.CanceledAt != null;
+        return Task.FromResult(valid ? ConditionResult.ToSuccess(f.Share?.CanceledAt) : ConditionResult.ToFailure("Canceled At Date is required."));
+    }
+
+    [RegisterConditionValidator(typeof(SubscriptionValidatorStates), SubscriptionValidatorStates.HasPlanId, "Plan ID is required.")]
+    private Task<ConditionResult> ValidatePlanId(DataFilter<string, Subscription> f)
+    {
+        bool valid = !string.IsNullOrWhiteSpace(f.Share?.PlanId);
+        return valid ? ConditionResult.ToSuccessAsync(f.Share?.PlanId) : ConditionResult.ToFailureAsync("Plan ID is required.");
+    }
 
     [RegisterConditionValidator(typeof(SubscriptionValidatorStates), SubscriptionValidatorStates.IsBelongToUser, "Subscription is not belong to user")]
     async Task<ConditionResult> IsBelongToUserAsync(DataFilter<string, Subscription> data)
@@ -141,8 +203,8 @@ public class SubscriptionValidator : ValidatorContext<Subscription, Subscription
     }
 
 
-    [RegisterConditionValidator(typeof(SubscriptionValidatorStates), SubscriptionValidatorStates.IsAvailableSpaces, "Spaces are not avaliable")]
-    async Task<ConditionResult> IsAvailableSpacesAsync(DataFilter<string, Subscription> data)
+    [RegisterConditionValidator(typeof(SubscriptionValidatorStates), SubscriptionValidatorStates.HasAllowedSpaces, "Spaces are not avaliable")]
+    async Task<ConditionResult> ValidateAllowedSpaces(DataFilter<string, Subscription> data)
     {
         try
         {
@@ -162,7 +224,7 @@ public class SubscriptionValidator : ValidatorContext<Subscription, Subscription
             {
                 Title = "Coudn't create space",
                 Detail = "You have exhausted all allowed subscription spaces.",
-                Status = SubscriptionValidatorStates.IsAvailableSpaces.ToInt()
+                Status = SubscriptionValidatorStates.HasAllowedSpaces.ToInt()
             });
         }
         catch { throw; }
@@ -217,8 +279,8 @@ public class SubscriptionValidator : ValidatorContext<Subscription, Subscription
         return ConditionResult.ToFailure(data.Share, "Subscription is will not canceled at end.");
     }
 
-    [RegisterConditionValidator(typeof(SubscriptionValidatorStates), SubscriptionValidatorStates.IsAllowedRequestsForCreate, "You have exhausted all allowed subscription requests.")]
-    private async Task<ConditionResult> IsRequestAllowedForCreate(DataFilter<string, Subscription> data)
+    [RegisterConditionValidator(typeof(SubscriptionValidatorStates), SubscriptionValidatorStates.IsFullAllowedRequests, "You have exhausted all allowed subscription requests.")]
+    private async Task<ConditionResult> ValidateAllowedRequests(DataFilter<string, Subscription> data)
     {
         if (data.Items == null || !data.Items.TryGetValue("serviceId", out object? serviceId))
             return ConditionResult.ToError("Items must contains serviceId");

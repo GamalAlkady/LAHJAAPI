@@ -56,7 +56,7 @@ namespace V1.Services.Services
                     },
                 };
 
-                var result = await _checker.CheckAndResultAsync(SubscriptionValidatorStates.IsAllowedRequestsForCreate, requestFilter);
+                var result = await _checker.CheckAndResultAsync(SubscriptionValidatorStates.IsFullAllowedRequests, requestFilter);
                 if (result.Success == false)
                 {
                     throw new ProblemDetailsException(result);

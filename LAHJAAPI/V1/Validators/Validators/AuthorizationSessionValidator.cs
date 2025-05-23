@@ -8,57 +8,88 @@ namespace LAHJAAPI.V1.Validators
 {
     public enum AuthorizationSessionValidatorStates
     {
-        ValidateId = 6400,
+        HasId = 6400,
         IsActive = 6401,
         HasSessionToken,
         HasAuthorizationType,
         HasStartTime,
         HasUserId,
-        HasEndTime,
-        IsFull,
         HasMatchingSession,
-        IsValidServices,
-        IsServicesAsignedToUser
+        IsServicesAsignedToUser,
+        HasIpAddress,
+        HasDeviceInfo
     }
 
     public class AuthorizationSessionValidator : ValidatorContext<AuthorizationSession, AuthorizationSessionValidatorStates>
     {
-        private readonly IConditionChecker _checker;
-        AuthorizationSession? Session { get; set; } = null;
+        private AuthorizationSession? _authorizationSession;
 
         public AuthorizationSessionValidator(IConditionChecker checker) : base(checker)
         {
-            _checker = checker;
         }
 
         protected override void InitializeConditions()
         {
         }
 
-        protected async Task<List<T>> QueryDbSet<T>(Func<DbSet<T>, IQueryable<T>> query)
-            where T : class
-        {
-            return await _injector.ContextFactory.ExecuteInScopeAsync(ctx =>
-                query(ctx.Set<T>()).ToListAsync()
-            );
-        }
-
-        [RegisterConditionValidator(typeof(AuthorizationSessionValidatorStates), AuthorizationSessionValidatorStates.ValidateId, "Session not found.")]
+        [RegisterConditionValidator(typeof(AuthorizationSessionValidatorStates), AuthorizationSessionValidatorStates.HasId, "Session not found.")]
         private Task<ConditionResult> ValidateId(DataFilter<string, AuthorizationSession> f)
         {
-            bool valid = !string.IsNullOrWhiteSpace(f.Share?.Id);
-            return valid
-                ? ConditionResult.ToSuccessAsync(f.Share)
-                : ConditionResult.ToFailureAsync("Id is required");
+            return !string.IsNullOrWhiteSpace(f.Share?.Id) ? ConditionResult.ToSuccessAsync(f.Share) : ConditionResult.ToFailureAsync("Id is required");
         }
 
-        [RegisterConditionValidator(typeof(AuthorizationSessionValidatorStates), AuthorizationSessionValidatorStates.IsActive, "Session not active.")]
-        private Task<ConditionResult> IsActive(DataFilter<string, AuthorizationSession> data)
+        [RegisterConditionValidator(typeof(AuthorizationSessionValidatorStates), AuthorizationSessionValidatorStates.IsActive, "IsActive is required")]
+        private Task<ConditionResult> ValidateIsActive(DataFilter<bool, AuthorizationSession> f)
         {
-            if (data.Share == null)
-                return ConditionResult.ToErrorAsync("Session not found.");
-            return Task.FromResult(new ConditionResult(data.Share!.IsActive, data.Share, "Session is not active."));
+            return f.Share?.IsActive == true ? ConditionResult.ToSuccessAsync(f.Share) : ConditionResult.ToFailureAsync("IsActive is required");
         }
+
+
+        [RegisterConditionValidator(typeof(AuthorizationSessionValidatorStates), AuthorizationSessionValidatorStates.HasSessionToken, "SessionToken is required")]
+        private Task<ConditionResult> ValidateSessionToken(DataFilter<string, AuthorizationSession> f)
+        {
+            return !string.IsNullOrWhiteSpace(f.Share?.SessionToken) ? ConditionResult.ToSuccessAsync(f.Share) : ConditionResult.ToFailureAsync("SessionToken is required");
+        }
+
+        [RegisterConditionValidator(typeof(AuthorizationSessionValidatorStates), AuthorizationSessionValidatorStates.HasAuthorizationType, "AuthorizationType is required")]
+        private Task<ConditionResult> ValidateAuthorizationType(DataFilter<string, AuthorizationSession> f)
+        {
+            return !string.IsNullOrWhiteSpace(f.Share?.AuthorizationType) ? ConditionResult.ToSuccessAsync(f.Share) : ConditionResult.ToFailureAsync("AuthorizationType is required");
+        }
+
+        [RegisterConditionValidator(typeof(AuthorizationSessionValidatorStates), AuthorizationSessionValidatorStates.HasStartTime, "StartTime is required")]
+        private Task<ConditionResult> ValidateStartTime(DataFilter<DateTime, AuthorizationSession> f)
+        {
+            return f.Share?.StartTime != default(DateTime) ? ConditionResult.ToSuccessAsync(f.Share) : ConditionResult.ToFailureAsync("StartTime is required");
+        }
+
+        [RegisterConditionValidator(typeof(AuthorizationSessionValidatorStates), AuthorizationSessionValidatorStates.HasUserId, "UserId is required")]
+        private Task<ConditionResult> ValidateUserId(DataFilter<string, AuthorizationSession> f)
+        {
+            return !string.IsNullOrEmpty(f.Share?.UserId) ? ConditionResult.ToSuccessAsync(f.Share) : ConditionResult.ToFailureAsync("UserId is required");
+        }
+
+        [RegisterConditionValidator(typeof(AuthorizationSessionValidatorStates), AuthorizationSessionValidatorStates.HasIpAddress, "IpAddress is required")]
+        private Task<ConditionResult> ValidateIpAddress(DataFilter<string, AuthorizationSession> f)
+        {
+            return !string.IsNullOrEmpty(f.Share?.IpAddress) ? ConditionResult.ToSuccessAsync(f.Share) : ConditionResult.ToFailureAsync("IpAddress is required");
+        }
+
+
+        [RegisterConditionValidator(typeof(AuthorizationSessionValidatorStates), AuthorizationSessionValidatorStates.HasDeviceInfo, "DeviceInfo is required")]
+        private Task<ConditionResult> ValidateDeviceInfo(DataFilter<string, AuthorizationSession> f)
+        {
+            return !string.IsNullOrEmpty(f.Share?.DeviceInfo) ? ConditionResult.ToSuccessAsync(f.Share) : ConditionResult.ToFailureAsync("DeviceInfo is required");
+        }
+
+        protected override async Task<AuthorizationSession?> GetModel(string? id)
+        {
+            if (_authorizationSession != null && _authorizationSession.Id == id)
+                return _authorizationSession;
+            _authorizationSession = await base.GetModel(id);
+            return _authorizationSession;
+        }
+
 
         [RegisterConditionValidator(typeof(AuthorizationSessionValidatorStates), AuthorizationSessionValidatorStates.HasMatchingSession, "No session found for the provided user ID and authorization type.")]
         private async Task<ConditionResult> HasMatchingAuthorizationSession(DataFilter<string, AuthorizationSession> data)

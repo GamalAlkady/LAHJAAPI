@@ -13,10 +13,10 @@ public class StripePrice : IStripePrice
         this.client = new StripeClient(_options.Value.SecretKey);
     }
 
-    public async Task<Price> GetByIdAsync(string id, CancellationToken cancellationToken = default)
+    public async Task<Price> GetByIdAsync(string id, PriceGetOptions options = null, CancellationToken cancellationToken = default)
     {
         var service = new PriceService();
-        var price = await service.GetAsync(id, cancellationToken: cancellationToken);
+        var price = await service.GetAsync(id, options, cancellationToken: cancellationToken);
         return price;
     }
 

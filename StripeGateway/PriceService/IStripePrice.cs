@@ -4,7 +4,7 @@ namespace StripeGateway;
 
 public interface IStripePrice
 {
-    Task<Price> GetByIdAsync(string id, CancellationToken cancellationToken = default);
+    Task<Price> GetByIdAsync(string id, PriceGetOptions options = null, CancellationToken cancellationToken = default);
 
     Task<StripeList<Price>> GetAllAsync(PriceListOptions priceList, CancellationToken cancellationToken = default);
 

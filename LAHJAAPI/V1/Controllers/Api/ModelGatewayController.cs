@@ -27,49 +27,11 @@ namespace LAHJAAPI.V1.Controllers.Api
             _logger = logger.CreateLogger(typeof(ModelGatewayController).FullName);
         }
 
-
-
-        // Update an existing ModelGateway.
-        [HttpPut("update/{id}", Name = "UpdateModelGateway")]
+        [HttpPut("SetDefault/{id}", Name = "SetDefault")]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-        public async Task<ActionResult<ModelGatewayOutputVM>> Update(string id, [FromBody] ModelGatewayUpdateVM model)
-        {
-            try
-            {
-                _logger.LogInformation("Updating ModelGateway with ID: {id}", id);
-                var modelGateway = await _modelgatewayService.GetByIdAsync(id);
-                if (modelGateway == null)
-                {
-                    return NotFound(HandleResult.NotFound("Record not found make sure that id is correct."));
-                }
-
-                var item = _mapper.Map<ModelGatewayRequestDso>(modelGateway);
-                item.Id = id;
-
-                var updatedEntity = await _modelgatewayService.UpdateAsync(item);
-                if (updatedEntity == null)
-                {
-                    _logger.LogWarning("ModelGateway not found for update with ID: {id}", id);
-                    return NotFound();
-                }
-
-                var updatedItem = _mapper.Map<ModelGatewayOutputVM>(updatedEntity);
-                return Ok(updatedItem);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error while updating ModelGateway with ID: {id}", id);
-                return StatusCode(500, "Internal Server Error");
-            }
-        }
-
-        [HttpPut("default/{id}", Name = "ChangeDefaultModelGateway")]
-        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> MakeDefault(string id)
+        public async Task<IActionResult> SetDefault(string id)
         {
             try
             {

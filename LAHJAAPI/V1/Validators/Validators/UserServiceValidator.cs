@@ -8,6 +8,8 @@ namespace V1.Validators
 {
     public class UserServiceValidatorContext : ValidatorContext<UserService, UserServiceValidatorStates>, ITValidator
     {
+        private UserService? _userService;
+
         public UserServiceValidatorContext(IConditionChecker checker) : base(checker)
         {
         }
@@ -16,7 +18,23 @@ namespace V1.Validators
         {
         }
 
-        [RegisterConditionValidator(typeof(UserServiceValidatorStates), UserServiceValidatorStates.IsServiceAssigned, IsCachability = false)]
+        [RegisterConditionValidator(typeof(UserServiceValidatorStates), UserServiceValidatorStates.HasUserId, "User ID is required.")]
+        private Task<ConditionResult> ValidateUserId(DataFilter<string, UserService> f)
+        {
+            return string.IsNullOrWhiteSpace(f.Share?.UserId)
+                ? ConditionResult.ToFailureAsync("User ID is required.")
+                : ConditionResult.ToSuccessAsync(f.Share);
+        }
+
+        [RegisterConditionValidator(typeof(UserServiceValidatorStates), UserServiceValidatorStates.HasServiceId, "Service ID is required.")]
+        private Task<ConditionResult> ValidateServiceId(DataFilter<string, UserService> f)
+        {
+            return string.IsNullOrWhiteSpace(f.Share?.ServiceId)
+                ? ConditionResult.ToFailureAsync("Service ID is required.")
+                : ConditionResult.ToSuccessAsync(f.Share);
+        }
+
+        [RegisterConditionValidator(typeof(UserServiceValidatorStates), UserServiceValidatorStates.IsServiceAssigned)]
         async Task<ConditionResult> IsServiceAssigned(DataFilter<string> data)
         {
             try
@@ -37,12 +55,29 @@ namespace V1.Validators
             }
         }
 
+        [RegisterConditionValidator(typeof(UserServiceValidatorStates), UserServiceValidatorStates.HasAssignedAt, "Assigned date is required.")]
+        private Task<ConditionResult> ValidateAssignedAt(DataFilter<DateTime, UserService> f)
+        {
+            return f.Share?.AssignedAt == f.Value
+                ? ConditionResult.ToFailureAsync("Assigned date is required.")
+                : ConditionResult.ToSuccessAsync(f.Share);
+        }
+
+        protected override async Task<UserService?> GetModel(string? id)
+        {
+            if (_userService != null && _userService.UserId == id)
+                return _userService;
+            _userService = await base.GetModel(id);
+            return _userService;
+        }
     } //
     //  Base
     public enum UserServiceValidatorStates //
     {
-        IsActive, IsFull, IsValid,  //
         IsServiceAssigned,
+        HasUserId,
+        HasServiceId,
+        HasAssignedAt,
     }
 
 }

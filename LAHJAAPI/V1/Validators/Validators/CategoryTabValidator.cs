@@ -1,8 +1,5 @@
-using AutoGenerator;
-using AutoGenerator.Helper.Translation;
 using AutoGenerator.Conditions;
 using LAHJAAPI.Models;
-using System;
 using LAHJAAPI.V1.Validators.Conditions;
 
 namespace V1.Validators
@@ -18,8 +15,9 @@ namespace V1.Validators
         }
     } //
     //  Base
-    public  enum  CategoryTabValidatorStates //
-    { IsActive ,  IsFull ,  IsValid ,  //
+    public enum CategoryTabValidatorStates //
+    {
+        IsActive, IsFull, IsValid,  //
     }
 
 }

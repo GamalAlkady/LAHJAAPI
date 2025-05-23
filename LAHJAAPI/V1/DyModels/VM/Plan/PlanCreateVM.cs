@@ -10,6 +10,10 @@ namespace V1.DyModels.VMs
     /// </summary>
     public class PlanCreateVM : ITVM
     {
+
+        [DefaultValue("")]
+        public String? Id { get; set; }
+
         [DefaultValue("")]
         public String? ProductId { get; set; }
         public TranslationData? ProductName { get; set; }
@@ -32,8 +36,8 @@ namespace V1.DyModels.VMs
 
     public class PlanSetVM : ITVM
     {
-        [Required]
-        public String? ProductId { get; set; }
+        //[Required]
+        //public String? ProductId { get; set; }
 
         [Required]
         public String Id { get; set; }

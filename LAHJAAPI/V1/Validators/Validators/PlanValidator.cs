@@ -271,14 +271,7 @@ namespace LAHJAAPI.V1.Validators
                 : ConditionResult.ToFailure("Customization is not disabled as required.");
         }
 
-        // --- Removed old methods not following the new pattern ---
-        // Removed: RegisterCondition (helper method)
-        // Removed: GetFeatureByKey (inlined logic or replaced by GetPlanFeatureByKeyAsync)
-        // Removed: getPlanActive
-        // Removed: GetPlanFeatureActive
-        // Removed: CheckActive (incomplete)
-        // Removed: GetModel (replaced by GetPlanFeatureByKeyAsync)
-        // Removed: getPlan (if needed, it should use QueryDbSet) - Let's keep a simple getPlan using QueryDbSet just in case, but it's not strictly needed for the feature checks.
+
         private async Task<Plan?> GetPlanByIdAsync(string? id)
         {
             if (string.IsNullOrWhiteSpace(id)) return null;

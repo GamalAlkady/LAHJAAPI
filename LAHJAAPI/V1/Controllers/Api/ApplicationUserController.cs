@@ -1,6 +1,7 @@
-using AutoMapper;
+﻿using AutoMapper;
 using LAHJAAPI.V1.Validators.Conditions;
 using Microsoft.AspNetCore.Mvc;
+using System.Diagnostics;
 using V1.BPR.Layers.Base;
 using V1.DyModels.Dso.Requests;
 using V1.DyModels.Dso.Responses;
@@ -31,6 +32,15 @@ namespace LAHJAAPI.V1.Controllers.Api
             //_logger.LogWarning("User:" + User);
         }
 
+        public override Task<ActionResult<IEnumerable<ApplicationUserOutputVM>>> GetAllAsync()
+        {
+            var watch = Stopwatch.StartNew();
+
+            var items = base.GetAllAsync();
+            watch.Stop();
+            Console.WriteLine($"🚀 Controller execution time: {watch.ElapsedMilliseconds}ms");
+            return items;
+        }
         // Get all ApplicationUsers.
         //[HttpGet(Name = "GetApplicationUsers")]
         //[ProducesResponseType(StatusCodes.Status401Unauthorized)]

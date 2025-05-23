@@ -58,65 +58,34 @@ namespace LAHJAAPI.V1.Controllers.Api
 
 
 
-        //// Create new Plan
-        //[HttpPost(Name = "CreatePlan")]
-        //[ProducesResponseType(StatusCodes.Status401Unauthorized)]
-        //[ProducesResponseType(StatusCodes.Status200OK)]
-        //[ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
-        //public async Task<ActionResult<PlanOutputVM>> Create([FromBody] PlanCreateVM model)
-        //{
-        //    if (!ModelState.IsValid)
-        //    {
-        //        _logger.LogWarning("Invalid model state in Create: {ModelState}", ModelState);
-        //        return BadRequest(ModelState);
-        //    }
 
-        //    try
-        //    {
-        //        _logger.LogInformation("Creating new Plan with data: {@model}", model);
-        //        var item = _mapper.Map<PlanRequestDso>(model);
-        //        var createdEntity = await _planService.CreateAsync(item);
-        //        var createdItem = _mapper.Map<PlanOutputVM>(createdEntity);
-        //        return Ok(createdItem);
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        _logger.LogError(ex, "Error while creating new Plan");
-        //        return StatusCode(500, HandleResult.Problem(ex));
-        //    }
-        //}
+        // Set new Plan
+        [HttpPost("SetPlan", Name = "CreateNewPlan")]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+        public async Task<ActionResult<PlanOutputVM>> SetPlan([FromBody] PlanSetVM model)
+        {
+            if (!ModelState.IsValid)
+            {
+                _logger.LogWarning("Invalid model state in SetPlan: {ModelState}", ModelState);
+                return BadRequest(ModelState);
+            }
 
-        //// Set new Plan
-        //[HttpPost("SetPlan", Name = "CreateNewPlan")]
-        //[ProducesResponseType(StatusCodes.Status401Unauthorized)]
-        //[ProducesResponseType(StatusCodes.Status200OK)]
-        //[ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
-        //public async Task<ActionResult<PlanOutputVM>> SetPlan([FromBody] PlanSetVM model)
-        //{
-        //    if (!ModelState.IsValid)
-        //    {
-        //        _logger.LogWarning("Invalid model state in SetPlan: {ModelState}", ModelState);
-        //        return BadRequest(ModelState);
-        //    }
+            try
+            {
+                _logger.LogInformation("Setting new Plan with data: {@model}", model);
 
-        //    try
-        //    {
-        //        _logger.LogInformation("Setting new Plan with data: {@model}", model);
-        //        var item = new PlanRequestDso
-        //        {
-        //            Id = model.Id,
-        //            ProductId = model.ProductId
-        //        };
-        //        var createdEntity = await _planService.SetPlanAsync(item);
-        //        var createdItem = _mapper.Map<PlanOutputVM>(createdEntity);
-        //        return Ok(createdItem);
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        _logger.LogError(ex, "Error while setting new Plan");
-        //        return StatusCode(500, HandleResult.Problem(ex));
-        //    }
-        //}
+                var createdEntity = await _planService.SetPlanAsync(new PlanRequest2Dso { Id = model.Id });
+                var createdItem = _mapper.Map<PlanOutputVM>(createdEntity);
+                return Ok(createdItem);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error while setting new Plan");
+                return StatusCode(500, HandleResult.Problem(ex));
+            }
+        }
 
 
 

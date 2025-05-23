@@ -1,5 +1,6 @@
 ﻿using AutoGenerator;
 using AutoGenerator.Notifications.Config;
+using AutoMapper;
 using LAHJAAPI;
 using LAHJAAPI.CustomPolicy;
 using LAHJAAPI.Data;
@@ -14,8 +15,13 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Logging;
 using Microsoft.OpenApi.Models;
+using System.Diagnostics;
 using System.Reflection;
 using System.Text.Json.Serialization;
+using V1.DyModels.Dso.Responses;
+using V1.DyModels.Dto.Build.Responses;
+using V1.DyModels.Dto.Share.Responses;
+using V1.DyModels.VMs;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -41,7 +47,7 @@ builder.Services
            ProjectName = "LAHJAAPI",
            PathModels = "G:\\ProgramOfStudy\\VisaulPrograming\\web\\LAHJAAPI\\Models\\Models\\"
        })
-    .AddAutoValidator()
+    //.AddAutoValidator()
     //.AddAutoConfigScheduler()
 
     .AddAutoNotifier(new()
@@ -58,7 +64,36 @@ builder.Services
         }
     });
 
-//TODO: read about Mock I see it in deepseek => repositories
+builder.Services.AddAutoValidator();
+
+
+try
+{
+
+    // بناء الخرائط في وقت التشغيل لتخفيف التحميل وقت الطلب
+    var validatorWatch = Stopwatch.StartNew();
+    var provider = builder.Services.BuildServiceProvider();
+    var mapper = provider.GetRequiredService<IMapper>();
+    mapper.Map<ApplicationUserResponseBuildDto>(new ApplicationUser());
+    mapper.Map<ApplicationUserResponseShareDto>(new ApplicationUserResponseBuildDto());
+    mapper.Map<ApplicationUserResponseDso>(new ApplicationUserResponseShareDto());
+    mapper.Map<ApplicationUserOutputVM>(new ApplicationUserResponseDso());
+
+    // تأكد من أن جميع الخرائط صحيحة
+    // حاليا معلقة لانها تنتج خطأ سببه التكرار عند بناء الخريطة CreateMap
+    //mapper.ConfigurationProvider.AssertConfigurationIsValid(); // ⬅️ يجبر AutoMapper يبني كل الخرائط الآن
+    validatorWatch.Stop();
+    Console.WriteLine($"✅ Validators registered in: {validatorWatch.ElapsedMilliseconds}ms");
+}
+catch (AutoMapper.DuplicateTypeMapConfigurationException ex)
+{
+    foreach (var error in ex.Errors)
+    {
+        Console.WriteLine($"Conflict for mapping: {error.Types.SourceType.Name} -> {error.Types.DestinationType.Name}");
+        Console.WriteLine("Defined in profiles: " + string.Join(", ", error.ProfileNames));
+    }
+}
+
 
 
 // Add services to the container.
@@ -249,3 +284,4 @@ app.MapPost("/api/logout", async (
 
 
 app.Run();
+

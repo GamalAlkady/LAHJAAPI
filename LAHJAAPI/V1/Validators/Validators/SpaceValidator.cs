@@ -91,7 +91,7 @@ namespace LAHJAAPI.V1.Validators
                 {
                     Title = "Coudn't create space",
                     Detail = "You have exhausted all allowed subscription spaces.",
-                    Status = SubscriptionValidatorStates.IsAvailableSpaces.ToInt()
+                    Status = SubscriptionValidatorStates.HasAllowedSpaces.ToInt()
                 });
             }
             catch (Exception)
@@ -117,7 +117,7 @@ namespace LAHJAAPI.V1.Validators
             //    });
             //}
 
-            if ((await _checker.CheckAndResultAsync(SubscriptionValidatorStates.IsAvailableSpaces)) is { Success: !true } result2)
+            if ((await _checker.CheckAndResultAsync(SubscriptionValidatorStates.HasAllowedSpaces)) is { Success: !true } result2)
             {
                 return result2;
             }
@@ -152,7 +152,7 @@ namespace LAHJAAPI.V1.Validators
                 });
             }
 
-            if ((await _checker.CheckAndResultAsync(SubscriptionValidatorStates.IsAvailableSpaces)) is { Success: false } result2)
+            if ((await _checker.CheckAndResultAsync(SubscriptionValidatorStates.HasAllowedSpaces)) is { Success: false } result2)
             {
                 return result2;
             }

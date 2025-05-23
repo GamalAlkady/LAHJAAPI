@@ -1,5 +1,6 @@
 using AutoGenerator.Helper.Translation;
 using AutoMapper;
+using Quartz.Util;
 using StripeGateway;
 using V1.BPR.Layers.Base;
 using V1.DyModels.Dso.Requests;
@@ -71,15 +72,21 @@ namespace V1.Services.Services
                 {
                     throw new ArgumentException("Amount must be greater than zero.");
                 }
+                entity.Amount = entity.Amount * 100;
                 if (string.IsNullOrWhiteSpace(entity.Id))
                 {
-                    var price = await _stripePrice!.CreateAsync(new()
+                    var priceCreateOptions = new Stripe.PriceCreateOptions()
                     {
                         Currency = entity.Currency,
-                        UnitAmount = Convert.ToInt64(entity.Amount) * 100,
-                        Recurring = new Stripe.PriceRecurringOptions { Interval = entity.BillingPeriod },
+                        UnitAmount = Convert.ToInt64(entity.Amount),
                         Product = product.Id
-                    });
+                    };
+
+                    if (!entity.BillingPeriod.IsNullOrWhiteSpace())
+                    {
+                        priceCreateOptions.Recurring = new Stripe.PriceRecurringOptions { Interval = entity.BillingPeriod };
+                    }
+                    var price = await _stripePrice!.CreateAsync(priceCreateOptions);
                     entity.Id = price.Id;
                 }
 
@@ -95,34 +102,42 @@ namespace V1.Services.Services
             }
         }
 
-        public async Task<PlanResponseDso> SetPlanAsync(PlanRequestDso entity)
+        public async Task<PlanResponseDso> SetPlanAsync(PlanRequest2Dso entity)
         {
             try
             {
-                _logger.LogInformation("Creating new  Plan entity with price...");
-                Stripe.Product? product = null;
+                _logger.LogInformation("Set new  Plan entity with price: {Id}", entity.Id);
 
-                product = await _stripeProduct.GetByIdAsync(entity.ProductId);
-                entity.ProductId = product.Id;
-                entity.ProductName = HelperTranslation.ConvertToTranslationData(product.Name);
-                if (product.Description != null)
-                    entity.Description = HelperTranslation.ConvertToTranslationData(product.Description);
 
-                var price = await _stripePrice!.GetByIdAsync(entity.Id);
+                var price = await _stripePrice!.GetByIdAsync(entity.Id, new Stripe.PriceGetOptions
+                {
+                    Expand = new List<string> { "product" }
+                });
                 entity.Id = price.Id;
-                entity.Amount = Convert.ToDouble(price.UnitAmount) / 100;
-                entity.BillingPeriod = price.Recurring.Interval;
-                entity.Currency = price.Currency;
-                entity.Active = price.Active;
+                Stripe.Product product = price.Product;
+                PlanRequestDso planRequestDso = new PlanRequestDso
+                {
+                    ProductId = product.Id,
+                    ProductName = HelperTranslation.ConvertToTranslationData(product.Name),
+                    Amount = Convert.ToDouble(price.UnitAmount),
+                    BillingPeriod = price.Recurring.Interval,
+                    Currency = price.Currency,
+                    Active = price.Active,
+                    Images = product.Images,
+                    Id = price.Id,
+                };
 
-                var result = await _share.CreateAsync(entity);
+                if (product.Description != null)
+                    planRequestDso.Description = HelperTranslation.ConvertToTranslationData(product.Description);
+
+                var result = await _share.CreateAsync(planRequestDso);
                 var output = MapToResponse(result);
-                _logger.LogInformation("Created Plan entity successfully.");
+                _logger.LogInformation("Set Plan entity successfully.");
                 return output;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error while creating Plan entity.");
+                _logger.LogError(ex, "Error while set Plan entity.");
                 throw;
             }
         }

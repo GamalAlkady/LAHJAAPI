@@ -160,48 +160,5 @@ namespace LAHJAAPI.V1.Controllers.Api
 
             return Ok(result.Data);
         }
-
-
-
-        // Update ModelAi
-        [HttpPut("update/{id}", Name = "UpdateModelAi")]
-        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-        public async Task<ActionResult<ModelAiOutputVM>> Update(string id, [FromBody] ModelAiUpdateVM model)
-        {
-            try
-            {
-                _logger.LogInformation("Updating ModelAi with ID: {id}", id);
-                var existingItem = await _modelAiService.GetByIdAsync(id);
-
-                if (existingItem == null)
-                {
-                    _logger.LogWarning("ModelAi not found with ID: {id}", id);
-                    return NotFound();
-                }
-
-                var item = _mapper.Map<ModelAiRequestDso>(model);
-                item.Id = id;
-                item.ModelGatewayId = existingItem.ModelGatewayId;
-                var updatedEntity = await _modelAiService.UpdateAsync(item);
-
-                if (updatedEntity == null)
-                {
-                    _logger.LogWarning("Failed to update ModelAi with ID: {id}", id);
-                    return NotFound();
-                }
-
-                var updatedItem = _mapper.Map<ModelAiOutputVM>(updatedEntity);
-                return Ok(updatedItem);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error while updating ModelAi with ID: {id}", id);
-                return StatusCode(500, HandleResult.Problem(ex));
-            }
-        }
-
-
     }
 }

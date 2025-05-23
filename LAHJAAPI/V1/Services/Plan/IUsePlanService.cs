@@ -7,6 +7,6 @@ namespace V1.Services.Services
 {
     public interface IUsePlanService : IPlanService<PlanRequestDso, PlanResponseDso>, IBaseService, IBaseBPRServiceLayer<PlanRequestDso, PlanResponseDso>
     {
-        Task<PlanResponseDso> SetPlanAsync(PlanRequestDso entity);
+        Task<PlanResponseDso> SetPlanAsync(PlanRequest2Dso entity);
     }
 }

@@ -18,10 +18,9 @@ namespace V1.BPR.Layers.Base
             _bPR = bPR;
         }
 
-
-        // I used _bpr.CreateAsync(entity) insteadof  _bPR.CreateDataResultAsync(entity); to show errors when use throw
+        // اعدت كتابتها لمعرفة الخطأ الناتج فالداله لا تعيد
+        // exceptions الفعلي الذي تم رميه من الداله عند اعادة بنائها في السيرفايس 
         // As example I used throw in RequestService when override CreateAsync(RequestRequestDso entity)
-
         public override async Task<ActionResult<VMOutput>> CreateAsync([FromBody] VMCreate model)
         {
             if (!base.ModelState.IsValid)
@@ -89,7 +88,8 @@ namespace V1.BPR.Layers.Base
             return Ok(output);
         }
 
-
+        // اعدت كتابتها لمعرفة الخطأ الناتج فالداله 
+        // DeleteDataResultAsync لا تعيد الخطأ الفعلي 
         public override async Task<ActionResult<bool>> DeleteAsync(string id)
         {
             try

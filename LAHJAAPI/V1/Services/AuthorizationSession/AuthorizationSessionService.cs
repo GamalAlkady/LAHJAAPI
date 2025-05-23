@@ -283,7 +283,7 @@ namespace V1.Services.Services
         {
             if (await _checker.CheckAsync(ServiceValidatorStates.IsCreateSpaceIn, new DataFilter { Value = servicesIds }))
             {
-                if (await _checker.CheckAndResultAsync(SubscriptionValidatorStates.IsAvailableSpaces, _userClaims.SubscriptionId)
+                if (await _checker.CheckAndResultAsync(SubscriptionValidatorStates.HasAllowedSpaces, _userClaims.SubscriptionId)
                 is { Success: false } resultSpaces)
                     throw new ProblemDetailsException(resultSpaces.Result ?? resultSpaces.Message!);
             }
